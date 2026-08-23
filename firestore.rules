@@ -1,0 +1,62 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner() {
+      return signedIn() && request.auth.token.owner == true;
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isOwner());
+      allow create: if signedIn() && request.auth.uid == uid;
+      allow update: if signedIn() && (request.auth.uid == uid || isOwner());
+      allow delete: if false;
+    }
+
+    // Wallets and financial ledgers must never be client-writable.
+    match /wallets/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isOwner());
+      allow write: if false;
+    }
+
+    match /ledger/{entryId} {
+      allow read: if signedIn() && isOwner();
+      allow write: if false;
+    }
+
+    match /recharges/{id} {
+      allow read: if signedIn() && isOwner();
+      allow write: if false;
+    }
+
+    match /withdrawals/{id} {
+      allow read: if signedIn() && isOwner();
+      allow write: if false;
+    }
+
+    match /owner_commissions/{id} {
+      allow read: if isOwner();
+      allow write: if false;
+    }
+
+    match /audit_logs/{id} {
+      allow read: if isOwner();
+      allow write: if false;
+    }
+
+    match /rooms/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if signedIn();
+      allow delete: if isOwner();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
