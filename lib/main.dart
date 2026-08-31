@@ -1,500 +1,176 @@
 // =====================================================
-// PART 3
-// VIP + COINS + GIFTS + REFER & EARN + SETTINGS
+// PART 4
+// PROFILE + OWNER DASHBOARD + CHAT ROOMS
 // =====================================================
 
-// ================= VIP =================
+// =====================================================
+// USER / OWNER ROLE
+// =====================================================
 
-class VipScreen extends StatelessWidget {
-  const VipScreen({super.key});
+// IMPORTANT:
+// Real authentication/Firebase connect ಮಾಡಿದ ನಂತರ
+// ಇದನ್ನು database role ಮೂಲಕ control ಮಾಡಬೇಕು.
+//
+// ಈಗ default ಆಗಿ normal USER.
+// ಆದ್ದರಿಂದ ಸಾಮಾನ್ಯ users ಗೆ Owner Dashboard ಕಾಣಿಸುವುದಿಲ್ಲ.
 
-  final List<int> vipCoins = const [
-    1000,
-    5000,
-    10000,
-    20000,
-    50000,
-    100000,
-    200000,
-    500000,
-    1000000,
-    2000000,
-  ];
+const bool currentUserIsOwner = false;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('VIP Levels'),
-      ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: 10,
-        itemBuilder: (context, index) {
-          final level = index + 1;
 
-          return Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            child: ListTile(
-              contentPadding: const EdgeInsets.all(14),
-              leading: CircleAvatar(
-                radius: 28,
-                child: Text(
-                  '$level',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
-              ),
-              title: Text(
-                'VIP $level',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              subtitle: Text(
-                'Required coins: ${vipCoins[index]}',
-              ),
-              trailing: const Icon(
-                Icons.arrow_forward_ios,
-                size: 18,
-              ),
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      title: Text('VIP $level'),
-                      content: Text(
-                        'VIP $level requires '
-                        '${vipCoins[index]} coins.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: const Text('Close'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
+// =====================================================
+// PROFILE SCREEN
+// =====================================================
 
-// ================= COINS =================
-
-class CoinsScreen extends StatelessWidget {
-  const CoinsScreen({super.key});
-
-  final List<Map<String, dynamic>> packages = const [
-    {
-      'coins': 100,
-      'price': '₹10',
-    },
-    {
-      'coins': 500,
-      'price': '₹50',
-    },
-    {
-      'coins': 1000,
-      'price': '₹100',
-    },
-    {
-      'coins': 5000,
-      'price': '₹500',
-    },
-    {
-      'coins': 10000,
-      'price': '₹1,000',
-    },
-    {
-      'coins': 50000,
-      'price': '₹5,000',
-    },
-  ];
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Coins & Recharge'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFFFFB300),
-                  Color(0xFFFF8F00),
-                ],
-              ),
-            ),
-            child: const Column(
-              children: [
-                Icon(
-                  Icons.monetization_on,
-                  size: 65,
-                  color: Colors.white,
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'My Coins',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                  ),
-                ),
-                SizedBox(height: 5),
-                Text(
-                  '0 Coins',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          const Text(
-            'Recharge Packages',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          ...packages.map(
-            (package) => Card(
-              margin: const EdgeInsets.only(bottom: 10),
-              child: ListTile(
-                leading: const CircleAvatar(
-                  child: Icon(Icons.monetization_on),
-                ),
-                title: Text(
-                  '${package['coins']} Coins',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle: Text(
-                  package['price'],
-                ),
-                trailing: ElevatedButton(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: const Text(
-                            'Recharge',
-                          ),
-                          content: Text(
-                            '${package['coins']} Coins\n'
-                            'Price: ${package['price']}',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: const Text(
-                                'Cancel',
-                              ),
-                            ),
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-
-                                ScaffoldMessenger.of(
-                                  context,
-                                ).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Payment gateway will be connected with the real backend.',
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                'Continue',
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                  child: const Text('Recharge'),
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.security,
-                    color: Colors.green,
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Payments will be processed securely '
-                      'when the real payment gateway is connected.',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ================= GIFTS =================
-
-class GiftsScreen extends StatelessWidget {
-  const GiftsScreen({super.key});
-
-  final List<Map<String, dynamic>> gifts = const [
-    {
-      'name': 'Rose',
-      'coins': 10,
-      'icon': Icons.local_florist,
-    },
-    {
-      'name': 'Heart',
-      'coins': 50,
-      'icon': Icons.favorite,
-    },
-    {
-      'name': 'Star',
-      'coins': 100,
-      'icon': Icons.star,
-    },
-    {
-      'name': 'Crown',
-      'coins': 500,
-      'icon': Icons.workspace_premium,
-    },
-    {
-      'name': 'Gift Box',
-      'coins': 1000,
-      'icon': Icons.card_giftcard,
-    },
-    {
-      'name': 'Diamond',
-      'coins': 5000,
-      'icon': Icons.diamond,
-    },
-    {
-      'name': 'Super Gift',
-      'coins': 10000,
-      'icon': Icons.auto_awesome,
-    },
-    {
-      'name': 'Royal Gift',
-      'coins': 50000,
-      'icon': Icons.emoji_events,
-    },
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Gifts'),
-      ),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: gifts.length,
-        gridDelegate:
-            const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 14,
-          mainAxisSpacing: 14,
-          childAspectRatio: 1,
-        ),
-        itemBuilder: (context, index) {
-          final gift = gifts[index];
-
-          return Card(
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      title: Text(
-                        gift['name'] as String,
-                      ),
-                      content: Text(
-                        'Gift cost: '
-                        '${gift['coins']} Coins',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: const Text('Close'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-
-                            ScaffoldMessenger.of(
-                              context,
-                            ).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Gift sending will be connected to the real coin system.',
-                                ),
-                              ),
-                            );
-                          },
-                          child: const Text(
-                            'Send Gift',
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-              child: Column(
-                mainAxisAlignment:
-                    MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    gift['icon'] as IconData,
-                    size: 52,
-                    color: Colors.deepPurple,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    gift['name'] as String,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    '${gift['coins']} Coins',
-                    style: const TextStyle(
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-// ================= REFER & EARN =================
-
-class ReferScreen extends StatelessWidget {
-  const ReferScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Refer & Earn'),
+        title: const Text('Profile'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            const SizedBox(height: 20),
+
+            const SizedBox(height: 10),
 
             const CircleAvatar(
-              radius: 60,
+              radius: 65,
               child: Icon(
-                Icons.people,
-                size: 65,
+                Icons.person,
+                size: 70,
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 18),
 
             const Text(
-              'Invite Friends & Earn',
+              'Mchat User',
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
               ),
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
 
             const Text(
-              'Invite your friends to join Mchat '
-              'and earn rewards.',
-              textAlign: TextAlign.center,
+              'Mchat ID: 10000001',
               style: TextStyle(
-                fontSize: 16,
                 color: Colors.grey,
+                fontSize: 15,
               ),
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 25),
 
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: Colors.deepPurple.withOpacity(.08),
-              ),
-              child: const Column(
+            Card(
+              child: Column(
                 children: [
-                  Text(
-                    'Your Referral Code',
-                    style: TextStyle(
-                      fontSize: 16,
+
+                  ListTile(
+                    leading: const Icon(
+                      Icons.person_outline,
                     ),
+                    title: const Text(
+                      'My Profile',
+                    ),
+                    subtitle: const Text(
+                      'Edit profile information',
+                    ),
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios,
+                      size: 18,
+                    ),
+                    onTap: () {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Profile editing will be connected next.',
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                  SizedBox(height: 10),
-                  Text(
-                    'MCHAT0000',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
+
+                  ListTile(
+                    leading: const Icon(
+                      Icons.monetization_on_outlined,
                     ),
+                    title: const Text(
+                      'My Coins',
+                    ),
+                    subtitle: const Text(
+                      '0 Coins',
+                    ),
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios,
+                      size: 18,
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const CoinsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  ListTile(
+                    leading: const Icon(
+                      Icons.card_giftcard,
+                    ),
+                    title: const Text(
+                      'My Gifts',
+                    ),
+                    subtitle: const Text(
+                      'Received and sent gifts',
+                    ),
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios,
+                      size: 18,
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const GiftsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  ListTile(
+                    leading: const Icon(
+                      Icons.people_outline,
+                    ),
+                    title: const Text(
+                      'Refer & Earn',
+                    ),
+                    subtitle: const Text(
+                      'Invite friends and earn',
+                    ),
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios,
+                      size: 18,
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const ReferScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -502,47 +178,61 @@ class ReferScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Share referral link will be connected next.',
-                      ),
+            // OWNER ONLY
+            if (currentUserIsOwner)
+              Card(
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.admin_panel_settings,
+                    size: 32,
+                  ),
+                  title: const Text(
+                    'Owner Dashboard',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
                     ),
-                  );
-                },
-                icon: const Icon(Icons.share),
-                label: const Text(
-                  'Share Referral',
+                  ),
+                  subtitle: const Text(
+                    'Manage Mchat application',
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            const OwnerDashboardScreen(),
+                      ),
+                    );
+                  },
                 ),
               ),
-            ),
 
-            const SizedBox(height: 15),
+            const SizedBox(height: 10),
 
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(
+            Card(
+              child: ListTile(
+                leading: const Icon(
+                  Icons.settings_outlined,
+                ),
+                title: const Text(
+                  'Settings',
+                ),
+                trailing: const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 18,
+                ),
+                onTap: () {
+                  Navigator.push(
                     context,
-                  ).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Referral history will appear here.',
-                      ),
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const SettingsScreen(),
                     ),
                   );
                 },
-                icon: const Icon(Icons.history),
-                label: const Text(
-                  'Referral History',
-                ),
               ),
             ),
           ],
@@ -552,236 +242,871 @@ class ReferScreen extends StatelessWidget {
   }
 }
 
-// ================= SETTINGS =================
 
-class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+// =====================================================
+// OWNER DASHBOARD
+// =====================================================
 
-  @override
-  State<SettingsScreen> createState() =>
-      _SettingsScreenState();
-}
-
-class _SettingsScreenState
-    extends State<SettingsScreen> {
-  bool notifications = true;
-  bool sound = true;
-  bool vibration = true;
+class OwnerDashboardScreen extends StatelessWidget {
+  const OwnerDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: const Text(
+          'Owner Dashboard',
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+
           const Text(
-            'General',
+            'Mchat Owner Panel',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 28,
               fontWeight: FontWeight.bold,
             ),
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 20),
 
-          Card(
-            child: Column(
-              children: [
-                SwitchListTile(
-                  title: const Text(
-                    'Notifications',
-                  ),
-                  subtitle: const Text(
-                    'Receive Mchat notifications',
-                  ),
-                  value: notifications,
-                  onChanged: (value) {
-                    setState(() {
-                      notifications = value;
-                    });
-                  },
-                ),
-                SwitchListTile(
-                  title: const Text(
-                    'Sound',
-                  ),
-                  subtitle: const Text(
-                    'Chat and room sounds',
-                  ),
-                  value: sound,
-                  onChanged: (value) {
-                    setState(() {
-                      sound = value;
-                    });
-                  },
-                ),
-                SwitchListTile(
-                  title: const Text(
-                    'Vibration',
-                  ),
-                  subtitle: const Text(
-                    'Vibrate for notifications',
-                  ),
-                  value: vibration,
-                  onChanged: (value) {
-                    setState(() {
-                      vibration = value;
-                    });
-                  },
-                ),
-              ],
-            ),
+          ownerMenu(
+            context,
+            Icons.people,
+            'Users',
+            'Manage registered users',
           ),
 
-          const SizedBox(height: 25),
-
-          const Text(
-            'Account',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+          ownerMenu(
+            context,
+            Icons.monetization_on,
+            'Coins & Recharge',
+            'View coin transactions',
           ),
 
-          const SizedBox(height: 10),
-
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(
-                    Icons.person,
-                  ),
-                  title: const Text(
-                    'My Profile',
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 18,
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            const ProfileScreen(),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.lock,
-                  ),
-                  title: const Text(
-                    'Privacy & Security',
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 18,
-                  ),
-                  onTap: () {},
-                ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.block,
-                  ),
-                  title: const Text(
-                    'Blocked Users',
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 18,
-                  ),
-                  onTap: () {},
-                ),
-              ],
-            ),
+          ownerMenu(
+            context,
+            Icons.card_giftcard,
+            'Gifts',
+            'Manage gifts',
           ),
 
-          const SizedBox(height: 25),
-
-          const Text(
-            'About',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+          ownerMenu(
+            context,
+            Icons.emoji_events,
+            'VIP Management',
+            'Manage VIP levels',
           ),
 
-          const SizedBox(height: 10),
-
-          Card(
-            child: Column(
-              children: [
-                const ListTile(
-                  leading: Icon(
-                    Icons.info_outline,
-                  ),
-                  title: Text(
-                    'About Mchat',
-                  ),
-                  subtitle: Text(
-                    'Version 1.0.0',
-                  ),
-                ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.description_outlined,
-                  ),
-                  title: const Text(
-                    'Terms & Conditions',
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 18,
-                  ),
-                  onTap: () {},
-                ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.privacy_tip_outlined,
-                  ),
-                  title: const Text(
-                   Icons.arrow_forward_ios,
-                    size: 18,
-                  ),
-                  onTap: () {},
-                ),
-              ],
-            ),
+          ownerMenu(
+            context,
+            Icons.live_tv,
+            'Live Rooms',
+            'Manage live rooms',
           ),
 
-          const SizedBox(height: 30),
+          ownerMenu(
+            context,
+            Icons.account_balance_wallet,
+            'Revenue',
+            'View application revenue',
+          ),
 
-          OutlinedButton.icon(
+          ownerMenu(
+            context,
+            Icons.settings,
+            'App Settings',
+            'Application settings',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget ownerMenu(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String subtitle,
+  ) {
+    return Card(
+      margin: const EdgeInsets.only(
+        bottom: 12,
+      ),
+      child: ListTile(
+        contentPadding:
+            const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 8,
+        ),
+        leading: Icon(
+          icon,
+          size: 35,
+          color: Theme.of(context)
+              .colorScheme
+              .primary,
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+        ),
+        trailing: const Icon(
+          Icons.arrow_forward_ios,
+          size: 18,
+        ),
+        onTap: () {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(
+            SnackBar(
+              content: Text(
+                '$title management will be connected to the real backend.',
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+
+// =====================================================
+// CHAT ROOM
+// =====================================================
+
+class ChatRoomScreen extends StatefulWidget {
+  final String roomName;
+  final String roomType;
+
+  const ChatRoomScreen({
+    super.key,
+    required this.roomName,
+    required this.roomType,
+  });
+
+  @override
+  State<ChatRoomScreen> createState() =>
+      _ChatRoomScreenState();
+}
+
+class _ChatRoomScreenState
+    extends State<ChatRoomScreen> {
+
+  final List<String> messages = [
+    'Welcome to Mchat Room!',
+    'Please respect everyone.',
+    'Let’s chat and have fun together!',
+  ];
+
+  final TextEditingController controller =
+      TextEditingController();
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  void sendMessage() {
+    final text = controller.text.trim();
+
+    if (text.isEmpty) return;
+
+    setState(() {
+      messages.add(
+        'You: $text',
+      );
+    });
+
+    controller.clear();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.roomName,
+              style: const TextStyle(
+                fontSize: 18,
+              ),
+            ),
+            Text(
+              widget.roomType,
+              style: const TextStyle(
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+
+          IconButton(
             onPressed: () {
               ScaffoldMessenger.of(
                 context,
               ).showSnackBar(
                 const SnackBar(
                   content: Text(
-                    'Logout will be connected to authentication.',
+                    'Room shared.',
                   ),
                 ),
               );
             },
             icon: const Icon(
-              Icons.logout,
+              Icons.share,
             ),
-            label: const Text(
-              'Logout',
+          ),
+
+          IconButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            icon: const Icon(
+              Icons.power_settings_new,
+            ),
+          ),
+        ],
+      ),
+
+      body: Stack(
+        children: [
+
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFF33205C),
+                  Color(0xFF11101E),
+                ],
+              ),
+            ),
+          ),
+
+          Column(
+            children: [
+
+              // ROOM HEADER
+              Padding(
+                padding:
+                    const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+
+                    const CircleAvatar(
+                      radius: 30,
+                      child: Icon(
+                        Icons.person,
+                        size: 35,
+                      ),
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+
+                          Text(
+                            widget.roomName,
+                            style:
+                                const TextStyle(
+                              color: Colors.white,
+                              fontSize: 19,
+                              fontWeight:
+                                  FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(
+                            height: 4,
+                          ),
+
+                          const Text(
+                            'Online users: 1',
+                            style: TextStyle(
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    IconButton(
+                      onPressed: () {
+                        showRoomMode(context);
+                      },
+                      icon: const Icon(
+                        Icons.grid_view,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // MIC SEATS
+              SizedBox(
+                height: 115,
+                child: ListView.builder(
+                  scrollDirection:
+                      Axis.horizontal,
+                  padding:
+                      const EdgeInsets.symmetric(
+                    horizontal: 12,
+                  ),
+                  itemCount: 10,
+                  itemBuilder:
+                      (context, index) {
+
+                    final isFirst =
+                        index == 0;
+
+                    return Container(
+                      width: 82,
+                      margin:
+                          const EdgeInsets.only(
+                        right: 10,
+                      ),
+                      child: Column(
+                        children: [
+
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundColor:
+                                Colors.white24,
+                            child: Icon(
+                              isFirst
+                                  ? Icons.person
+                                  : Icons.lock,
+                              color:
+                                  Colors.white,
+                              size: 30,
+                            ),
+                          ),
+
+                          const SizedBox(
+                            height: 6,
+                          ),
+
+                          Text(
+                            isFirst
+                                ? 'You'
+                                : '${index + 1}',
+                            style:
+                                const TextStyle(
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // MESSAGES
+              Expanded(
+                child: ListView.builder(
+                  padding:
+                      const EdgeInsets.all(16),
+                  itemCount:
+                      messages.length,
+                  itemBuilder:
+                      (context, index) {
+
+                    return Container(
+                      margin:
+                          const EdgeInsets.only(
+                        bottom: 10,
+                      ),
+                      padding:
+                          const EdgeInsets.all(14),
+                      decoration:
+                          BoxDecoration(
+                        color:
+                            Colors.black45,
+                        borderRadius:
+                            BorderRadius.circular(
+                          16,
+                        ),
+                      ),
+                      child: Text(
+                        messages[index],
+                        style:
+                            const TextStyle(
+                          color:
+                              Colors.white,
+                          fontSize: 15,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // CHAT INPUT
+              SafeArea(
+                child: Container(
+                  padding:
+                      const EdgeInsets.all(10),
+                  child: Row(
+                    children: [
+
+                      IconButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Emoji panel coming next.',
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(
+                          Icons.emoji_emotions,
+                          color: Colors.white,
+                        ),
+                      ),
+
+                      Expanded(
+                        child: TextField(
+                          controller:
+                              controller,
+                          style:
+                              const TextStyle(
+                            color: Colors.white,
+                          ),
+                          decoration:
+                              InputDecoration(
+                            hintText:
+                                'Type message...',
+                            hintStyle:
+                                const TextStyle(
+                              color:
+                                  Colors.white54,
+                            ),
+                            filled: true,
+                            fillColor:
+                                Colors.white12,
+                            border:
+                                OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.circular(
+                                25,
+                              ),
+                              borderSide:
+                                  BorderSide.none,
+                            ),
+                          ),
+                          onSubmitted:
+                              (_) => sendMessage(),
+                        ),
+                      ),
+
+                      IconButton(
+                        onPressed:
+                            sendMessage,
+                        icon: const Icon(
+                          Icons.send,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ===================================================
+  // ROOM MODE
+  // ===================================================
+
+  void showRoomMode(
+    BuildContext context,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor:
+          const Color(0xFF181818),
+      isScrollControlled: true,
+      builder: (context) {
+
+        final modes = [
+          ['Truth & Dare', Icons.sports],
+          ['Undercover', Icons.visibility],
+          ['Dominoes', Icons.casino],
+          ['Draw & Guess', Icons.brush],
+          ['Ludo', Icons.games],
+          ['Blind Date', Icons.favorite],
+          ['Talent', Icons.mic],
+          ['Video', Icons.play_circle],
+          ['Snakes & Ladders', Icons.casino],
+          ['Carrom', Icons.sports_esports],
+          ['No Bomb', Icons.warning],
+          ['Yummy Crush', Icons.favorite],
+          ['Music', Icons.music_note],
+          ['Lucky Wheel', Icons.album],
+          ['Calculator', Icons.calculate],
+          ['Sound Effect', Icons.music_video],
+          ['PK', Icons.flash_on],
+          ['Room PK', Icons.compare_arrows],
+          ['Turntable', Icons.album],
+          ['Intimacy Bond', Icons.favorite_border],
+        ];
+
+        return SafeArea(
+          child: Padding(
+            padding:
+                const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize:
+                  MainAxisSize.min,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+
+                const Text(
+                  'Room Mode',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(
+                  height: 20,
+                ),
+
+                Flexible(
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    itemCount:
+                        modes.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 18,
+                      childAspectRatio: .85,
+                    ),
+                    itemBuilder:
+                        (context, index) {
+
+                      return InkWell(
+                        onTap: () {
+                          Navigator.pop(
+                            context,
+                          );
+
+                          ScaffoldMessenger
+                              .of(context)
+                              .showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '${modes[index][0]} selected.',
+                              ),
+                            ),
+                          );
+                        },
+                        child: Column(
+                          children: [
+
+                            CircleAvatar(
+                              radius: 27,
+                              child: Icon(
+                                modes[index][1]
+                                    as IconData,
+                              ),
+                            ),
+
+                            const SizedBox(
+                              height: 6,
+                            ),
+
+                            Text(
+                              modes[index][0]
+                                  as String,
+                              maxLines: 2,
+                              textAlign:
+                                  TextAlign.center,
+                              style:
+                                  const TextStyle(
+                                color:
+                                    Colors.white,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+
+// =====================================================
+// BROAD ROOM
+// =====================================================
+
+class BroadRoomScreen extends StatelessWidget {
+  const BroadRoomScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Broad Rooms',
+        ),
+      ),
+      body: ListView(
+        padding:
+            const EdgeInsets.all(16),
+        children: [
+
+          roomTypeCard(
+            context,
+            'Public Broad Room',
+            'Open room for everyone',
+            Icons.public,
+          ),
+
+          roomTypeCard(
+            context,
+            'Popular Broad Room',
+            'Discover popular rooms',
+            Icons.trending_up,
+          ),
+
+          roomTypeCard(
+            context,
+            'Music Broad Room',
+            'Music and entertainment',
+            Icons.music_note,
+          ),
+
+          roomTypeCard(
+            context,
+            'Game Broad Room',
+            'Play games together',
+            Icons.games,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget roomTypeCard(
+    BuildContext context,
+    String title,
+    String subtitle,
+    IconData icon,
+  ) {
+    return Card(
+      margin:
+          const EdgeInsets.only(
+        bottom: 14,
+      ),
+      child: ListTile(
+        contentPadding:
+            const EdgeInsets.all(16),
+        leading: CircleAvatar(
+          radius: 28,
+          child: Icon(icon),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight:
+                FontWeight.bold,
+            fontSize: 17,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+        ),
+        trailing: const Icon(
+          Icons.arrow_forward_ios,
+          size: 18,
+        ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  ChatRoomScreen(
+                roomName: title,
+                roomType: 'Broad Room',
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+
+// =====================================================
+// FAMILY ROOM
+// =====================================================
+
+class FamilyRoomScreen extends StatelessWidget {
+  const FamilyRoomScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Family Rooms',
+        ),
+      ),
+      body: ListView(
+        padding:
+            const EdgeInsets.all(16),
+        children: [
+
+          roomCard(
+            context,
+            'Mchat Family',
+            'Family members and friends',
+          ),
+
+          roomCard(
+            context,
+            'Friends Family',
+            'Private family room',
+          ),
+
+          roomCard(
+            context,
+            'Music Family',
+            'Music and voice chat',
+          ),
+
+          const SizedBox(
+            height: 20,
+          ),
+
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        const ChatRoomScreen(
+                      roomName:
+                          'My Family Room',
+                      roomType:
+                          'Family Room',
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(
+                Icons.add,
+              ),
+              label: const Text(
+                'Create Family Room',
+              ),
             ),
           ),
         ],
       ),
     );
   }
+
+  Widget roomCard(
+    BuildContext context,
+    String title,
+    String subtitle,
+  ) {
+    return Card(
+      margin:
+          const EdgeInsets.only(
+        bottom: 14,
+      ),
+      child: ListTile(
+        contentPadding:
+            const EdgeInsets.all(16),
+        leading: const CircleAvatar(
+          radius: 28,
+          child: Icon(
+            Icons.family_restroom,
+          ),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight:
+                FontWeight.bold,
+            fontSize: 17,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+        ),
+        trailing: const Icon(
+          Icons.arrow_forward_ios,
+          size: 18,
+        ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  ChatRoomScreen(
+                roomName: title,
+                roomType:
+                    'Family Room',
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 }
 
+
 // =====================================================
-// PART 3 END
+// PART 4 END
 // =====================================================
