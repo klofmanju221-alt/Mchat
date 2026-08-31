@@ -4,15 +4,24 @@ import 'package:flutter/material.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase using the Android configuration
-  // from android/app/google-services.json
-  await Firebase.initializeApp();
+  String? firebaseError;
 
-  runApp(const MchatApp());
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    firebaseError = e.toString();
+  }
+
+  runApp(MchatApp(firebaseError: firebaseError));
 }
 
 class MchatApp extends StatelessWidget {
-  const MchatApp({super.key});
+  final String? firebaseError;
+
+  const MchatApp({
+    super.key,
+    this.firebaseError,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +34,9 @@ class MchatApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const ProductionStatusPage(),
+      home: firebaseError == null
+          ? const ProductionStatusPage()
+          : FirebaseErrorPage(error: firebaseError!),
     );
   }
 }
@@ -48,65 +59,96 @@ class ProductionStatusPage extends StatelessWidget {
             color: Colors.deepPurple,
           ),
           SizedBox(height: 16),
-
           Text(
-            'Production Foundation',
+            'Mchat Production Foundation',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
             ),
           ),
-
-          SizedBox(height: 10),
-
+          SizedBox(height: 12),
           Text(
-            'Mchat uses real backend data only. '
-            'No demo balance, fake transactions, '
-            'or fake withdrawal success is generated.',
+            'Firebase connected successfully.',
             textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-
           SizedBox(height: 28),
-
           _Status(
             'Authentication',
             'Firebase Authentication ready',
           ),
-
           _Status(
             'Database',
             'Cloud Firestore configured',
           ),
-
           _Status(
             'Payments',
             'Server verification required',
           ),
-
           _Status(
             'Withdrawals',
             'Verified payout integration required',
           ),
-
           _Status(
             'Live / Voice',
             'Live SDK credentials required',
           ),
-
-          _Status(
-            'Owner account',
-            'klofmanju221@gmail.com',
-          ),
-
-          SizedBox(height: 24),
-
-          Text(
-            'Production release requires KYC, tax, '
-            'privacy, terms, refund and app-store compliance.',
-            textAlign: TextAlign.center,
-          ),
         ],
+      ),
+    );
+  }
+}
+
+class FirebaseErrorPage extends StatelessWidget {
+  final String error;
+
+  const FirebaseErrorPage({
+    super.key,
+    required this.error,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Mchat - Firebase Error'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: ListView(
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 80,
+              color: Colors.red,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Firebase Initialization Failed',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Please send this error to the developer:',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 15),
+            SelectableText(
+              error,
+              style: const TextStyle(
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
