@@ -1,589 +1,549 @@
 // =====================================================
-// PART 2
-// CHAT ROOMS
+// PART 3
+// VIP + COINS + GIFTS + REFER & EARN + SETTINGS
 // =====================================================
 
-class BroadRoomScreen extends StatelessWidget {
-  const BroadRoomScreen({super.key});
+// ================= VIP =================
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Broad Rooms'),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.search),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          roomCard(
-            context,
-            'Music Lovers',
-            '1,258 online',
-            Icons.music_note,
-          ),
-          roomCard(
-            context,
-            'Friends Chat',
-            '876 online',
-            Icons.people,
-          ),
-          roomCard(
-            context,
-            'Kannada Family',
-            '542 online',
-            Icons.language,
-          ),
-          roomCard(
-            context,
-            'Entertainment',
-            '324 online',
-            Icons.movie,
-          ),
-          roomCard(
-            context,
-            'Game Room',
-            '218 online',
-            Icons.sports_esports,
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const ChatRoomScreen(
-                roomName: 'My Broad Room',
-              ),
-            ),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Create Room'),
-      ),
-    );
-  }
+class VipScreen extends StatelessWidget {
+  const VipScreen({super.key});
 
-  Widget roomCard(
-    BuildContext context,
-    String name,
-    String users,
-    IconData icon,
-  ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 14),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
-        leading: CircleAvatar(
-          radius: 28,
-          child: Icon(icon, size: 28),
-        ),
-        title: Text(
-          name,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 17,
-          ),
-        ),
-        subtitle: Row(
-          children: [
-            const Icon(
-              Icons.circle,
-              size: 10,
-              color: Colors.green,
-            ),
-            const SizedBox(width: 5),
-            Text(users),
-          ],
-        ),
-        trailing: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ChatRoomScreen(
-                  roomName: name,
-                ),
-              ),
-            );
-          },
-          child: const Text('Join'),
-        ),
-      ),
-    );
-  }
-}
-
-// =====================================================
-// FAMILY ROOM
-// =====================================================
-
-class FamilyRoomScreen extends StatelessWidget {
-  const FamilyRoomScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Family Rooms'),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.search),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          familyCard(
-            context,
-            'Happy Family',
-            'Family members only',
-            Icons.home,
-          ),
-          familyCard(
-            context,
-            'Mchat Friends Family',
-            'Private family room',
-            Icons.family_restroom,
-          ),
-          familyCard(
-            context,
-            'Kannada Family',
-            'Safe family chat',
-            Icons.groups,
-          ),
-          familyCard(
-            context,
-            'VIP Family',
-            'VIP family room',
-            Icons.workspace_premium,
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const ChatRoomScreen(
-                roomName: 'My Family Room',
-              ),
-            ),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Create Family'),
-      ),
-    );
-  }
-
-  Widget familyCard(
-    BuildContext context,
-    String name,
-    String subtitle,
-    IconData icon,
-  ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 14),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
-        leading: CircleAvatar(
-          radius: 28,
-          child: Icon(icon, size: 28),
-        ),
-        title: Text(
-          name,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 17,
-          ),
-        ),
-        subtitle: Text(subtitle),
-        trailing: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ChatRoomScreen(
-                  roomName: name,
-                ),
-              ),
-            );
-          },
-          child: const Text('Enter'),
-        ),
-      ),
-    );
-  }
-}
-
-// =====================================================
-// CHAT ROOM
-// =====================================================
-
-class ChatRoomScreen extends StatefulWidget {
-  final String roomName;
-
-  const ChatRoomScreen({
-    super.key,
-    required this.roomName,
-  });
-
-  @override
-  State<ChatRoomScreen> createState() =>
-      _ChatRoomScreenState();
-}
-
-class _ChatRoomScreenState extends State<ChatRoomScreen> {
-  final TextEditingController messageController =
-      TextEditingController();
-
-  bool micOn = false;
-
-  final List<String> messages = [
-    'Welcome to Mchat Room!',
-    'Please respect each other.',
-    'Have fun and enjoy the room!',
-  ];
-
-  final List<IconData> seatIcons = [
-    Icons.person,
-    Icons.lock,
-    Icons.lock,
-    Icons.lock,
-    Icons.lock,
-    Icons.lock,
-    Icons.lock,
-    Icons.lock,
-    Icons.lock,
-    Icons.lock,
+  final List<int> vipCoins = const [
+    1000,
+    5000,
+    10000,
+    20000,
+    50000,
+    100000,
+    200000,
+    500000,
+    1000000,
+    2000000,
   ];
 
   @override
-  void dispose() {
-    messageController.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('VIP Levels'),
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: 10,
+        itemBuilder: (context, index) {
+          final level = index + 1;
+
+          return Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(14),
+              leading: CircleAvatar(
+                radius: 28,
+                child: Text(
+                  '$level',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+              ),
+              title: Text(
+                'VIP $level',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: Text(
+                'Required coins: ${vipCoins[index]}',
+              ),
+              trailing: const Icon(
+                Icons.arrow_forward_ios,
+                size: 18,
+              ),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: Text('VIP $level'),
+                      content: Text(
+                        'VIP $level requires '
+                        '${vipCoins[index]} coins.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Close'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
   }
+}
 
-  void sendMessage() {
-    final text = messageController.text.trim();
+// ================= COINS =================
 
-    if (text.isEmpty) return;
+class CoinsScreen extends StatelessWidget {
+  const CoinsScreen({super.key});
 
-    setState(() {
-      messages.add(text);
-      messageController.clear();
-    });
-  }
+  final List<Map<String, dynamic>> packages = const [
+    {
+      'coins': 100,
+      'price': '₹10',
+    },
+    {
+      'coins': 500,
+      'price': '₹50',
+    },
+    {
+      'coins': 1000,
+      'price': '₹100',
+    },
+    {
+      'coins': 5000,
+      'price': '₹500',
+    },
+    {
+      'coins': 10000,
+      'price': '₹1,000',
+    },
+    {
+      'coins': 50000,
+      'price': '₹5,000',
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.roomName),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.share),
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.more_vert),
-          ),
-          IconButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            icon: const Icon(Icons.power_settings_new),
-          ),
-        ],
+        title: const Text('Coins & Recharge'),
       ),
-      body: Stack(
+      body: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: const LinearGradient(
                 colors: [
-                  Color(0xFF251638),
-                  Color(0xFF120D1E),
+                  Color(0xFFFFB300),
+                  Color(0xFFFF8F00),
                 ],
               ),
             ),
-          ),
-
-          SafeArea(
-            child: Column(
+            child: const Column(
               children: [
-                // Room owner
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      const CircleAvatar(
-                        radius: 28,
-                        child: Icon(Icons.person),
-                      ),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Mchat Owner',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'ID: 207022467',
-                              style: TextStyle(
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(
-                          Icons.emoji_events,
-                          color: Colors.amber,
-                        ),
-                      ),
-                    ],
+                Icon(
+                  Icons.monetization_on,
+                  size: 65,
+                  color: Colors.white,
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'My Coins',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
                   ),
                 ),
-
-                // Seats
-                SizedBox(
-                  height: 250,
-                  child: GridView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                    ),
-                    physics:
-                        const NeverScrollableScrollPhysics(),
-                    itemCount: 10,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 5,
-                      mainAxisSpacing: 14,
-                      crossAxisSpacing: 10,
-                      childAspectRatio: .85,
-                    ),
-                    itemBuilder: (context, index) {
-                      final occupied = index == 0;
-
-                      return Column(
-                        children: [
-                          CircleAvatar(
-                            radius: 29,
-                            backgroundColor:
-                                occupied
-                                    ? Colors.deepPurple
-                                    : Colors.white24,
-                            child: Icon(
-                              seatIcons[index],
-                              color: Colors.white,
-                              size: 27,
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            '${index + 1}',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-
-                // Messages
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      return Container(
-                        margin:
-                            const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius:
-                              BorderRadius.circular(14),
-                        ),
-                        child: Text(
-                          messages[index],
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                // Bottom controls
-                Container(
-                  padding: const EdgeInsets.fromLTRB(
-                    10,
-                    8,
-                    10,
-                    10,
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          setState(() {
-                            micOn = !micOn;
-                          });
-                        },
-                        icon: Icon(
-                          micOn
-                              ? Icons.mic
-                              : Icons.mic_off,
-                          color: Colors.white,
-                          size: 30,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(
-                          Icons.emoji_emotions,
-                          color: Colors.white,
-                          size: 30,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(
-                          Icons.card_giftcard,
-                          color: Colors.amber,
-                          size: 30,
-                        ),
-                      ),
-                      Expanded(
-                        child: TextField(
-                          controller: messageController,
-                          style: const TextStyle(
-                            color: Colors.white,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: 'Type message...',
-                            hintStyle:
-                                const TextStyle(
-                              color: Colors.white60,
-                            ),
-                            filled: true,
-                            fillColor: Colors.white12,
-                            border: OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.circular(25),
-                              borderSide:
-                                  BorderSide.none,
-                            ),
-                            contentPadding:
-                                const EdgeInsets.symmetric(
-                              horizontal: 16,
-                            ),
-                          ),
-                          onSubmitted: (_) =>
-                              sendMessage(),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: sendMessage,
-                        icon: const Icon(
-                          Icons.send,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
+                SizedBox(height: 5),
+                Text(
+                  '0 Coins',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
           ),
+
+          const SizedBox(height: 24),
+
+          const Text(
+            'Recharge Packages',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          ...packages.map(
+            (package) => Card(
+              margin: const EdgeInsets.only(bottom: 10),
+              child: ListTile(
+                leading: const CircleAvatar(
+                  child: Icon(Icons.monetization_on),
+                ),
+                title: Text(
+                  '${package['coins']} Coins',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(
+                  package['price'],
+                ),
+                trailing: ElevatedButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: const Text(
+                            'Recharge',
+                          ),
+                          content: Text(
+                            '${package['coins']} Coins\n'
+                            'Price: ${package['price']}',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: const Text(
+                                'Cancel',
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+
+                                ScaffoldMessenger.of(
+                                  context,
+                                ).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Payment gateway will be connected with the real backend.',
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                'Continue',
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  child: const Text('Recharge'),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.security,
+                    color: Colors.green,
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Payments will be processed securely '
+                      'when the real payment gateway is connected.',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-// =====================================================
-// VOICE SCREEN
-// =====================================================
+// ================= GIFTS =================
 
-class VoiceScreen extends StatelessWidget {
-  const VoiceScreen({super.key});
+class GiftsScreen extends StatelessWidget {
+  const GiftsScreen({super.key});
+
+  final List<Map<String, dynamic>> gifts = const [
+    {
+      'name': 'Rose',
+      'coins': 10,
+      'icon': Icons.local_florist,
+    },
+    {
+      'name': 'Heart',
+      'coins': 50,
+      'icon': Icons.favorite,
+    },
+    {
+      'name': 'Star',
+      'coins': 100,
+      'icon': Icons.star,
+    },
+    {
+      'name': 'Crown',
+      'coins': 500,
+      'icon': Icons.workspace_premium,
+    },
+    {
+      'name': 'Gift Box',
+      'coins': 1000,
+      'icon': Icons.card_giftcard,
+    },
+    {
+      'name': 'Diamond',
+      'coins': 5000,
+      'icon': Icons.diamond,
+    },
+    {
+      'name': 'Super Gift',
+      'coins': 10000,
+      'icon': Icons.auto_awesome,
+    },
+    {
+      'name': 'Royal Gift',
+      'coins': 50000,
+      'icon': Icons.emoji_events,
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Voice Party'),
+        title: const Text('Gifts'),
       ),
-      body: Padding(
+      body: GridView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: gifts.length,
+        gridDelegate:
+            const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+          childAspectRatio: 1,
+        ),
+        itemBuilder: (context, index) {
+          final gift = gifts[index];
+
+          return Card(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: Text(
+                        gift['name'] as String,
+                      ),
+                      content: Text(
+                        'Gift cost: '
+                        '${gift['coins']} Coins',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Close'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Gift sending will be connected to the real coin system.',
+                                ),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            'Send Gift',
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              child: Column(
+                mainAxisAlignment:
+                    MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    gift['icon'] as IconData,
+                    size: 52,
+                    color: Colors.deepPurple,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    gift['name'] as String,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    '${gift['coins']} Coins',
+                    style: const TextStyle(
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ================= REFER & EARN =================
+
+class ReferScreen extends StatelessWidget {
+  const ReferScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Refer & Earn'),
+      ),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
+
             const CircleAvatar(
-              radius: 65,
+              radius: 60,
               child: Icon(
-                Icons.mic,
+                Icons.people,
                 size: 65,
               ),
             ),
+
             const SizedBox(height: 20),
+
             const Text(
-              'Voice Party',
+              'Invite Friends & Earn',
               style: TextStyle(
-                fontSize: 28,
+                fontSize: 26,
                 fontWeight: FontWeight.bold,
               ),
             ),
+
             const SizedBox(height: 10),
+
             const Text(
-              'Talk • Meet • Make Friends',
+              'Invite your friends to join Mchat '
+              'and earn rewards.',
+              textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey,
               ),
             ),
-            const SizedBox(height: 35),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ChatRoomScreen(
-                      roomName: 'Voice Party',
+
+            const SizedBox(height: 30),
+
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                color: Colors.deepPurple.withOpacity(.08),
+              ),
+              child: const Column(
+                children: [
+                  Text(
+                    'Your Referral Code',
+                    style: TextStyle(
+                      fontSize: 16,
                     ),
                   ),
-                );
-              },
-              icon: const Icon(Icons.mic),
-              label: const Text('Enter Voice Room'),
+                  SizedBox(height: 10),
+                  Text(
+                    'MCHAT0000',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Share referral link will be connected next.',
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.share),
+                label: const Text(
+                  'Share Referral',
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 15),
+
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Referral history will appear here.',
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.history),
+                label: const Text(
+                  'Referral History',
+                ),
+              ),
             ),
           ],
         ),
@@ -592,115 +552,236 @@ class VoiceScreen extends StatelessWidget {
   }
 }
 
-// =====================================================
-// LIVE SCREEN
-// =====================================================
+// ================= SETTINGS =================
 
-class LiveScreen extends StatelessWidget {
-  const LiveScreen({super.key});
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() =>
+      _SettingsScreenState();
+}
+
+class _SettingsScreenState
+    extends State<SettingsScreen> {
+  bool notifications = true;
+  bool sound = true;
+  bool vibration = true;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Live Rooms'),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.search),
-          ),
-        ],
+        title: const Text('Settings'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          liveCard(
-            context,
-            'Live Room 1',
-            '1.2K viewers',
+          const Text(
+            'General',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          liveCard(
-            context,
-            'Music Live',
-            '856 viewers',
+
+          const SizedBox(height: 10),
+
+          Card(
+            child: Column(
+              children: [
+                SwitchListTile(
+                  title: const Text(
+                    'Notifications',
+                  ),
+                  subtitle: const Text(
+                    'Receive Mchat notifications',
+                  ),
+                  value: notifications,
+                  onChanged: (value) {
+                    setState(() {
+                      notifications = value;
+                    });
+                  },
+                ),
+                SwitchListTile(
+                  title: const Text(
+                    'Sound',
+                  ),
+                  subtitle: const Text(
+                    'Chat and room sounds',
+                  ),
+                  value: sound,
+                  onChanged: (value) {
+                    setState(() {
+                      sound = value;
+                    });
+                  },
+                ),
+                SwitchListTile(
+                  title: const Text(
+                    'Vibration',
+                  ),
+                  subtitle: const Text(
+                    'Vibrate for notifications',
+                  ),
+                  value: vibration,
+                  onChanged: (value) {
+                    setState(() {
+                      vibration = value;
+                    });
+                  },
+                ),
+              ],
+            ),
           ),
-          liveCard(
-            context,
-            'Friends Live',
-            '428 viewers',
+
+          const SizedBox(height: 25),
+
+          const Text(
+            'Account',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          liveCard(
-            context,
-            'Mchat Live',
-            '216 viewers',
+
+          const SizedBox(height: 10),
+
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(
+                    Icons.person,
+                  ),
+                  title: const Text(
+                    'My Profile',
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 18,
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            const ProfileScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.lock,
+                  ),
+                  title: const Text(
+                    'Privacy & Security',
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 18,
+                  ),
+                  onTap: () {},
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.block,
+                  ),
+                  title: const Text(
+                    'Blocked Users',
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 18,
+                  ),
+                  onTap: () {},
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 25),
+
+          const Text(
+            'About',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          Card(
+            child: Column(
+              children: [
+                const ListTile(
+                  leading: Icon(
+                    Icons.info_outline,
+                  ),
+                  title: Text(
+                    'About Mchat',
+                  ),
+                  subtitle: Text(
+                    'Version 1.0.0',
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.description_outlined,
+                  ),
+                  title: const Text(
+                    'Terms & Conditions',
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 18,
+                  ),
+                  onTap: () {},
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.privacy_tip_outlined,
+                  ),
+                  title: const Text(
+                   Icons.arrow_forward_ios,
+                    size: 18,
+                  ),
+                  onTap: () {},
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 30),
+
+          OutlinedButton.icon(
+            onPressed: () {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Logout will be connected to authentication.',
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(
+              Icons.logout,
+            ),
+            label: const Text(
+              'Logout',
+            ),
           ),
         ],
-      ),
-      floatingActionButton:
-          FloatingActionButton.extended(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Live streaming will connect to the real backend.',
-              ),
-            ),
-          );
-        },
-        icon: const Icon(Icons.videocam),
-        label: const Text('Go Live'),
-      ),
-    );
-  }
-
-  Widget liveCard(
-    BuildContext context,
-    String title,
-    String viewers,
-  ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 14),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
-        leading: const CircleAvatar(
-          radius: 28,
-          child: Icon(Icons.live_tv),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        subtitle: Row(
-          children: [
-            const Icon(
-              Icons.circle,
-              size: 9,
-              color: Colors.red,
-            ),
-            const SizedBox(width: 5),
-            Text(viewers),
-          ],
-        ),
-        trailing: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ChatRoomScreen(
-                  roomName: title,
-                ),
-              ),
-            );
-          },
-          child: const Text('Join'),
-        ),
       ),
     );
   }
 }
 
 // =====================================================
-// PART 2 END
+// PART 3 END
 // =====================================================
