@@ -28,6 +28,7 @@ class ProfileScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: backgroundColor,
+
       appBar: AppBar(
         backgroundColor: backgroundColor,
         elevation: 0,
@@ -69,13 +70,19 @@ class ProfileScreen extends StatelessWidget {
             );
           }
 
-          final data = snapshot.data?.data() ?? {};
+          final Map<String, dynamic> data =
+              snapshot.data?.data() ?? <String, dynamic>{};
 
           final String email =
-              (data['email'] ?? firebaseUser.email ?? 'No email').toString();
+              (data['email'] ??
+                      firebaseUser.email ??
+                      'No email')
+                  .toString();
 
           final String name =
-              (data['name'] ?? firebaseUser.displayName ?? 'Mchat User')
+              (data['name'] ??
+                      firebaseUser.displayName ??
+                      'Mchat User')
                   .toString();
 
           final int coins = _toInt(data['coins']);
@@ -90,16 +97,26 @@ class ProfileScreen extends StatelessWidget {
           final String? photoUrl = firebaseUser.photoURL;
 
           return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
-            children: [
+            padding: const EdgeInsets.fromLTRB(
+              20,
+              10,
+              20,
+              30,
+            ),
 
+            children: [
+              // =====================================================
               // PROFILE PHOTO
+              // =====================================================
+
               Center(
                 child: CircleAvatar(
                   radius: 60,
                   backgroundColor: Colors.deepPurple.shade100,
-                  backgroundImage:
-                      photoUrl != null ? NetworkImage(photoUrl) : null,
+                  backgroundImage: photoUrl != null
+                      ? NetworkImage(photoUrl)
+                      : null,
+
                   child: photoUrl == null
                       ? const Icon(
                           Icons.person,
@@ -112,7 +129,10 @@ class ProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 16),
 
+              // =====================================================
               // NAME
+              // =====================================================
+
               Center(
                 child: Text(
                   name,
@@ -126,7 +146,10 @@ class ProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 6),
 
+              // =====================================================
               // EMAIL
+              // =====================================================
+
               Center(
                 child: Text(
                   email,
@@ -140,7 +163,10 @@ class ProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 25),
 
+              // =====================================================
               // COINS + VIP
+              // =====================================================
+
               Row(
                 children: [
                   Expanded(
@@ -165,10 +191,14 @@ class ProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 25),
 
+              // =====================================================
               // OWNER DASHBOARD
-              if (isOwner) ...[
+              // =====================================================
+
+              if (isOwner)
                 Container(
                   margin: const EdgeInsets.only(bottom: 12),
+
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [
@@ -176,7 +206,10 @@ class ProfileScreen extends StatelessWidget {
                         Color(0xFF8E5DE7),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(18),
+
+                    borderRadius:
+                        BorderRadius.circular(18),
+
                     boxShadow: const [
                       BoxShadow(
                         blurRadius: 8,
@@ -185,8 +218,10 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
+                    contentPadding:
+                        const EdgeInsets.symmetric(
                       horizontal: 18,
                       vertical: 8,
                     ),
@@ -224,15 +259,18 @@ class ProfileScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const OwnerDashboard(),
+                          builder: (_) =>
+                              const OwnerDashboard(),
                         ),
                       );
                     },
                   ),
                 ),
-              ],
 
+              // =====================================================
               // EDIT PROFILE
+              // =====================================================
+
               _menuItem(
                 context,
                 Icons.edit,
@@ -246,7 +284,10 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
 
+              // =====================================================
               // RECHARGE
+              // =====================================================
+
               _menuItem(
                 context,
                 Icons.account_balance_wallet,
@@ -260,7 +301,10 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
 
-              // REFER
+              // =====================================================
+              // REFER & EARN
+              // =====================================================
+
               _menuItem(
                 context,
                 Icons.card_giftcard,
@@ -274,7 +318,10 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
 
+              // =====================================================
               // SETTINGS
+              // =====================================================
+
               _menuItem(
                 context,
                 Icons.settings,
@@ -290,9 +337,13 @@ class ProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
+              // =====================================================
               // LOGOUT
+              // =====================================================
+
               SizedBox(
                 height: 58,
+
                 child: OutlinedButton.icon(
                   icon: const Icon(
                     Icons.logout,
@@ -313,8 +364,10 @@ class ProfileScreen extends StatelessWidget {
                       color: Colors.grey,
                       width: 1.5,
                     ),
+
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius:
+                          BorderRadius.circular(30),
                     ),
                   ),
 
@@ -332,17 +385,24 @@ class ProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 25),
 
-              // DEBUG / OWNER STATUS
+              // =====================================================
+              // OWNER STATUS
+              // =====================================================
+
               if (isOwner)
                 Container(
                   padding: const EdgeInsets.all(14),
+
                   decoration: BoxDecoration(
                     color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius:
+                        BorderRadius.circular(14),
+
                     border: Border.all(
                       color: Colors.green.shade200,
                     ),
                   ),
+
                   child: Column(
                     children: [
                       const Icon(
@@ -378,9 +438,9 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // ----------------------------------------------------------
+  // ===============================================================
   // INFO CARD
-  // ----------------------------------------------------------
+  // ===============================================================
 
   static Widget _infoCard({
     required IconData icon,
@@ -390,14 +450,17 @@ class ProfileScreen extends StatelessWidget {
     return Card(
       elevation: 3,
       color: const Color(0xFFFFF8FF),
+
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
       ),
+
       child: Padding(
         padding: const EdgeInsets.symmetric(
           vertical: 20,
           horizontal: 10,
         ),
+
         child: Column(
           children: [
             Icon(
@@ -411,6 +474,7 @@ class ProfileScreen extends StatelessWidget {
             Text(
               value,
               textAlign: TextAlign.center,
+
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -431,9 +495,9 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // ----------------------------------------------------------
+  // ===============================================================
   // MENU ITEM
-  // ----------------------------------------------------------
+  // ===============================================================
 
   static Widget _menuItem(
     BuildContext context,
@@ -445,19 +509,25 @@ class ProfileScreen extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
+
       color: const Color(0xFFFFF8FF),
+
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
       ),
+
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
+        contentPadding:
+            const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 7,
         ),
 
         leading: CircleAvatar(
           radius: 25,
-          backgroundColor: Colors.deepPurple.shade50,
+          backgroundColor:
+              Colors.deepPurple.shade50,
+
           child: Icon(
             icon,
             color: primaryColor,
@@ -490,9 +560,9 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // ----------------------------------------------------------
+  // ===============================================================
   // MESSAGE
-  // ----------------------------------------------------------
+  // ===============================================================
 
   static void _showMessage(
     BuildContext context,
@@ -505,9 +575,9 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // ----------------------------------------------------------
-  // INTEGER CONVERTER
-  // ----------------------------------------------------------
+  // ===============================================================
+  // INTEGER
+  // ===============================================================
 
   static int _toInt(dynamic value) {
     if (value is int) {
@@ -524,9 +594,9 @@ class ProfileScreen extends StatelessWidget {
         0;
   }
 
-  // ----------------------------------------------------------
+  // ===============================================================
   // NUMBER FORMAT
-  // ----------------------------------------------------------
+  // ===============================================================
 
   static String _formatNumber(int value) {
     if (value >= 1000000000) {
@@ -545,6 +615,7 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
+
 // ==================================================================
 // OWNER DASHBOARD
 // ==================================================================
@@ -552,17 +623,22 @@ class ProfileScreen extends StatelessWidget {
 class OwnerDashboard extends StatelessWidget {
   const OwnerDashboard({super.key});
 
-  static const Color primaryColor = Color(0xFF673AB7);
+  static const Color primaryColor =
+      Color(0xFF673AB7);
+
+  static const Color backgroundColor =
+      Color(0xFFFFF9FF);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF9FF),
+      backgroundColor: backgroundColor,
 
       appBar: AppBar(
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
+
         title: const Text(
           'Owner Dashboard',
           style: TextStyle(
@@ -571,7 +647,8 @@ class OwnerDashboard extends StatelessWidget {
         ),
       ),
 
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      body: StreamBuilder<
+          QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
             .collection('users')
             .snapshots(),
@@ -586,7 +663,21 @@ class OwnerDashboard extends StatelessWidget {
             );
           }
 
-          final users = snapshot.data?.docs ?? [];
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  'Unable to load dashboard.\n\n'
+                  '${snapshot.error}',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+
+          final users =
+              snapshot.data?.docs ?? [];
 
           int totalCoins = 0;
           int ownerCount = 0;
@@ -595,43 +686,54 @@ class OwnerDashboard extends StatelessWidget {
           for (final doc in users) {
             final data = doc.data();
 
-            final dynamic coinValue = data['coins'];
+            totalCoins +=
+                _toInt(data['coins']);
 
-            if (coinValue is num) {
-              totalCoins += coinValue.toInt();
-            }
+            final String role =
+                data['role']
+                        ?.toString()
+                        .toLowerCase() ??
+                    '';
 
             if (data['isOwner'] == true ||
-                data['role']?.toString().toLowerCase() ==
-                    'owner') {
+                role == 'owner') {
               ownerCount++;
             }
 
             if (data['isVolunteer'] == true ||
-                data['role']?.toString().toLowerCase() ==
-                    'volunteer') {
+                role == 'volunteer') {
               volunteerCount++;
             }
           }
 
           return ListView(
             padding: const EdgeInsets.all(18),
-            children: [
 
-              // OWNER HEADER
+            children: [
+              // =====================================================
+              // HEADER
+              // =====================================================
+
               Container(
                 padding: const EdgeInsets.all(20),
+
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+                  gradient:
+                      const LinearGradient(
                     colors: [
                       Color(0xFF673AB7),
                       Color(0xFF9575CD),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(22),
+
+                  borderRadius:
+                      BorderRadius.circular(22),
                 ),
+
                 child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+
                   children: [
                     Icon(
                       Icons.admin_panel_settings,
@@ -665,7 +767,10 @@ class OwnerDashboard extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // STATISTICS
+              // =====================================================
+              // USERS + COINS
+              // =====================================================
+
               Row(
                 children: [
                   Expanded(
@@ -689,6 +794,10 @@ class OwnerDashboard extends StatelessWidget {
               ),
 
               const SizedBox(height: 10),
+
+              // =====================================================
+              // OWNERS + VOLUNTEERS
+              // =====================================================
 
               Row(
                 children: [
@@ -714,7 +823,10 @@ class OwnerDashboard extends StatelessWidget {
 
               const SizedBox(height: 25),
 
-              // USERS
+              // =====================================================
+              // MANAGE USERS
+              // =====================================================
+
               _ownerMenu(
                 context,
                 Icons.people,
@@ -724,13 +836,17 @@ class OwnerDashboard extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const OwnerUsersScreen(),
+                      builder: (_) =>
+                          const OwnerUsersScreen(),
                     ),
                   );
                 },
               ),
 
+              // =====================================================
               // COIN PACKAGES
+              // =====================================================
+
               _ownerMenu(
                 context,
                 Icons.monetization_on,
@@ -740,13 +856,17 @@ class OwnerDashboard extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const CoinPackagesScreen(),
+                      builder: (_) =>
+                          const CoinPackagesScreen(),
                     ),
                   );
                 },
               ),
 
+              // =====================================================
               // VIP LEVELS
+              // =====================================================
+
               _ownerMenu(
                 context,
                 Icons.star,
@@ -756,25 +876,26 @@ class OwnerDashboard extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const VipLevelsScreen(),
+                      builder: (_) =>
+                          const VipLevelsScreen(),
                     ),
                   );
                 },
               ),
 
-              // SETTINGS
+              // =====================================================
+              // OWNER SETTINGS
+              // =====================================================
+
               _ownerMenu(
                 context,
                 Icons.settings,
                 'Owner Settings',
                 'Application management settings',
                 () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Owner settings will be connected next.',
-                      ),
-                    ),
+                  _showMessage(
+                    context,
+                    'Owner Settings will be connected next.',
                   );
                 },
               ),
@@ -785,6 +906,10 @@ class OwnerDashboard extends StatelessWidget {
     );
   }
 
+  // ===============================================================
+  // DASHBOARD CARD
+  // ===============================================================
+
   static Widget _dashboardCard(
     IconData icon,
     String title,
@@ -792,14 +917,18 @@ class OwnerDashboard extends StatelessWidget {
   ) {
     return Card(
       elevation: 2,
+
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius:
+            BorderRadius.circular(18),
       ),
+
       child: Padding(
         padding: const EdgeInsets.symmetric(
           vertical: 18,
           horizontal: 8,
         ),
+
         child: Column(
           children: [
             Icon(
@@ -825,6 +954,10 @@ class OwnerDashboard extends StatelessWidget {
     );
   }
 
+  // ===============================================================
+  // OWNER MENU
+  // ===============================================================
+
   static Widget _ownerMenu(
     BuildContext context,
     IconData icon,
@@ -833,12 +966,17 @@ class OwnerDashboard extends StatelessWidget {
     VoidCallback onTap,
   ) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin:
+          const EdgeInsets.only(bottom: 12),
+
       child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
+        contentPadding:
+            const EdgeInsets.all(12),
 
         leading: CircleAvatar(
-          backgroundColor: Colors.deepPurple.shade50,
+          backgroundColor:
+              Colors.deepPurple.shade50,
+
           child: Icon(
             icon,
             color: primaryColor,
@@ -864,6 +1002,16 @@ class OwnerDashboard extends StatelessWidget {
     );
   }
 
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+
+    return int.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        0;
+  }
+
   static String _formatNumber(int value) {
     if (value >= 1000000000) {
       return '${(value / 1000000000).toStringAsFixed(1)}B';
@@ -879,7 +1027,19 @@ class OwnerDashboard extends StatelessWidget {
 
     return value.toString();
   }
+
+  static void _showMessage(
+    BuildContext context,
+    String message,
+  ) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
+    );
+  }
 }
+
 
 // ==================================================================
 // OWNER USERS
@@ -888,43 +1048,93 @@ class OwnerDashboard extends StatelessWidget {
 class OwnerUsersScreen extends StatelessWidget {
   const OwnerUsersScreen({super.key});
 
+  static const Color primaryColor =
+      Color(0xFF673AB7);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor:
+          const Color(0xFFFFF9FF),
+
       appBar: AppBar(
-        title: const Text('Manage Users'),
+        title: const Text(
+          'Manage Users',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        backgroundColor:
+            const Color(0xFFFFF9FF),
+
+        foregroundColor: Colors.black,
+
+        elevation: 0,
       ),
 
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      body: StreamBuilder<
+          QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
             .collection('users')
             .snapshots(),
 
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState ==
+              ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(),
+              child: CircularProgressIndicator(
+                color: primaryColor,
+              ),
             );
           }
 
-          final users = snapshot.data!.docs;
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Unable to load users.\n\n'
+                '${snapshot.error}',
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+
+          final users =
+              snapshot.data?.docs ?? [];
 
           if (users.isEmpty) {
             return const Center(
-              child: Text('No users found'),
+              child: Text(
+                'No users found',
+                style: TextStyle(
+                  fontSize: 18,
+                ),
+              ),
             );
           }
 
           return ListView.builder(
+            padding:
+                const EdgeInsets.symmetric(
+              vertical: 8,
+            ),
+
             itemCount: users.length,
-            itemBuilder: (context, index) {
-              final data = users[index].data();
+
+            itemBuilder:
+                (context, index) {
+              final data =
+                  users[index].data();
 
               final String name =
-                  (data['name'] ?? 'Mchat User').toString();
+                  (data['name'] ??
+                          'Mchat User')
+                      .toString();
 
               final String email =
-                  (data['email'] ?? 'No email').toString();
+                  (data['email'] ??
+                          'No email')
+                      .toString();
 
               final int coins =
                   _toInt(data['coins']);
@@ -932,25 +1142,71 @@ class OwnerUsersScreen extends StatelessWidget {
               final int vip =
                   _toInt(data['vipLevel']);
 
+              final String? photoUrl =
+                  (data['photoUrl'] ??
+                          data['photoURL'])
+                      ?.toString();
+
               return Card(
-                margin: const EdgeInsets.symmetric(
+                margin:
+                    const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 6,
                 ),
+
+                elevation: 2,
+
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(
+                    16,
+                  ),
+                ),
+
                 child: ListTile(
-                  leading: const CircleAvatar(
-                    child: Icon(Icons.person),
+                  contentPadding:
+                      const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+
+                  leading: CircleAvatar(
+                    backgroundColor:
+                        Colors.deepPurple.shade50,
+
+                    backgroundImage:
+                        photoUrl != null &&
+                                photoUrl.isNotEmpty
+                            ? NetworkImage(
+                                photoUrl,
+                              )
+                            : null,
+
+                    child:
+                        photoUrl == null ||
+                                photoUrl.isEmpty
+                            ? const Icon(
+                                Icons.person,
+                                color:
+                                    primaryColor,
+                              )
+                            : null,
                   ),
 
                   title: Text(
                     name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
+                    style:
+                        const TextStyle(
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
 
                   subtitle: Text(
-                    '$email\nCoins: $coins • VIP: $vip',
+                    '$email\n'
+                    'Coins: ${_formatNumber(coins)}'
+                    ' • VIP: $vip',
                   ),
 
                   isThreeLine: true,
@@ -972,7 +1228,24 @@ class OwnerUsersScreen extends StatelessWidget {
         ) ??
         0;
   }
+
+  static String _formatNumber(int value) {
+    if (value >= 1000000000) {
+      return '${(value / 1000000000).toStringAsFixed(1)}B';
+    }
+
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(1)}M';
+    }
+
+    if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(1)}K';
+    }
+
+    return value.toString();
+  }
 }
+
 
 // ==================================================================
 // COIN PACKAGES
@@ -981,11 +1254,29 @@ class OwnerUsersScreen extends StatelessWidget {
 class CoinPackagesScreen extends StatelessWidget {
   const CoinPackagesScreen({super.key});
 
+  static const Color primaryColor =
+      Color(0xFF673AB7);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor:
+          const Color(0xFFFFF9FF),
+
       appBar: AppBar(
-        title: const Text('Coin Packages'),
+        title: const Text(
+          'Coin Packages',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        backgroundColor:
+            const Color(0xFFFFF9FF),
+
+        foregroundColor: Colors.black,
+
+        elevation: 0,
       ),
 
       body: StreamBuilder<
@@ -995,62 +1286,165 @@ class CoinPackagesScreen extends StatelessWidget {
             .snapshots(),
 
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState ==
+              ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(),
+              child: CircularProgressIndicator(
+                color: primaryColor,
+              ),
             );
           }
 
-          final packages = snapshot.data!.docs;
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding:
+                    const EdgeInsets.all(20),
+                child: Text(
+                  'Unable to load coin packages.\n\n'
+                  '${snapshot.error}',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+
+          final packages =
+              snapshot.data?.docs ?? [];
 
           if (packages.isEmpty) {
             return const Center(
               child: Text(
                 'No coin packages found.',
+                style: TextStyle(
+                  fontSize: 18,
+                ),
               ),
             );
           }
 
           return ListView.builder(
+            padding:
+                const EdgeInsets.symmetric(
+              vertical: 8,
+            ),
+
             itemCount: packages.length,
-            itemBuilder: (context, index) {
-              final data = packages[index].data();
+
+            itemBuilder:
+                (context, index) {
+              final data =
+                  packages[index].data();
 
               final String name =
-                  (data['name'] ?? 'Coin Package').toString();
+                  (data['name'] ??
+                          'Coin Package')
+                      .toString();
 
               final int coins =
                   _toInt(data['coins']);
 
-              final dynamic price =
-                  data['price'] ?? 0;
+              final double price =
+                  _toDouble(data['price']);
 
               final bool enabled =
                   data['enabled'] == true;
 
+              // Invalid package data
+              if (coins <= 0 ||
+                  price <= 0) {
+                return Card(
+                  margin:
+                      const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+
+                  child: ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor:
+                          Color(0xFFFFEAEA),
+                      child: Icon(
+                        Icons.warning,
+                        color: Colors.red,
+                      ),
+                    ),
+
+                    title: Text(
+                      name,
+                      style: const TextStyle(
+                        fontWeight:
+                            FontWeight.bold,
+                      ),
+                    ),
+
+                    subtitle: const Text(
+                      'Invalid package data',
+                    ),
+
+                    trailing:
+                        const Icon(
+                      Icons.error,
+                      color: Colors.red,
+                    ),
+                  ),
+                );
+              }
+
               return Card(
-                margin: const EdgeInsets.all(10),
+                margin:
+                    const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+
+                elevation: 2,
+
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(
+                    16,
+                  ),
+                ),
+
                 child: ListTile(
-                  leading: const Icon(
-                    Icons.monetization_on,
-                    color: Colors.deepPurple,
+                  contentPadding:
+                      const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+
+                  leading: const CircleAvatar(
+                    backgroundColor:
+                        Color(0xFFF0E7FF),
+
+                    child: Icon(
+                      Icons.monetization_on,
+                      color: primaryColor,
+                    ),
                   ),
 
                   title: Text(
                     name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
+                    style:
+                        const TextStyle(
+                      fontWeight:
+                          FontWeight.bold,
+                      fontSize: 17,
                     ),
                   ),
 
                   subtitle: Text(
-                    '$coins Coins • ₹$price',
+                    '${_formatNumber(coins)} Coins'
+                    ' • ₹${price.toStringAsFixed(0)}',
                   ),
 
                   trailing: Icon(
                     enabled
                         ? Icons.check_circle
                         : Icons.cancel,
+
                     color: enabled
                         ? Colors.green
                         : Colors.red,
@@ -1073,7 +1467,34 @@ class CoinPackagesScreen extends StatelessWidget {
         ) ??
         0;
   }
+
+  static double _toDouble(dynamic value) {
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+
+    return double.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        0;
+  }
+
+  static String _formatNumber(int value) {
+    if (value >= 1000000000) {
+      return '${(value / 1000000000).toStringAsFixed(1)}B';
+    }
+
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(1)}M';
+    }
+
+    if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(1)}K';
+    }
+
+    return value.toString();
+  }
 }
+
 
 // ==================================================================
 // VIP LEVELS
@@ -1082,11 +1503,56 @@ class CoinPackagesScreen extends StatelessWidget {
 class VipLevelsScreen extends StatelessWidget {
   const VipLevelsScreen({super.key});
 
+  static const Color primaryColor =
+      Color(0xFF673AB7);
+
+  // ===============================================================
+  // CORRECT VIP STRUCTURE
+  // ===============================================================
+
+  static const Map<int, int> correctVipLevels = {
+    1: 1000,
+    2: 5000,
+    3: 10000,
+    4: 20000,
+    5: 50000,
+    6: 100000,
+    7: 200000,
+    8: 500000,
+    9: 1000000,
+    10: 2000000,
+  };
+
+  int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+
+    return int.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        0;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor:
+          const Color(0xFFFFF9FF),
+
       appBar: AppBar(
-        title: const Text('VIP Levels'),
+        title: const Text(
+          'VIP Levels',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        backgroundColor:
+            const Color(0xFFFFF9FF),
+
+        foregroundColor: Colors.black,
+
+        elevation: 0,
       ),
 
       body: StreamBuilder<
@@ -1096,54 +1562,189 @@ class VipLevelsScreen extends StatelessWidget {
             .snapshots(),
 
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState ==
+              ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-
-          final levels = snapshot.data!.docs;
-
-          if (levels.isEmpty) {
-            return const Center(
-              child: Text(
-                'No VIP levels found.',
+              child: CircularProgressIndicator(
+                color: primaryColor,
               ),
             );
           }
 
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding:
+                    const EdgeInsets.all(20),
+                child: Text(
+                  'Unable to load VIP levels.\n\n'
+                  '${snapshot.error}',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+
+          final firestoreLevels =
+              snapshot.data?.docs ?? [];
+
+          // =========================================================
+          // IMPORTANT:
+          //
+          // We use requiredCoins to determine the correct VIP level.
+          // Firestore "level: 0" will never appear as VIP 0.
+          // =========================================================
+
+          final List<Map<String, int>> validLevels = [];
+
+          for (final doc in firestoreLevels) {
+            final data = doc.data();
+
+            final int requiredCoins =
+                _toInt(
+              data['requiredCoins'],
+            );
+
+            if (requiredCoins <= 0) {
+              continue;
+            }
+
+            int? correctLevel;
+
+            for (final entry
+                in correctVipLevels.entries) {
+              if (entry.value ==
+                  requiredCoins) {
+                correctLevel =
+                    entry.key;
+                break;
+              }
+            }
+
+            if (correctLevel != null) {
+              validLevels.add({
+                'level': correctLevel,
+                'requiredCoins':
+                    requiredCoins,
+              });
+            }
+          }
+
+          // =========================================================
+          // If Firestore data is incomplete/wrong,
+          // show the correct 1–10 structure instead.
+          // =========================================================
+
+          final Map<int, int>
+              finalLevels = {};
+
+          for (final item in validLevels) {
+            finalLevels[
+                    item['level']!] =
+                item['requiredCoins']!;
+          }
+
+          for (final entry
+              in correctVipLevels.entries) {
+            finalLevels.putIfAbsent(
+              entry.key,
+              () => entry.value,
+            );
+          }
+
+          final sortedLevels =
+              finalLevels.entries.toList()
+                ..sort(
+                  (a, b) =>
+                      a.key.compareTo(b.key),
+                );
+
           return ListView.builder(
-            itemCount: levels.length,
-            itemBuilder: (context, index) {
-              final data = levels[index].data();
+            padding:
+                const EdgeInsets.symmetric(
+              vertical: 10,
+            ),
+
+            itemCount:
+                sortedLevels.length,
+
+            itemBuilder:
+                (context, index) {
+              final entry =
+                  sortedLevels[index];
 
               final int level =
-                  _toInt(data['level']);
+                  entry.key;
 
               final int requiredCoins =
-                  _toInt(data['requiredCoins']);
+                  entry.value;
 
               return Card(
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 12,
+                margin:
+                    const EdgeInsets.symmetric(
+                  horizontal: 16,
                   vertical: 6,
                 ),
+
+                elevation: 2,
+
+                shape:
+                    RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(
+                    18,
+                  ),
+                ),
+
                 child: ListTile(
-                  leading: const Icon(
-                    Icons.star,
-                    color: Colors.deepPurple,
+                  contentPadding:
+                      const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+
+                  leading: CircleAvatar(
+                    backgroundColor:
+                        const Color(
+                      0xFFF0E7FF,
+                    ),
+
+                    child: const Icon(
+                      Icons.star,
+                      color: primaryColor,
+                    ),
                   ),
 
                   title: Text(
                     'VIP $level',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
+
+                    style:
+                        const TextStyle(
+                      fontSize: 20,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
 
                   subtitle: Text(
-                    'Required Coins: $requiredCoins',
+                    'Required Coins: '
+                    '${_formatNumber(requiredCoins)}',
+
+                    style:
+                        const TextStyle(
+                      fontSize: 16,
+                    ),
                   ),
+
+                  trailing:
+                      level == 10
+                          ? const Icon(
+                              Icons.workspace_premium,
+                              color:
+                                  Colors.amber,
+                              size: 30,
+                            )
+                          : null,
                 ),
               );
             },
@@ -1153,13 +1754,19 @@ class VipLevelsScreen extends StatelessWidget {
     );
   }
 
-  static int _toInt(dynamic value) {
-    if (value is int) return value;
-    if (value is num) return value.toInt();
+  static String _formatNumber(int value) {
+    if (value >= 1000000000) {
+      return '${(value / 1000000000).toStringAsFixed(1)}B';
+    }
 
-    return int.tryParse(
-          value?.toString() ?? '',
-        ) ??
-        0;
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(1)}M';
+    }
+
+    if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(1)}K';
+    }
+
+    return value.toString();
   }
 }
