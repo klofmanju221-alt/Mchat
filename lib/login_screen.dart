@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'home_screen.dart';
 import 'inbox_screen.dart';
+import 'profile_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -68,7 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       showMessage(message);
-    } catch (e) {
+    } catch (_) {
       showMessage('Something went wrong');
     } finally {
       if (mounted) {
@@ -77,15 +78,6 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     }
-  }
-
-  void openRegister() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const RegisterScreen(),
-      ),
-    );
   }
 
   void showMessage(String message) {
@@ -142,11 +134,12 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
                   labelText: 'Email',
                   hintText: 'Enter your email',
-                  prefixIcon: Icon(Icons.email_outlined),
+                  prefixIcon: Icon(
+                    Icons.email_outlined,
+                  ),
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -159,12 +152,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: InputDecoration(
                   labelText: 'Password',
                   hintText: 'Enter your password',
-                  prefixIcon: const Icon(Icons.lock_outline),
+                  prefixIcon: const Icon(
+                    Icons.lock_outline,
+                  ),
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     onPressed: () {
                       setState(() {
-                        obscurePassword = !obscurePassword;
+                        obscurePassword =
+                            !obscurePassword;
                       });
                     },
                     icon: Icon(
@@ -186,13 +182,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       ? const SizedBox(
                           width: 24,
                           height: 24,
-                          child: CircularProgressIndicator(),
+                          child:
+                              CircularProgressIndicator(),
                         )
                       : const Text(
                           'LOGIN',
                           style: TextStyle(
                             fontSize: 17,
-                            fontWeight: FontWeight.bold,
+                            fontWeight:
+                                FontWeight.bold,
                           ),
                         ),
                 ),
@@ -201,21 +199,29 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 25),
 
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment:
+                    MainAxisAlignment.center,
                 children: [
                   const Text(
                     "Don't have an account? ",
-                    style: TextStyle(
-                      fontSize: 16,
-                    ),
                   ),
                   TextButton(
-                    onPressed: loading ? null : openRegister,
+                    onPressed: loading
+                        ? null
+                        : () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    const RegisterScreen(),
+                              ),
+                            );
+                          },
                     child: const Text(
                       'Register',
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight:
+                            FontWeight.bold,
                       ),
                     ),
                   ),
@@ -233,16 +239,17 @@ class MchatHomePage extends StatefulWidget {
   const MchatHomePage({super.key});
 
   @override
-  State<MchatHomePage> createState() => _MchatHomePageState();
+  State<MchatHomePage> createState() =>
+      _MchatHomePageState();
 }
 
-class _MchatHomePageState extends State<MchatHomePage> {
+class _MchatHomePageState
+    extends State<MchatHomePage> {
   int selectedIndex = 0;
 
   final List<Widget> pages = const [
     HomeScreen(),
     InboxScreen(),
-
     Center(
       child: Text(
         'Live',
@@ -252,16 +259,7 @@ class _MchatHomePageState extends State<MchatHomePage> {
         ),
       ),
     ),
-
-    Center(
-      child: Text(
-        'Profile',
-        style: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    ),
+    ProfileScreen(),
   ];
 
   @override
@@ -280,26 +278,42 @@ class _MchatHomePageState extends State<MchatHomePage> {
 
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
+            icon: Icon(
+              Icons.home_outlined,
+            ),
+            selectedIcon: Icon(
+              Icons.home,
+            ),
             label: 'Home',
           ),
 
           NavigationDestination(
-            icon: Icon(Icons.chat_outlined),
-            selectedIcon: Icon(Icons.chat),
+            icon: Icon(
+              Icons.chat_outlined,
+            ),
+            selectedIcon: Icon(
+              Icons.chat,
+            ),
             label: 'Inbox',
           ),
 
           NavigationDestination(
-            icon: Icon(Icons.live_tv_outlined),
-            selectedIcon: Icon(Icons.live_tv),
+            icon: Icon(
+              Icons.live_tv_outlined,
+            ),
+            selectedIcon: Icon(
+              Icons.live_tv,
+            ),
             label: 'Live',
           ),
 
           NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
+            icon: Icon(
+              Icons.person_outline,
+            ),
+            selectedIcon: Icon(
+              Icons.person,
+            ),
             label: 'Profile',
           ),
         ],
