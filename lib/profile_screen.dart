@@ -1248,250 +1248,429 @@ class OwnerUsersScreen extends StatelessWidget {
 
 
 // ==================================================================
+// ==================================================================
 // COIN PACKAGES
 // ==================================================================
 
-class CoinPackagesScreen extends StatelessWidget {
+class CoinPackage {
+  final String name;
+  final int coins;
+  final int price;
+
+  const CoinPackage({
+    required this.name,
+    required this.coins,
+    required this.price,
+  });
+}
+
+class CoinPackagesScreen extends StatefulWidget {
   const CoinPackagesScreen({super.key});
 
+  @override
+  State<CoinPackagesScreen> createState() =>
+      _CoinPackagesScreenState();
+}
+
+class _CoinPackagesScreenState
+    extends State<CoinPackagesScreen> {
   static const Color primaryColor =
       Color(0xFF673AB7);
 
+  static const Color backgroundColor =
+      Color(0xFFFFF9FF);
+
+  // ================================================================
+  // FINAL COIN PRICING
+  // ================================================================
+
+  static const List<CoinPackage> packages = [
+    CoinPackage(
+      name: 'Starter Coins',
+      coins: 1000,
+      price: 100,
+    ),
+
+    CoinPackage(
+      name: 'Basic Coins',
+      coins: 5000,
+      price: 500,
+    ),
+
+    CoinPackage(
+      name: 'Silver Coins',
+      coins: 10000,
+      price: 1000,
+    ),
+
+    CoinPackage(
+      name: 'Gold Coins',
+      coins: 25000,
+      price: 2500,
+    ),
+
+    CoinPackage(
+      name: 'Premium Coins',
+      coins: 50000,
+      price: 5000,
+    ),
+
+    CoinPackage(
+      name: 'Mega Coins',
+      coins: 100000,
+      price: 10000,
+    ),
+
+    CoinPackage(
+      name: 'Ultra Coins',
+      coins: 250000,
+      price: 25000,
+    ),
+
+    CoinPackage(
+      name: 'Royal Coins',
+      coins: 500000,
+      price: 50000,
+    ),
+
+    CoinPackage(
+      name: 'Diamond Coins',
+      coins: 1000000,
+      price: 100000,
+    ),
+
+    CoinPackage(
+      name: 'Royal Diamond Coins',
+      coins: 2500000,
+      price: 250000,
+    ),
+  ];
+
+  int selectedIndex = 0;
+
+  // ================================================================
+  // NUMBER FORMAT
+  // ================================================================
+
+  String formatCoins(int value) {
+    if (value >= 1000000) {
+      final double result = value / 1000000;
+
+      if (result == result.roundToDouble()) {
+        return '${result.toInt()}M';
+      }
+
+      return '${result.toStringAsFixed(1)}M';
+    }
+
+    if (value >= 1000) {
+      final double result = value / 1000;
+
+      if (result == result.roundToDouble()) {
+        return '${result.toInt()}K';
+      }
+
+      return '${result.toStringAsFixed(1)}K';
+    }
+
+    return value.toString();
+  }
+
+  String formatPrice(int value) {
+    if (value >= 100000) {
+      final String number =
+          value.toString();
+
+      final StringBuffer result =
+          StringBuffer();
+
+      int count = 0;
+
+      for (int i = number.length - 1;
+          i >= 0;
+          i--) {
+        result.write(number[i]);
+        count++;
+
+        if (count == 3 && i != 0) {
+          result.write(',');
+          count = 0;
+        }
+      }
+
+      return result
+          .toString()
+          .split('')
+          .reversed
+          .join();
+    }
+
+    return value.toString();
+  }
+
+  // ================================================================
+  // BUILD
+  // ================================================================
+
   @override
   Widget build(BuildContext context) {
+    final CoinPackage selectedPackage =
+        packages[selectedIndex];
+
     return Scaffold(
-      backgroundColor:
-          const Color(0xFFFFF9FF),
+      backgroundColor: backgroundColor,
 
       appBar: AppBar(
+        backgroundColor: backgroundColor,
+        foregroundColor: Colors.black,
+        elevation: 0,
+
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back,
+          ),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+
         title: const Text(
           'Coin Packages',
           style: TextStyle(
+            fontSize: 27,
             fontWeight: FontWeight.bold,
           ),
         ),
-
-        backgroundColor:
-            const Color(0xFFFFF9FF),
-
-        foregroundColor: Colors.black,
-
-        elevation: 0,
       ),
 
-      body: StreamBuilder<
-          QuerySnapshot<Map<String, dynamic>>>(
-        stream: FirebaseFirestore.instance
-            .collection('coinPackages')
-            .snapshots(),
+      body: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(
+          18,
+          10,
+          18,
+          120,
+        ),
 
-        builder: (context, snapshot) {
-          if (snapshot.connectionState ==
-              ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: primaryColor,
+        itemCount: packages.length,
+
+        itemBuilder: (context, index) {
+          final CoinPackage package =
+              packages[index];
+
+          final bool selected =
+              selectedIndex == index;
+
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                selectedIndex = index;
+              });
+            },
+
+            child: Container(
+              margin: const EdgeInsets.only(
+                bottom: 14,
               ),
-            );
-          }
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding:
-                    const EdgeInsets.all(20),
-                child: Text(
-                  'Unable to load coin packages.\n\n'
-                  '${snapshot.error}',
-                  textAlign: TextAlign.center,
+              padding:
+                  const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 18,
+              ),
+
+              decoration: BoxDecoration(
+                color: Colors.white,
+
+                borderRadius:
+                    BorderRadius.circular(20),
+
+                border: Border.all(
+                  color: selected
+                      ? primaryColor
+                      : Colors.transparent,
+
+                  width: selected ? 2 : 0,
                 ),
-              ),
-            );
-          }
 
-          final packages =
-              snapshot.data?.docs ?? [];
-
-          if (packages.isEmpty) {
-            return const Center(
-              child: Text(
-                'No coin packages found.',
-                style: TextStyle(
-                  fontSize: 18,
-                ),
-              ),
-            );
-          }
-
-          return ListView.builder(
-            padding:
-                const EdgeInsets.symmetric(
-              vertical: 8,
-            ),
-
-            itemCount: packages.length,
-
-            itemBuilder:
-                (context, index) {
-              final data =
-                  packages[index].data();
-
-              final String name =
-                  (data['name'] ??
-                          'Coin Package')
-                      .toString();
-
-              final int coins =
-                  _toInt(data['coins']);
-
-              final double price =
-                  _toDouble(data['price']);
-
-              final bool enabled =
-                  data['enabled'] == true;
-
-              // Invalid package data
-              if (coins <= 0 ||
-                  price <= 0) {
-                return Card(
-                  margin:
-                      const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 7,
+                    offset: Offset(0, 3),
                   ),
+                ],
+              ),
 
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor:
-                          Color(0xFFFFEAEA),
-                      child: Icon(
-                        Icons.warning,
-                        color: Colors.red,
+              child: Row(
+                children: [
+                  // =================================================
+                  // COIN ICON
+                  // =================================================
+
+                  Container(
+                    width: 58,
+                    height: 58,
+
+                    decoration: BoxDecoration(
+                      color:
+                          const Color(0xFFF0E7FF),
+
+                      borderRadius:
+                          BorderRadius.circular(
+                        18,
                       ),
                     ),
 
-                    title: Text(
-                      name,
-                      style: const TextStyle(
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
-                    ),
-
-                    subtitle: const Text(
-                      'Invalid package data',
-                    ),
-
-                    trailing:
-                        const Icon(
-                      Icons.error,
-                      color: Colors.red,
-                    ),
-                  ),
-                );
-              }
-
-              return Card(
-                margin:
-                    const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-
-                elevation: 2,
-
-                shape:
-                    RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(
-                    16,
-                  ),
-                ),
-
-                child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-
-                  leading: const CircleAvatar(
-                    backgroundColor:
-                        Color(0xFFF0E7FF),
-
-                    child: Icon(
+                    child: const Icon(
                       Icons.monetization_on,
                       color: primaryColor,
+                      size: 35,
                     ),
                   ),
 
-                  title: Text(
-                    name,
-                    style:
-                        const TextStyle(
-                      fontWeight:
-                          FontWeight.bold,
-                      fontSize: 17,
+                  const SizedBox(width: 15),
+
+                  // =================================================
+                  // PACKAGE DETAILS
+                  // =================================================
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+
+                      children: [
+                        Text(
+                          package.name,
+
+                          style:
+                              const TextStyle(
+                            fontSize: 19,
+                            fontWeight:
+                                FontWeight.bold,
+                          ),
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        Text(
+                          '${formatCoins(package.coins)} Coins',
+
+                          style:
+                              TextStyle(
+                            fontSize: 16,
+                            color: Colors
+                                .grey
+                                .shade700,
+                            fontWeight:
+                                FontWeight.w500,
+                          ),
+                        ),
+
+                        const SizedBox(height: 4),
+
+                        Text(
+                          '₹${formatPrice(package.price)}',
+
+                          style:
+                              const TextStyle(
+                            fontSize: 18,
+                            color:
+                                primaryColor,
+                            fontWeight:
+                                FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
-                  subtitle: Text(
-                    '${_formatNumber(coins)} Coins'
-                    ' • ₹${price.toStringAsFixed(0)}',
-                  ),
+                  // =================================================
+                  // SELECTED ICON
+                  // =================================================
 
-                  trailing: Icon(
-                    enabled
+                  Icon(
+                    selected
                         ? Icons.check_circle
-                        : Icons.cancel,
+                        : Icons
+                            .radio_button_unchecked,
 
-                    color: enabled
+                    color: selected
                         ? Colors.green
-                        : Colors.red,
+                        : Colors.grey,
+
+                    size: 30,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+
+      // ============================================================
+      // CONTINUE BUTTON
+      // ============================================================
+
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(
+          18,
+          8,
+          18,
+          14,
+        ),
+
+        child: SizedBox(
+          height: 56,
+
+          child: ElevatedButton(
+            style:
+                ElevatedButton.styleFrom(
+              backgroundColor:
+                  primaryColor,
+
+              foregroundColor:
+                  Colors.white,
+
+              elevation: 3,
+
+              shape:
+                  RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(
+                  30,
+                ),
+              ),
+            ),
+
+            onPressed: () {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '${selectedPackage.name} selected — '
+                    '${formatCoins(selectedPackage.coins)} Coins • '
+                    '₹${formatPrice(selectedPackage.price)}',
                   ),
                 ),
               );
             },
-          );
-        },
+
+            child: Text(
+              'Continue • ₹${formatPrice(selectedPackage.price)}',
+
+              style:
+                  const TextStyle(
+                fontSize: 17,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
       ),
     );
-  }
-
-  static int _toInt(dynamic value) {
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-
-    return int.tryParse(
-          value?.toString() ?? '',
-        ) ??
-        0;
-  }
-
-  static double _toDouble(dynamic value) {
-    if (value is double) return value;
-    if (value is num) return value.toDouble();
-
-    return double.tryParse(
-          value?.toString() ?? '',
-        ) ??
-        0;
-  }
-
-  static String _formatNumber(int value) {
-    if (value >= 1000000000) {
-      return '${(value / 1000000000).toStringAsFixed(1)}B';
-    }
-
-    if (value >= 1000000) {
-      return '${(value / 1000000).toStringAsFixed(1)}M';
-    }
-
-    if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(1)}K';
-    }
-
-    return value.toString();
   }
 }
 
