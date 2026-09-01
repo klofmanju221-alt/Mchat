@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'payment_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -1643,19 +1644,18 @@ class _CoinPackagesScreenState
               ),
             ),
 
-            onPressed: () {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    '${selectedPackage.name} selected — '
-                    '${formatCoins(selectedPackage.coins)} Coins • '
-                    '₹${formatPrice(selectedPackage.price)}',
-                  ),
-                ),
-              );
-            },
+    onPressed: () {
+        Navigator.push(
+        context,
+        MaterialPageRoute(
+        builder: (context) => PaymentScreen(
+        packageName: selectedPackage.name,
+        coins: selectedPackage.coins,
+        price: selectedPackage.price,
+      ),
+    ),
+  );
+},         
 
             child: Text(
               'Continue • ₹${formatPrice(selectedPackage.price)}',
