@@ -1,4 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
+import 'home_screen.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final passwordController = TextEditingController();
 
   bool obscurePassword = true;
+  bool loading = false;
 
   @override
   void dispose() {
@@ -20,30 +25,72 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void login() {
+  Future<void> login() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter email and password'),
-        ),
-      );
+      showMessage('Please enter email and password');
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Login system will be connected to Firebase next'),
+    setState(() {
+      loading = true;
+    });
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const MchatHomePage(),
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      String message = 'Login failed';
+
+      if (e.code == 'user-not-found') {
+        message = 'No account found with this email';
+      } else if (e.code == 'wrong-password' ||
+          e.code == 'invalid-credential') {
+        message = 'Invalid email or password';
+      } else if (e.code == 'invalid-email') {
+        message = 'Please enter a valid email';
+      } else if (e.code == 'user-disabled') {
+        message = 'This account has been disabled';
+      }
+
+      showMessage(message);
+    } catch (e) {
+      showMessage('Something went wrong');
+    } finally {
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+      }
+    }
+  }
+
+  void openRegister() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const RegisterScreen(),
       ),
     );
   }
 
-  void openRegister() {
+  void showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Registration screen will be added next'),
+      SnackBar(
+        content: Text(message),
       ),
     );
   }
@@ -94,6 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
                   labelText: 'Email',
                   hintText: 'Enter your email',
@@ -132,14 +180,20 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: login,
-                  child: const Text(
-                    'LOGIN',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  onPressed: loading ? null : login,
+                  child: loading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(),
+                        )
+                      : const Text(
+                          'LOGIN',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
 
@@ -148,12 +202,18 @@ class _LoginScreenState extends State<LoginScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("Don't have an account? "),
+                  const Text(
+                    "Don't have an account? ",
+                    style: TextStyle(
+                      fontSize: 16,
+                    ),
+                  ),
                   TextButton(
-                    onPressed: openRegister,
+                    onPressed: loading ? null : openRegister,
                     child: const Text(
                       'Register',
                       style: TextStyle(
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -163,6 +223,77 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class MchatHomePage extends StatefulWidget {
+  const MchatHomePage({super.key});
+
+  @override
+  State<MchatHomePage> createState() => _MchatHomePageState();
+}
+
+class _MchatHomePageState extends State<MchatHomePage> {
+  int selectedIndex = 0;
+
+  final List<Widget> pages = const [
+    HomeScreen(),
+    InboxScreen(),
+    Center(
+      child: Text(
+        'Live',
+        style: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ),
+    Center(
+      child: Text(
+        'Profile',
+        style: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: pages[selectedIndex],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: selectedIndex,
+        onDestinationSelected: (index) {
+          setState(() {
+            selectedIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.chat_outlined),
+            selectedIcon: Icon(Icons.chat),
+            label: 'Inbox',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.live_tv_outlined),
+            selectedIcon: Icon(Icons.live_tv),
+            label: 'Live',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }
