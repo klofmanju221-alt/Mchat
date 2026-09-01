@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+
+import 'firebase_options.dart';
 import 'home_screen.dart';
 import 'inbox_screen.dart';
+import 'login_screen.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const MchatApp());
 }
 
@@ -22,7 +31,7 @@ class MchatApp extends StatelessWidget {
         ),
         scaffoldBackgroundColor: const Color(0xFFFFF9FF),
       ),
-      home: const MchatHomePage(),
+      home: const LoginScreen(),
     );
   }
 }
