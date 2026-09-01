@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'home_screen.dart';
+import 'inbox_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -241,6 +242,7 @@ class _MchatHomePageState extends State<MchatHomePage> {
   final List<Widget> pages = const [
     HomeScreen(),
     InboxScreen(),
+
     Center(
       child: Text(
         'Live',
@@ -250,6 +252,7 @@ class _MchatHomePageState extends State<MchatHomePage> {
         ),
       ),
     ),
+
     Center(
       child: Text(
         'Profile',
@@ -265,29 +268,35 @@ class _MchatHomePageState extends State<MchatHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: pages[selectedIndex],
+
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
+
         onDestinationSelected: (index) {
           setState(() {
             selectedIndex = index;
           });
         },
+
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: 'Home',
           ),
+
           NavigationDestination(
             icon: Icon(Icons.chat_outlined),
             selectedIcon: Icon(Icons.chat),
             label: 'Inbox',
           ),
+
           NavigationDestination(
             icon: Icon(Icons.live_tv_outlined),
             selectedIcon: Icon(Icons.live_tv),
             label: 'Live',
           ),
+
           NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person),
