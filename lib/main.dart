@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
+import 'inbox_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +22,78 @@ class MchatApp extends StatelessWidget {
         ),
         scaffoldBackgroundColor: const Color(0xFFFFF9FF),
       ),
-      home: const HomeScreen(),
+      home: const MchatHomePage(),
+    );
+  }
+}
+
+class MchatHomePage extends StatefulWidget {
+  const MchatHomePage({super.key});
+
+  @override
+  State<MchatHomePage> createState() => _MchatHomePageState();
+}
+
+class _MchatHomePageState extends State<MchatHomePage> {
+  int selectedIndex = 0;
+
+  final List<Widget> pages = const [
+    HomeScreen(),
+    InboxScreen(),
+    Center(
+      child: Text(
+        'Live',
+        style: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ),
+    Center(
+      child: Text(
+        'Profile',
+        style: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: pages[selectedIndex],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: selectedIndex,
+        onDestinationSelected: (index) {
+          setState(() {
+            selectedIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.chat_outlined),
+            selectedIcon: Icon(Icons.chat),
+            label: 'Inbox',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.live_tv_outlined),
+            selectedIcon: Icon(Icons.live_tv),
+            label: 'Live',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
     );
   }
 }
