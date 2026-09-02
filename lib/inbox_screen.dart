@@ -28,15 +28,12 @@ class InboxScreen extends StatelessWidget {
           ),
         ),
       ),
-
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
             .collection('users')
             .snapshots(),
-
         builder: (context, snapshot) {
-          if (snapshot.connectionState ==
-              ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(),
             );
@@ -94,42 +91,28 @@ class InboxScreen extends StatelessWidget {
           return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: users.length,
-            separatorBuilder: (context, index) {
+            separatorBuilder: (_, __) {
               return const SizedBox(height: 10);
             },
             itemBuilder: (context, index) {
               final user = users[index];
               final data = user.data();
 
-              final String name =
-                  (data['name'] ?? 'Mchat User').toString();
-
-              final String email =
-                  (data['email'] ?? '').toString();
-
-              final String photoUrl =
-                  (data['photoUrl'] ?? '').toString();
-
-              final bool isOnline =
-                  data['isOnline'] == true;
-
               return _userCard(
                 context: context,
                 uid: user.id,
-                name: name,
-                email: email,
-                photoUrl: photoUrl,
-                isOnline: isOnline,
+                name: (data['name'] ?? 'Mchat User').toString(),
+                email: (data['email'] ?? '').toString(),
+                photoUrl: (data['photoUrl'] ?? '').toString(),
+                isOnline: data['isOnline'] == true,
+                mchatId: (data['mchatId'] ?? user.id).toString(),
               );
             },
           );
         },
       ),
-
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showSearchInfo(context);
-        },
+        onPressed: () => _showSearchDialog(context),
         child: const Icon(Icons.search),
       ),
     );
@@ -142,6 +125,7 @@ class InboxScreen extends StatelessWidget {
     required String email,
     required String photoUrl,
     required bool isOnline,
+    required String mchatId,
   }) {
     return Card(
       elevation: 2,
@@ -154,7 +138,6 @@ class InboxScreen extends StatelessWidget {
           horizontal: 14,
           vertical: 8,
         ),
-
         leading: Stack(
           children: [
             CircleAvatar(
@@ -169,7 +152,6 @@ class InboxScreen extends StatelessWidget {
                     )
                   : null,
             ),
-
             if (isOnline)
               Positioned(
                 right: 0,
@@ -189,7 +171,6 @@ class InboxScreen extends StatelessWidget {
               ),
           ],
         ),
-
         title: Text(
           name,
           style: const TextStyle(
@@ -197,62 +178,263 @@ class InboxScreen extends StatelessWidget {
             fontSize: 17,
           ),
         ),
-
         subtitle: Text(
           isOnline
-              ? 'Online'
+              ? 'Online • ID: $mchatId'
               : email.isNotEmpty
                   ? email
-                  : 'Mchat User',
+                  : 'Mchat ID: $mchatId',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-
         trailing: const Icon(
           Icons.arrow_forward_ios,
           size: 18,
         ),
-
-        onTap: () {
-          // Unique private chat ID for two users.
-          final ids = [FirebaseAuth.instance.currentUser!.uid, uid]
-            ..sort();
-
-          final chatId = '${ids[0]}_${ids[1]}';
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChatScreen(
-                chatId: chatId,
-                title: name,
-              ),
-            ),
-          );
-        },
+        onTap: () => _openChat(
+          context,
+          uid,
+          name,
+        ),
       ),
     );
   }
 
-  void _showSearchInfo(BuildContext context) {
-    showDialog(
+  void _openChat(
+    BuildContext context,
+    String uid,
+    String name,
+  ) {
+    final currentUid =
+        FirebaseAuth.instance.currentUser?.uid;
+
+    if (currentUid == null || currentUid == uid) {
+      return;
+    }
+
+    final ids = [currentUid, uid]..sort();
+
+    final chatId = '${ids[0]}_${ids[1]}';
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          chatId: chatId,
+          title: name,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showSearchDialog(
+    BuildContext context,
+  ) async {
+    final controller = TextEditingController();
+
+    final currentUid =
+        FirebaseAuth.instance.currentUser?.uid;
+
+    if (currentUid == null) {
+      return;
+    }
+
+    await showDialog<void>(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Find Mchat User'),
-          content: const Text(
-            'User search will be connected to Mchat ID and name search next.',
+          title: const Text(
+            'Find Mchat User',
+          ),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            textInputAction: TextInputAction.search,
+            decoration: const InputDecoration(
+              hintText: 'Enter name or Mchat ID',
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(),
+            ),
+            onSubmitted: (_) {
+              _searchUsers(
+                context,
+                dialogContext,
+                controller.text,
+                currentUid,
+              );
+            },
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
               },
-              child: const Text('OK'),
+              child: const Text('CANCEL'),
+            ),
+            FilledButton(
+              onPressed: () {
+                _searchUsers(
+                  context,
+                  dialogContext,
+                  controller.text,
+                  currentUid,
+                );
+              },
+              child: const Text('SEARCH'),
             ),
           ],
         );
       },
     );
+
+    controller.dispose();
+  }
+
+  Future<void> _searchUsers(
+    BuildContext context,
+    BuildContext dialogContext,
+    String value,
+    String currentUid,
+  ) async {
+    final query = value.trim().toLowerCase();
+
+    if (query.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Enter a name or Mchat ID',
+          ),
+        ),
+      );
+      return;
+    }
+
+    try {
+      final snapshot = await FirebaseFirestore
+          .instance
+          .collection('users')
+          .get();
+
+      final matches = snapshot.docs.where((doc) {
+        if (doc.id == currentUid) {
+          return false;
+        }
+
+        final data = doc.data();
+
+        final name =
+            (data['name'] ?? '').toString().toLowerCase();
+
+        final mchatId =
+            (data['mchatId'] ?? doc.id)
+                .toString()
+                .toLowerCase();
+
+        final email =
+            (data['email'] ?? '').toString().toLowerCase();
+
+        return name.contains(query) ||
+            mchatId.contains(query) ||
+            doc.id.toLowerCase().contains(query) ||
+            email.contains(query);
+      }).toList();
+
+      if (!context.mounted) {
+        return;
+      }
+
+      if (matches.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No Mchat user found',
+            ),
+          ),
+        );
+        return;
+      }
+
+      Navigator.pop(dialogContext);
+
+      await showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (sheetContext) {
+          return SafeArea(
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: const EdgeInsets.fromLTRB(
+                16,
+                8,
+                16,
+                20,
+              ),
+              itemCount: matches.length,
+              separatorBuilder: (_, __) {
+                return const Divider(height: 1);
+              },
+              itemBuilder: (_, index) {
+                final doc = matches[index];
+                final data = doc.data();
+
+                final name =
+                    (data['name'] ?? 'Mchat User')
+                        .toString();
+
+                final photoUrl =
+                    (data['photoUrl'] ?? '').toString();
+
+                final mchatId =
+                    (data['mchatId'] ?? doc.id).toString();
+
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundImage: photoUrl.isNotEmpty
+                        ? NetworkImage(photoUrl)
+                        : null,
+                    child: photoUrl.isEmpty
+                        ? const Icon(Icons.person)
+                        : null,
+                  ),
+                  title: Text(
+                    name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Mchat ID: $mchatId',
+                  ),
+                  trailing: const Icon(
+                    Icons.chat_outlined,
+                  ),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+
+                    _openChat(
+                      context,
+                      doc.id,
+                      name,
+                    );
+                  },
+                );
+              },
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Search failed: $e',
+          ),
+        ),
+      );
+    }
   }
 }
