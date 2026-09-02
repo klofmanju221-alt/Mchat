@@ -2,58 +2,173 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ============================================================
+    // AUTH
+    // ============================================================
+
     function signedIn() {
       return request.auth != null;
     }
 
     function isOwner() {
-      return signedIn() && request.auth.token.owner == true;
+      return signedIn()
+        && request.auth.token.owner == true;
     }
 
+
+    // ============================================================
+    // USERS
+    // ============================================================
+
     match /users/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isOwner());
-      allow create: if signedIn() && request.auth.uid == uid;
-      allow update: if signedIn() && (request.auth.uid == uid || isOwner());
+
+      // User can read own profile.
+      // Owner can read all user profiles.
+      allow read: if signedIn()
+        && (
+          request.auth.uid == uid
+          || isOwner()
+        );
+
+      // User can create only their own profile.
+      allow create: if signedIn()
+        && request.auth.uid == uid;
+
+      // User can update only their own profile.
+      // Owner can update all profiles.
+      allow update: if signedIn()
+        && (
+          request.auth.uid == uid
+          || isOwner()
+        );
+
       allow delete: if false;
     }
 
-    // Wallets and financial ledgers must never be client-writable.
+
+    // ============================================================
+    // MCHAT ID INDEX
+    //
+    // Used only to find a user's Firebase UID from their
+    // numeric Mchat ID.
+    // ============================================================
+
+    match /mchatIds/{mchatId} {
+
+      // Signed-in users can check an Mchat ID.
+      allow read: if signedIn();
+
+      // A user can reserve/create an ID for themselves.
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && mchatId.matches('^[0-9]{8}$')
+        && mchatId != '11111111';
+
+      // Mchat IDs cannot be changed from the client.
+      allow update: if false;
+
+      // Mchat IDs cannot be deleted from the client.
+      allow delete: if false;
+    }
+
+
+    // ============================================================
+    // WALLETS
+    // ============================================================
+
     match /wallets/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isOwner());
+
+      allow read: if signedIn()
+        && (
+          request.auth.uid == uid
+          || isOwner()
+        );
+
+      // Financial data must never be client-writable.
       allow write: if false;
     }
+
+
+    // ============================================================
+    // LEDGER
+    // ============================================================
 
     match /ledger/{entryId} {
+
       allow read: if signedIn() && isOwner();
+
       allow write: if false;
     }
+
+
+    // ============================================================
+    // RECHARGES
+    // ============================================================
 
     match /recharges/{id} {
+
       allow read: if signedIn() && isOwner();
+
       allow write: if false;
     }
+
+
+    // ============================================================
+    // WITHDRAWALS
+    // ============================================================
 
     match /withdrawals/{id} {
+
       allow read: if signedIn() && isOwner();
+
       allow write: if false;
     }
+
+
+    // ============================================================
+    // OWNER COMMISSIONS
+    // ============================================================
 
     match /owner_commissions/{id} {
-      allow read: if isOwner();
+
+      allow read: if signedIn() && isOwner();
+
       allow write: if false;
     }
+
+
+    // ============================================================
+    // AUDIT LOGS
+    // ============================================================
 
     match /audit_logs/{id} {
-      allow read: if isOwner();
+
+      allow read: if signedIn() && isOwner();
+
       allow write: if false;
     }
 
+
+    // ============================================================
+    // ROOMS
+    // ============================================================
+
     match /rooms/{id} {
+
       allow read: if signedIn();
+
       allow create: if signedIn();
+
       allow update: if signedIn();
+
       allow delete: if isOwner();
     }
+
+
+    // ============================================================
+    // EVERYTHING ELSE BLOCKED
+    // ============================================================
 
     match /{document=**} {
       allow read, write: if false;
