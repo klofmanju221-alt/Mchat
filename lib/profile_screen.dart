@@ -151,17 +151,57 @@ class ProfileScreen extends StatelessWidget {
               // EMAIL
               // =====================================================
 
-              Center(
-                child: Text(
-                  email,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ),
+              final String mchatId =
+    (data['mchatId'] ?? 'Creating...').toString();
 
+Center(
+  child: Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 18,
+      vertical: 10,
+    ),
+    decoration: BoxDecoration(
+      color: Colors.deepPurple.shade50,
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(
+        color: Colors.deepPurple.shade100,
+      ),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(
+          Icons.badge_rounded,
+          color: primaryColor,
+          size: 26,
+        ),
+        const SizedBox(width: 10),
+        Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Mchat ID',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey,
+              ),
+            ),
+            Text(
+              mchatId,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+                color: primaryColor,
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  ),
+),
               const SizedBox(height: 25),
 
               // =====================================================
