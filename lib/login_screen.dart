@@ -1,187 +1,34 @@
-import 'dart:math';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'main.dart';
+import 'mchat_id_service.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<LoginScreen> createState() =>
+      _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+class _LoginScreenState
+    extends State<LoginScreen> {
+  final emailController =
+      TextEditingController();
+
+  final passwordController =
+      TextEditingController();
 
   bool isLoading = false;
   bool obscurePassword = true;
-
-  // ===============================================================
-  // OWNER MCHAT ID
-  // ===============================================================
-
-  static const String ownerMchatId = '11111111';
 
   @override
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
     super.dispose();
-  }
-
-  // ===============================================================
-  // GENERATE UNIQUE 8-DIGIT MCHAT ID
-  // ===============================================================
-
-  Future<String> _generateUniqueMchatId() async {
-    final random = Random.secure();
-
-    while (true) {
-      final int number =
-          10000000 + random.nextInt(90000000);
-
-      final String id = number.toString();
-
-      // -----------------------------------------------------------
-      // Owner ID must never be assigned to normal users.
-      // -----------------------------------------------------------
-
-      if (id == ownerMchatId) {
-        continue;
-      }
-
-      final result = await FirebaseFirestore.instance
-          .collection('users')
-          .where(
-            'mchatId',
-            isEqualTo: id,
-          )
-          .limit(1)
-          .get();
-
-      if (result.docs.isEmpty) {
-        return id;
-      }
-    }
-  }
-
-  // ===============================================================
-  // CREATE / REPAIR USER PROFILE
-  // ===============================================================
-
-  Future<String> _ensureMchatId(User user) async {
-    final userRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid);
-
-    final snapshot = await userRef.get();
-
-    final Map<String, dynamic> data =
-        snapshot.data() ?? <String, dynamic>{};
-
-    // -------------------------------------------------------------
-    // OWNER ACCOUNT
-    // -------------------------------------------------------------
-
-    final bool isOwner =
-        data['isOwner'] == true ||
-        data['role']?.toString().toLowerCase() == 'owner';
-
-    if (isOwner) {
-      await userRef.set(
-        {
-          'uid': user.uid,
-          'name': data['name'] ??
-              user.displayName ??
-              'Mchat Owner',
-          'email': data['email'] ??
-              user.email ??
-              '',
-          'mchatId': ownerMchatId,
-          'isOwner': true,
-          'isOnline': true,
-        },
-        SetOptions(merge: true),
-      );
-
-      return ownerMchatId;
-    }
-
-    // -------------------------------------------------------------
-    // EXISTING USER ALREADY HAS MCHAT ID
-    // -------------------------------------------------------------
-
-    final dynamic existingValue =
-        data['mchatId'];
-
-    final String existingId =
-        existingValue?.toString().trim() ?? '';
-
-    if (_isValidMchatId(existingId)) {
-      // Make sure online status is updated.
-      await userRef.set(
-        {
-          'isOnline': true,
-        },
-        SetOptions(merge: true),
-      );
-
-      return existingId;
-    }
-
-    // -------------------------------------------------------------
-    // OLD USER WITHOUT MCHAT ID
-    // -------------------------------------------------------------
-
-    final String newMchatId =
-        await _generateUniqueMchatId();
-
-    await userRef.set(
-      {
-        'uid': user.uid,
-        'name': data['name'] ??
-            user.displayName ??
-            'Mchat User',
-        'email': data['email'] ??
-            user.email ??
-            '',
-        'mchatId': newMchatId,
-        'coins': data['coins'] ?? 0,
-        'vipLevel': data['vipLevel'] ?? 0,
-        'isOwner': false,
-        'isVolunteer': data['isVolunteer'] ?? false,
-        'isOnline': true,
-        'createdAt': data['createdAt'] ??
-            FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
-
-    return newMchatId;
-  }
-
-  // ===============================================================
-  // VALIDATE MCHAT ID
-  // ===============================================================
-
-  bool _isValidMchatId(String id) {
-    if (id.length != 8) {
-      return false;
-    }
-
-    if (id == ownerMchatId) {
-      return false;
-    }
-
-    final bool isNumeric =
-        RegExp(r'^[0-9]+$').hasMatch(id);
-
-    return isNumeric;
   }
 
   // ===============================================================
@@ -195,19 +42,16 @@ class _LoginScreenState extends State<LoginScreen> {
     final String password =
         passwordController.text.trim();
 
-    // -------------------------------------------------------------
-    // VALIDATION
-    // -------------------------------------------------------------
-
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
+    if (email.isEmpty ||
+        password.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         const SnackBar(
           content: Text(
             'Please enter email and password',
           ),
         ),
       );
-
       return;
     }
 
@@ -237,11 +81,35 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       // -----------------------------------------------------------
-      // AUTOMATICALLY CREATE / REPAIR MCHAT ID
+      // GET DISPLAY NAME
       // -----------------------------------------------------------
 
-      final String mchatId =
-          await _ensureMchatId(user);
+      String name =
+          user.displayName ??
+              '';
+
+      if (name.isEmpty) {
+        name = 'Mchat User';
+      }
+
+      // -----------------------------------------------------------
+      // AUTOMATIC MCHAT ID
+      //
+      // Existing user:
+      //     keep same ID.
+      //
+      // Old user without ID:
+      //     create new ID automatically.
+      //
+      // Owner:
+      //     11111111
+      // -----------------------------------------------------------
+
+      await MchatIdService.ensureMchatId(
+        user: user,
+        name: name,
+        email: user.email ?? email,
+      );
 
       if (!mounted) {
         return;
@@ -252,23 +120,17 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       // -----------------------------------------------------------
-      // OPEN MCHAT HOME
+      // OPEN HOME
       // -----------------------------------------------------------
 
-      Navigator.of(context).pushAndRemoveUntil(
+      Navigator.of(context)
+          .pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (_) =>
               const MchatHomePage(),
         ),
         (route) => false,
       );
-
-      // -----------------------------------------------------------
-      // NOTE:
-      // We do not show the ID popup for every login.
-      // The ID is shown in Profile.
-      // -----------------------------------------------------------
-
     } on FirebaseAuthException catch (e) {
       if (!mounted) {
         return;
@@ -281,29 +143,37 @@ class _LoginScreenState extends State<LoginScreen> {
       String message =
           'Login failed';
 
-      if (e.code == 'user-not-found') {
+      if (e.code ==
+          'user-not-found') {
         message =
             'No account found with this email';
-      } else if (e.code == 'wrong-password') {
+      } else if (e.code ==
+          'wrong-password') {
         message =
             'Incorrect password';
-      } else if (e.code == 'invalid-credential') {
+      } else if (e.code ==
+          'invalid-credential') {
         message =
             'Invalid email or password';
-      } else if (e.code == 'invalid-email') {
+      } else if (e.code ==
+          'invalid-email') {
         message =
             'Please enter a valid email';
-      } else if (e.code == 'user-disabled') {
+      } else if (e.code ==
+          'user-disabled') {
         message =
             'This account has been disabled';
-      } else if (e.code == 'too-many-requests') {
+      } else if (e.code ==
+          'too-many-requests') {
         message =
             'Too many attempts. Please try again later';
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         SnackBar(
-          content: Text(message),
+          content:
+              Text(message),
         ),
       );
     } catch (e) {
@@ -315,7 +185,8 @@ class _LoginScreenState extends State<LoginScreen> {
         isLoading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         SnackBar(
           content: Text(
             'Login failed: $e',
@@ -343,14 +214,16 @@ class _LoginScreenState extends State<LoginScreen> {
         title: const Text(
           'Mchat Login',
           style: TextStyle(
-            fontWeight: FontWeight.bold,
+            fontWeight:
+                FontWeight.bold,
             fontSize: 24,
           ),
         ),
       ),
 
       body: SafeArea(
-        child: SingleChildScrollView(
+        child:
+            SingleChildScrollView(
           padding:
               const EdgeInsets.all(24),
 
@@ -361,21 +234,19 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const SizedBox(height: 30),
 
-              // =====================================================
-              // LOGO
-              // =====================================================
-
               Container(
                 width: 100,
                 height: 100,
-
-                decoration: BoxDecoration(
-                  color:
-                      Colors.deepPurple.shade50,
-                  shape: BoxShape.circle,
+                decoration:
+                    BoxDecoration(
+                  color: Colors
+                      .deepPurple
+                      .shade50,
+                  shape:
+                      BoxShape.circle,
                 ),
-
-                child: const Icon(
+                child:
+                    const Icon(
                   Icons.chat_rounded,
                   size: 58,
                   color:
@@ -389,7 +260,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 'Welcome to Mchat',
                 textAlign:
                     TextAlign.center,
-
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight:
@@ -403,7 +273,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 'Login to continue',
                 textAlign:
                     TextAlign.center,
-
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey,
@@ -412,37 +281,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 35),
 
-              // =====================================================
-              // EMAIL
-              // =====================================================
-
               TextField(
                 controller:
                     emailController,
-
                 keyboardType:
                     TextInputType
                         .emailAddress,
-
                 textInputAction:
                     TextInputAction.next,
-
                 decoration:
                     const InputDecoration(
-                  labelText:
-                      'Email',
-
+                  labelText: 'Email',
                   prefixIcon:
                       Icon(
                     Icons
                         .email_outlined,
                   ),
-
                   border:
                       OutlineInputBorder(),
-
                   filled: true,
-
                   fillColor:
                       Colors.white,
                 ),
@@ -450,45 +307,32 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 16),
 
-              // =====================================================
-              // PASSWORD
-              // =====================================================
-
               TextField(
                 controller:
                     passwordController,
-
                 obscureText:
                     obscurePassword,
-
                 textInputAction:
                     TextInputAction.done,
-
                 onSubmitted: (_) {
                   if (!isLoading) {
                     login();
                   }
                 },
-
                 decoration:
                     InputDecoration(
                   labelText:
                       'Password',
-
                   prefixIcon:
                       const Icon(
                     Icons
                         .lock_outline,
                   ),
-
                   border:
                       const OutlineInputBorder(),
-
                   filled: true,
-
                   fillColor:
                       Colors.white,
-
                   suffixIcon:
                       IconButton(
                     onPressed: () {
@@ -497,7 +341,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             !obscurePassword;
                       });
                     },
-
                     icon: Icon(
                       obscurePassword
                           ? Icons
@@ -511,30 +354,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 25),
 
-              // =====================================================
-              // LOGIN BUTTON
-              // =====================================================
-
               SizedBox(
                 height: 54,
-
                 child:
                     ElevatedButton(
                   onPressed:
                       isLoading
                           ? null
                           : login,
-
                   style:
                       ElevatedButton.styleFrom(
                     backgroundColor:
                         const Color(
                       0xFF673AB7,
                     ),
-
                     foregroundColor:
                         Colors.white,
-
                     shape:
                         RoundedRectangleBorder(
                       borderRadius:
@@ -543,51 +378,39 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-
-                  child:
-                      isLoading
-                          ? const SizedBox(
-                              width: 25,
-                              height: 25,
-
-                              child:
-                                  CircularProgressIndicator(
-                                strokeWidth:
-                                    2.5,
-
-                                color:
-                                    Colors.white,
-                              ),
-                            )
-                          : const Text(
-                              'LOGIN',
-
-                              style:
-                                  TextStyle(
-                                fontSize:
-                                    17,
-                                fontWeight:
-                                    FontWeight.bold,
-                              ),
-                            ),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 25,
+                          height: 25,
+                          child:
+                              CircularProgressIndicator(
+                            strokeWidth:
+                                2.5,
+                            color:
+                                Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'LOGIN',
+                          style:
+                              TextStyle(
+                            fontSize: 17,
+                            fontWeight:
+                                FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
 
               const SizedBox(height: 20),
 
-              // =====================================================
-              // REGISTER
-              // =====================================================
-
               Row(
                 mainAxisAlignment:
                     MainAxisAlignment.center,
-
                 children: [
                   const Text(
                     "Don't have an account?",
                   ),
-
                   TextButton(
                     onPressed:
                         isLoading
@@ -596,13 +419,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) =>
-                                        const RegisterScreen(),
+                                    builder:
+                                        (_) =>
+                                            const RegisterScreen(),
                                   ),
                                 );
                               },
-
-                    child: const Text(
+                    child:
+                        const Text(
                       'Register',
                       style:
                           TextStyle(
@@ -616,14 +440,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 25),
 
-              // =====================================================
-              // MCHAT ID INFORMATION
-              // =====================================================
-
               Container(
                 padding:
                     const EdgeInsets.all(16),
-
                 decoration:
                     BoxDecoration(
                   color:
@@ -631,12 +450,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           .withValues(
                     alpha: 0.06,
                   ),
-
                   borderRadius:
                       BorderRadius.circular(
                     16,
                   ),
-
                   border:
                       Border.all(
                     color:
@@ -646,7 +463,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-
                 child:
                     const Column(
                   children: [
@@ -656,11 +472,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Colors.deepPurple,
                       size: 32,
                     ),
-
-                    SizedBox(
-                      height: 8,
-                    ),
-
+                    SizedBox(height: 8),
                     Text(
                       'Unique Mchat ID',
                       style:
@@ -670,16 +482,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             FontWeight.bold,
                       ),
                     ),
-
-                    SizedBox(
-                      height: 5,
-                    ),
-
+                    SizedBox(height: 5),
                     Text(
                       'Every Mchat user gets a unique 8-digit numeric ID automatically.',
                       textAlign:
                           TextAlign.center,
-
                       style:
                           TextStyle(
                         fontSize: 13,
