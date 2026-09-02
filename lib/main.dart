@@ -6,6 +6,7 @@ import 'home_screen.dart';
 import 'inbox_screen.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
+import 'live_screen.dart';
 
 
 // ============================================================================
@@ -79,40 +80,16 @@ class _MchatHomePageState
 
   final List<Widget> pages = const [
 
-    // ------------------------------------------------------------------------
     // HOME
-    // ------------------------------------------------------------------------
-
     HomeScreen(),
 
-
-    // ------------------------------------------------------------------------
     // INBOX
-    // ------------------------------------------------------------------------
-
     InboxScreen(),
 
-
-    // ------------------------------------------------------------------------
     // LIVE
-    // ------------------------------------------------------------------------
+    LiveScreen(),
 
-    Center(
-      child: Text(
-        'Live',
-
-        style: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    ),
-
-
-    // ------------------------------------------------------------------------
     // PROFILE
-    // ------------------------------------------------------------------------
-
     ProfileScreen(),
   ];
 
@@ -125,10 +102,6 @@ class _MchatHomePageState
   Widget build(BuildContext context) {
 
     return Scaffold(
-
-      // ======================================================================
-      // CURRENT PAGE
-      // ======================================================================
 
       body: pages[selectedIndex],
 
@@ -150,81 +123,45 @@ class _MchatHomePageState
           });
         },
 
-
-        // ====================================================================
-        // NAVIGATION ITEMS
-        // ====================================================================
-
         destinations: const [
 
-          // ------------------------------------------------------------------
-          // HOME
-          // ------------------------------------------------------------------
-
           NavigationDestination(
-
             icon: Icon(
               Icons.home_outlined,
             ),
-
             selectedIcon: Icon(
               Icons.home,
             ),
-
             label: 'Home',
           ),
 
-
-          // ------------------------------------------------------------------
-          // INBOX
-          // ------------------------------------------------------------------
-
           NavigationDestination(
-
             icon: Icon(
               Icons.chat_outlined,
             ),
-
             selectedIcon: Icon(
               Icons.chat,
             ),
-
             label: 'Inbox',
           ),
 
-
-          // ------------------------------------------------------------------
-          // LIVE
-          // ------------------------------------------------------------------
-
           NavigationDestination(
-
             icon: Icon(
               Icons.live_tv_outlined,
             ),
-
             selectedIcon: Icon(
               Icons.live_tv,
             ),
-
             label: 'Live',
           ),
 
-
-          // ------------------------------------------------------------------
-          // PROFILE
-          // ------------------------------------------------------------------
-
           NavigationDestination(
-
             icon: Icon(
               Icons.person_outline,
             ),
-
             selectedIcon: Icon(
               Icons.person,
             ),
-
             label: 'Profile',
           ),
         ],
