@@ -214,13 +214,18 @@ class InboxScreen extends StatelessWidget {
         ),
 
         onTap: () {
+          // Unique private chat ID for two users.
+          final ids = [FirebaseAuth.instance.currentUser!.uid, uid]
+            ..sort();
+
+          final chatId = '${ids[0]}_${ids[1]}';
+
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => ChatScreen(
-                userId: uid,
-                userName: name,
-                userPhotoUrl: photoUrl,
+                chatId: chatId,
+                title: name,
               ),
             ),
           );
