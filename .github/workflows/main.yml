@@ -11,25 +11,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      # --------------------------------------------------
+      # 1. Checkout
+      # --------------------------------------------------
       - name: Checkout source
         uses: actions/checkout@v4
 
+
+      # --------------------------------------------------
+      # 2. Setup Flutter
+      # --------------------------------------------------
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
+
+      # --------------------------------------------------
+      # 3. Flutter version
+      # --------------------------------------------------
       - name: Flutter version
         run: flutter --version
 
+
+      # --------------------------------------------------
+      # 4. Get dependencies
+      # --------------------------------------------------
       - name: Get dependencies
         run: flutter pub get
 
-      # ============================================================
-      # ANDROID SDK + AGORA FIX
-      # ============================================================
-      - name: Configure Android SDK and Agora
+
+      # --------------------------------------------------
+      # 5. Configure Android + Agora
+      # --------------------------------------------------
+      - name: Configure Android and Agora
         shell: bash
         run: |
           set -e
@@ -41,17 +58,16 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
+          import sys
 
-          # --------------------------------------------------------
-          # 1. Mchat compileSdk = 37
-          # --------------------------------------------------------
-
+          # ---------------------------------------------
+          # Mchat app compileSdk
+          # ---------------------------------------------
           app = Path("android/app/build.gradle.kts")
 
           if not app.exists():
-              raise SystemExit(
-                  "ERROR: android/app/build.gradle.kts not found"
-              )
+              print("ERROR: android/app/build.gradle.kts not found")
+              sys.exit(1)
 
           text = app.read_text()
 
@@ -63,23 +79,31 @@ jobs:
 
           app.write_text(text)
 
-          print("OK: Mchat compileSdk = 37")
+          print("")
+          print("Mchat compileSdk configured to 37")
 
-          # --------------------------------------------------------
-          # 2. Find Agora plugin
-          # --------------------------------------------------------
 
+          # ---------------------------------------------
+          # Find Agora plugin
+          # ---------------------------------------------
           pub = Path.home() / ".pub-cache" / "hosted" / "pub.dev"
 
-          agora_dirs = list(
-              pub.glob("agora_rtc_engine-*/android")
-          )
+          agora_dirs = sorted(pub.glob("agora_rtc_engine-*/android"))
 
           if not agora_dirs:
-              raise SystemExit(
-                  "ERROR: agora_rtc_engine Android folder not found"
-              )
+              print("ERROR: agora_rtc_engine Android folder not found")
+              sys.exit(1)
 
+          print("")
+          print("Agora Android folders found:")
+
+          for directory in agora_dirs:
+              print(" -", directory)
+
+
+          # ---------------------------------------------
+          # Patch Agora Gradle dependency
+          # ---------------------------------------------
           for android_dir in agora_dirs:
 
               gradle = android_dir / "build.gradle"
@@ -88,15 +112,22 @@ jobs:
                   gradle = android_dir / "build.gradle.kts"
 
               if not gradle.exists():
-                  raise SystemExit(
-                      f"ERROR: Agora Gradle file not found: {android_dir}"
-                  )
+                  print("ERROR: Agora Gradle file not found:")
+                  print(android_dir)
+                  sys.exit(1)
 
               text = gradle.read_text()
 
-              # ----------------------------------------------------
-              # Agora compileSdk 31 -> 37
-              # ----------------------------------------------------
+              print("")
+              print("----------------------------------------")
+              print("Agora Gradle:")
+              print(gradle)
+              print("----------------------------------------")
+
+
+              # -----------------------------------------
+              # Force Agora compileSdk = 37
+              # -----------------------------------------
 
               text = re.sub(
                   r"(safeExtGet\s*\(\s*['\"]compileSdkVersion['\"]\s*,\s*)31(\s*\))",
@@ -122,242 +153,73 @@ jobs:
                   text
               )
 
-              gradle.write_text(text)
 
-              print(f"OK: Agora compileSdk patched: {gradle}")
+              # -----------------------------------------
+              # IMPORTANT:
+              #
+              # Remove only agora-special-full.
+              #
+              # iris-rtc remains.
+              # full-screen-sharing remains.
+              #
+              # This directly addresses:
+              #
+              # Namespace 'io.agora.rtc' is used in
+              # multiple modules:
+              # iris-rtc
+              # agora-special-full
+              # -----------------------------------------
 
-          # --------------------------------------------------------
-          # 3. Find downloaded Agora AAR files
-          # --------------------------------------------------------
+              before = text
 
-          gradle_cache = (
-              Path.home()
-              / ".gradle"
-              / "caches"
-              / "modules-2"
-              / "files-2.1"
-              / "io.agora.rtc"
-          )
-
-          if not gradle_cache.exists():
-              print("WARNING: Gradle Agora cache not found yet.")
-              print("Gradle will download dependencies during build.")
-          else:
-              print("Agora Gradle cache found.")
-
-          print("Android configuration finished.")
-          PY
-
-      # ============================================================
-      # BUILD ONCE TO DOWNLOAD AGORA AAR DEPENDENCIES
-      # ============================================================
-      - name: Prepare Gradle dependencies
-        shell: bash
-        run: |
-          set -e
-
-          cd android
-
-          ./gradlew \
-            :app:dependencies \
-            --configuration releaseRuntimeClasspath \
-            > /tmp/mchat_dependencies.txt 2>&1 || true
-
-          echo "========================================"
-          echo "Agora dependencies"
-          echo "========================================"
-
-          grep -i -E \
-            "agora|iris-rtc|special-full|screen-sharing" \
-            /tmp/mchat_dependencies.txt \
-            | head -100 || true
-
-          cd ..
-
-      # ============================================================
-      # PATCH AGORA DUPLICATE NAMESPACE
-      # ============================================================
-      - name: Fix Agora duplicate namespace
-        shell: bash
-        run: |
-          set -e
-
-          echo "========================================"
-          echo "Fixing Agora duplicate namespace"
-          echo "========================================"
-
-          python3 - <<'PY'
-          from pathlib import Path
-          import zipfile
-          import tempfile
-          import shutil
-
-          base = (
-              Path.home()
-              / ".gradle"
-              / "caches"
-              / "modules-2"
-              / "files-2.1"
-              / "io.agora.rtc"
-          )
-
-          if not base.exists():
-              print("Agora cache directory not found.")
-              print("Gradle may resolve artifacts directly during build.")
-              raise SystemExit(0)
-
-          target_names = {
-              "agora-special-full",
-          }
-
-          aar_files = []
-
-          for name in target_names:
-              folder = base / name
-
-              if folder.exists():
-                  aar_files.extend(folder.rglob("*.aar"))
-
-          if not aar_files:
-              print("No Agora special-full AAR found.")
-              print("Nothing to patch at this stage.")
-              raise SystemExit(0)
-
-          for aar in aar_files:
-
-              print("")
-              print("Checking:")
-              print(aar)
-
-              temp_dir = Path(
-                  tempfile.mkdtemp(prefix="mchat_agora_")
+              text = re.sub(
+                  r'^\s*api\s+[\'"]io\.agora\.rtc:agora-special-full:[^\'"]+[\'"]\s*$',
+                  '',
+                  text,
+                  flags=re.MULTILINE
               )
 
-              try:
-                  with zipfile.ZipFile(aar, "r") as zin:
+              if before != text:
+                  print("")
+                  print("SUCCESS: Removed duplicate Agora dependency:")
+                  print("        io.agora.rtc:agora-special-full")
+              else:
+                  print("")
+                  print("WARNING: agora-special-full dependency was not found")
 
-                      manifest_data = None
 
-                      try:
-                          manifest_data = zin.read(
-                              "AndroidManifest.xml"
-                          )
-                      except KeyError:
-                          print(
-                              "AndroidManifest.xml not found."
-                          )
-                          continue
+              gradle.write_text(text)
 
-                      # ------------------------------------------------
-                      # AAR manifests are normally plain XML.
-                      # Only patch if the duplicate namespace/package
-                      # is present.
-                      # ------------------------------------------------
 
-                      try:
-                          manifest_text = manifest_data.decode(
-                              "utf-8"
-                          )
-                      except UnicodeDecodeError:
-                          print(
-                              "Manifest is binary/compiled XML."
-                          )
-                          print(
-                              "Skipping this AAR safely."
-                          )
-                          continue
+              # -----------------------------------------
+              # Show final dependencies
+              # -----------------------------------------
 
-                      if 'package="io.agora.rtc"' not in manifest_text:
-                          print(
-                              "No duplicate package found."
-                          )
-                          continue
+              print("")
+              print("Final Agora dependencies:")
 
-                      patched = manifest_text.replace(
-                          'package="io.agora.rtc"',
-                          'package="io.agora.rtc.specialfull"',
-                          1
-                      )
+              for line in text.splitlines():
+                  if "api " in line and "io.agora" in line:
+                      print(" ", line.strip())
 
-                      if patched == manifest_text:
-                          print(
-                              "No modification made."
-                          )
-                          continue
-
-                      # Extract everything
-                      zin.extractall(temp_dir)
-
-                  # Replace manifest
-                  manifest_path = (
-                      temp_dir
-                      / "AndroidManifest.xml"
-                  )
-
-                  manifest_path.write_text(
-                      patched,
-                      encoding="utf-8"
-                  )
-
-                  # Create replacement AAR
-                  replacement = aar.with_suffix(
-                      ".aar.mchat"
-                  )
-
-                  with zipfile.ZipFile(
-                      replacement,
-                      "w",
-                      zipfile.ZIP_DEFLATED
-                  ) as zout:
-
-                      for file in temp_dir.rglob("*"):
-
-                          if not file.is_file():
-                              continue
-
-                          arcname = file.relative_to(
-                              temp_dir
-                          )
-
-                          zout.write(
-                              file,
-                              arcname.as_posix()
-                          )
-
-                  shutil.move(
-                      str(replacement),
-                      str(aar)
-                  )
-
-                  print(
-                      "SUCCESS: patched duplicate namespace:"
-                  )
-                  print(
-                      "io.agora.rtc"
-                      " -> "
-                      "io.agora.rtc.specialfull"
-                  )
-
-              finally:
-                  shutil.rmtree(
-                      temp_dir,
-                      ignore_errors=True
-                  )
 
           print("")
-          print("Agora namespace patch completed.")
+          print("========================================")
+          print("Android / Agora configuration completed")
+          print("========================================")
           PY
 
-      # ============================================================
-      # VERIFY
-      # ============================================================
-      - name: Verify Android configuration
+
+      # --------------------------------------------------
+      # 6. Verify configuration
+      # --------------------------------------------------
+      - name: Verify Android and Agora configuration
         shell: bash
         run: |
           set -e
 
           echo "========================================"
-          echo "VERIFY CONFIGURATION"
+          echo "VERIFYING CONFIGURATION"
           echo "========================================"
 
           echo ""
@@ -365,34 +227,69 @@ jobs:
           grep -n "compileSdk" \
             android/app/build.gradle.kts || true
 
+
           echo ""
           echo "Agora Gradle configuration:"
 
           find "$HOME/.pub-cache/hosted/pub.dev" \
-            -path "*/agora_rtc_engine-*/android/*" \
+            -path "*/agora_rtc_engine-*/android/build.gradle" \
             -type f \
-            \( -name "build.gradle" -o -name "build.gradle.kts" \) \
             ! -path "*/example/*" \
             -print \
-            -exec grep -n "compileSdk" {} \; || true
+            -exec grep -nE "compileSdk|agora-special-full|iris-rtc|full-screen-sharing" {} \; || true
+
+
+          echo ""
+          echo "Checking duplicate dependency..."
+
+          if grep -R \
+            "io.agora.rtc:agora-special-full" \
+            "$HOME/.pub-cache/hosted/pub.dev"/agora_rtc_engine-*/android/build.gradle \
+            "$HOME/.pub-cache/hosted/pub.dev"/agora_rtc_engine-*/android/build.gradle.kts \
+            2>/dev/null; then
+
+            echo ""
+            echo "ERROR: agora-special-full is still present."
+            exit 1
+
+          else
+
+            echo ""
+            echo "SUCCESS: agora-special-full removed."
+
+          fi
+
 
           echo ""
           echo "========================================"
-          echo "Verification completed"
+          echo "Configuration verification completed"
           echo "========================================"
 
-      # ============================================================
-      # FINAL APK BUILD
-      # ============================================================
-      - name: Build APK
-        run: |
-          flutter clean
-          flutter pub get
-          flutter build apk --release
 
-      # ============================================================
-      # VERIFY APK
-      # ============================================================
+      # --------------------------------------------------
+      # 7. Clean Flutter
+      # --------------------------------------------------
+      - name: Flutter clean
+        run: flutter clean
+
+
+      # --------------------------------------------------
+      # 8. Get dependencies again
+      # --------------------------------------------------
+      - name: Flutter pub get
+        run: flutter pub get
+
+
+      # --------------------------------------------------
+      # 9. Build APK
+      # --------------------------------------------------
+      - name: Build APK
+        run: flutter build apk --release
+
+
+      # --------------------------------------------------
+      # 10. Verify APK
+      # --------------------------------------------------
       - name: Verify APK
         shell: bash
         run: |
@@ -401,6 +298,7 @@ jobs:
           APK="build/app/outputs/flutter-apk/app-release.apk"
 
           if [ ! -f "$APK" ]; then
+            echo ""
             echo "ERROR: APK was not created."
             exit 1
           fi
@@ -412,9 +310,10 @@ jobs:
 
           ls -lh "$APK"
 
-      # ============================================================
-      # UPLOAD APK
-      # ============================================================
+
+      # --------------------------------------------------
+      # 11. Upload APK
+      # --------------------------------------------------
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
