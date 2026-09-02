@@ -97,7 +97,10 @@ class ProfileScreen extends StatelessWidget {
 
           final String? photoUrl = firebaseUser.photoURL;
 
-          return ListView(
+         final String mchatId =
+         (data['mchatId'] ?? 'Creating...').toString();
+
+         return ListView(
             padding: const EdgeInsets.fromLTRB(
               20,
               10,
