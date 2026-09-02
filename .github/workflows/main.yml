@@ -26,6 +26,94 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Fix Android compile SDK
+        shell: bash
+        run: |
+          set -e
+
+          echo "Updating app compileSdk to 37..."
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("android/app/build.gradle.kts")
+          text = path.read_text()
+
+          text = text.replace(
+              "compileSdk = 35",
+              "compileSdk = 37"
+          )
+
+          path.write_text(text)
+          print("App compileSdk updated to 37.")
+          PY
+
+          echo "Finding Agora RTC Engine..."
+
+          AGORA_GRADLE="$(find "$HOME/.pub-cache/hosted/pub.dev" \
+            -path "*/agora_rtc_engine-*/android/build.gradle" \
+            -type f | head -n 1)"
+
+          if [ -z "$AGORA_GRADLE" ]; then
+            echo "ERROR: Agora android/build.gradle was not found."
+            exit 1
+          fi
+
+          echo "Agora Gradle file:"
+          echo "$AGORA_GRADLE"
+
+          python3 - "$AGORA_GRADLE" <<'PY'
+          import re
+          import sys
+          from pathlib import Path
+
+          path = Path(sys.argv[1])
+          text = path.read_text()
+
+          original = text
+
+          # Old Android Gradle syntax:
+          # compileSdkVersion 31
+          text = re.sub(
+              r'compileSdkVersion\s+31\b',
+              'compileSdkVersion 37',
+              text
+          )
+
+          # New Android Gradle syntax:
+          # compileSdk = 31
+          text = re.sub(
+              r'compileSdk\s*=\s*31\b',
+              'compileSdk = 37',
+              text
+          )
+
+          # Another possible syntax:
+          # compileSdk 31
+          text = re.sub(
+              r'compileSdk\s+31\b',
+              'compileSdk 37',
+              text
+          )
+
+          if text == original:
+              print("WARNING: Agora compileSdk 31 pattern was not found.")
+          else:
+              path.write_text(text)
+              print("Agora compileSdk updated to 37.")
+
+          print("\n--- Agora Android Gradle compileSdk lines ---")
+
+          for line in text.splitlines():
+              if "compileSdk" in line:
+                  print(line)
+          PY
+
+          echo ""
+          echo "Checking app compileSdk..."
+
+          grep -n "compileSdk" android/app/build.gradle.kts || true
+
       - name: Build APK
         run: flutter build apk --release
 
