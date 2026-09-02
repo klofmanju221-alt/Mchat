@@ -10,11 +10,20 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Firebase
   firebase_core: ^3.15.0
   firebase_auth: ^5.3.0
   cloud_firestore: ^5.4.0
   firebase_app_check: ^0.3.1+1
+
+  # Payments
   in_app_purchase: ^3.3.0
+
+  # Real-time Live Video / Audio
+  agora_rtc_engine: ^6.6.3
+
+  # Camera / Microphone runtime permissions
+  permission_handler: ^13.0.1
 
 dev_dependencies:
   flutter_test:
