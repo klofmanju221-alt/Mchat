@@ -32,125 +32,128 @@ jobs:
           set -e
 
           echo "========================================"
-          echo "Configuring Android compile SDK"
+          echo "Mchat Android SDK Configuration"
           echo "========================================"
 
           python3 - <<'PY'
           from pathlib import Path
           import re
 
-          # -------------------------------------------------
-          # 1. Set Mchat app compileSdk to 37
-          # -------------------------------------------------
+          # ==========================================
+          # 1. Mchat app compileSdk = 37
+          # ==========================================
+
           app = Path("android/app/build.gradle.kts")
 
-          if app.exists():
-              text = app.read_text()
+          if not app.exists():
+              print("ERROR: android/app/build.gradle.kts not found")
+              raise SystemExit(1)
+
+          text = app.read_text()
+
+          text = re.sub(
+              r'compileSdk\s*=\s*\d+',
+              'compileSdk = 37',
+              text
+          )
+
+          app.write_text(text)
+
+          print("Mchat app compileSdk = 37")
+
+          # ==========================================
+          # 2. Find Agora RTC Engine
+          # ==========================================
+
+          pub = Path.home() / ".pub-cache" / "hosted" / "pub.dev"
+
+          agora_dirs = list(
+              pub.glob("agora_rtc_engine-*/android")
+          )
+
+          if not agora_dirs:
+              print("ERROR: agora_rtc_engine Android folder not found")
+              raise SystemExit(1)
+
+          print("")
+          print("Agora folders found:")
+
+          for directory in agora_dirs:
+              print(" -", directory)
+
+          # ==========================================
+          # 3. Fix REAL Agora compileSdk
+          # ==========================================
+
+          for android_dir in agora_dirs:
+
+              gradle = android_dir / "build.gradle"
+
+              if not gradle.exists():
+                  gradle = android_dir / "build.gradle.kts"
+
+              if not gradle.exists():
+                  print("ERROR: Agora Gradle file not found")
+                  raise SystemExit(1)
+
+              text = gradle.read_text()
+
+              print("")
+              print("Agora Gradle file:")
+              print(gradle)
+
+              # ------------------------------------------
+              # IMPORTANT:
+              # Agora 6.6.3 uses:
+              #
+              # compileSdkVersion safeExtGet(
+              #     'compileSdkVersion',
+              #     31
+              # )
+              #
+              # Change the fallback 31 to 37.
+              # ------------------------------------------
 
               text = re.sub(
-                  r'compileSdk\s*=\s*\d+',
+                  r"(safeExtGet\s*\(\s*['\"]compileSdkVersion['\"]\s*,\s*)31(\s*\))",
+                  r"\g<1>37\g<2>",
+                  text
+              )
+
+              # Old direct syntax
+              text = re.sub(
+                  r'compileSdkVersion\s+31\b',
+                  'compileSdkVersion 37',
+                  text
+              )
+
+              # Kotlin DSL
+              text = re.sub(
+                  r'compileSdk\s*=\s*31\b',
                   'compileSdk = 37',
                   text
               )
 
-              app.write_text(text)
-              print("Mchat app compileSdk = 37")
-          else:
-              print("ERROR: android/app/build.gradle.kts not found")
-              raise SystemExit(1)
+              # Other syntax
+              text = re.sub(
+                  r'compileSdk\s+31\b',
+                  'compileSdk 37',
+                  text
+              )
 
-          # -------------------------------------------------
-          # 2. Find the REAL Agora plugin
-          #    Do NOT modify the example project.
-          # -------------------------------------------------
-          pub = Path.home() / ".pub-cache" / "hosted" / "pub.dev"
+              gradle.write_text(text)
 
-          agora_dirs = sorted(
-              pub.glob("agora_rtc_engine-*/android")
-          )
+              print("")
+              print("Agora compileSdk configuration after patch:")
 
-          agora_dirs = [
-              p for p in agora_dirs
-              if "/example/" not in str(p)
-          ]
-
-          if not agora_dirs:
-              print("ERROR: Real agora_rtc_engine Android folder not found")
-              raise SystemExit(1)
+              for line in text.splitlines():
+                  if "compileSdk" in line:
+                      print(line)
 
           print("")
-          print("Agora Android folders found:")
-
-          for p in agora_dirs:
-              print(" -", p)
-
-          # -------------------------------------------------
-          # 3. Modify the REAL Agora Gradle file
-          # -------------------------------------------------
-          for android_dir in agora_dirs:
-              gradle_files = [
-                  android_dir / "build.gradle",
-                  android_dir / "build.gradle.kts",
-              ]
-
-              for gradle in gradle_files:
-                  if not gradle.exists():
-                      continue
-
-                  text = gradle.read_text()
-                  original = text
-
-                  # Old syntax
-                  text = re.sub(
-                      r'compileSdkVersion\s+\d+',
-                      'compileSdkVersion 37',
-                      text
-                  )
-
-                  # Kotlin DSL
-                  text = re.sub(
-                      r'compileSdk\s*=\s*\d+',
-                      'compileSdk = 37',
-                      text
-                  )
-
-                  # Other syntax
-                  text = re.sub(
-                      r'compileSdk\s+\d+',
-                      'compileSdk 37',
-                      text
-                  )
-
-                  # If Agora does not explicitly define compileSdk,
-                  # add it inside android { }.
-                  if "compileSdk" not in text:
-                      match = re.search(
-                          r'android\s*\{',
-                          text
-                      )
-
-                      if match:
-                          position = match.end()
-                          text = (
-                              text[:position]
-                              + "\n    compileSdkVersion 37\n"
-                              + text[position:]
-                          )
-
-                  gradle.write_text(text)
-
-                  print("")
-                  print("Updated Agora Gradle:")
-                  print(gradle)
-
-                  print("--- compileSdk lines ---")
-
-                  for line in text.splitlines():
-                      if "compileSdk" in line:
-                          print(line)
-
-          print("")
-          print("Android configuration completed.")
+          print("========================================")
+          print("Android configuration completed")
+          print("========================================")
           PY
 
       - name: Verify Android SDK configuration
@@ -163,11 +166,13 @@ jobs:
           echo "========================================"
 
           echo ""
-          echo "Mchat app:"
-          grep -Rni "compileSdk" android/app/build.gradle.kts || true
+          echo "Mchat app compileSdk:"
+          grep -n "compileSdk" \
+            android/app/build.gradle.kts || true
 
           echo ""
-          echo "Agora plugin:"
+          echo "Agora compileSdk:"
+
           find "$HOME/.pub-cache/hosted/pub.dev" \
             -path "*/agora_rtc_engine-*/android/*" \
             -type f \
@@ -175,6 +180,11 @@ jobs:
             ! -path "*/example/*" \
             -print \
             -exec grep -n "compileSdk" {} \; || true
+
+          echo ""
+          echo "========================================"
+          echo "Verification completed"
+          echo "========================================"
 
       - name: Build APK
         run: flutter build apk --release
@@ -191,7 +201,11 @@ jobs:
             exit 1
           fi
 
-          echo "APK created successfully:"
+          echo ""
+          echo "========================================"
+          echo "APK BUILD SUCCESS"
+          echo "========================================"
+
           ls -lh "$APK"
 
       - name: Upload APK
