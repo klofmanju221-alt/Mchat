@@ -24,23 +24,32 @@ service cloud.firestore {
     match /users/{uid} {
 
       // User can read own profile.
-      // Owner can read all user profiles.
+      // Owner can read all profiles.
       allow read: if signedIn()
         && (
           request.auth.uid == uid
           || isOwner()
         );
 
-      // User can create only their own profile.
+      // New users can create only their own profile.
       allow create: if signedIn()
         && request.auth.uid == uid;
 
-      // User can update only their own profile.
-      // Owner can update all profiles.
+      // User can update own profile.
+      //
+      // Important:
+      // User cannot change isOwner or role.
       allow update: if signedIn()
         && (
-          request.auth.uid == uid
-          || isOwner()
+          isOwner()
+          ||
+          (
+            request.auth.uid == uid
+            && request.resource.data.isOwner
+                == resource.data.isOwner
+            && request.resource.data.role
+                == resource.data.role
+          )
         );
 
       allow delete: if false;
@@ -49,26 +58,56 @@ service cloud.firestore {
 
     // ============================================================
     // MCHAT ID INDEX
-    //
-    // Used only to find a user's Firebase UID from their
-    // numeric Mchat ID.
     // ============================================================
 
     match /mchatIds/{mchatId} {
 
-      // Signed-in users can check an Mchat ID.
+      // All signed-in users can search Mchat IDs.
       allow read: if signedIn();
 
-      // A user can reserve/create an ID for themselves.
+      // Normal user creates their own ID.
+      //
+      // Owner ID 11111111 is allowed only when the
+      // user's existing profile is marked as owner.
       allow create: if signedIn()
-        && request.resource.data.uid == request.auth.uid
-        && mchatId.matches('^[0-9]{8}$')
-        && mchatId != '11111111';
+        && (
+          (
+            request.auth.uid
+                == request.resource.data.uid
+            &&
+            mchatId.matches(
+              '^[0-9]{8}$'
+            )
+            &&
+            mchatId != '11111111'
+          )
+          ||
+          (
+            mchatId == '11111111'
+            &&
+            request.resource.data.uid
+                == request.auth.uid
+            &&
+            get(
+              /databases/$(database)/documents/users/$(request.auth.uid)
+            ).data.isOwner == true
+          )
+        );
 
-      // Mchat IDs cannot be changed from the client.
-      allow update: if false;
+      // User can update only their own index.
+      //
+      // Mchat ID and UID can never be changed.
+      allow update: if signedIn()
+        && request.auth.uid
+            == resource.data.uid
+        && request.resource.data.uid
+            == resource.data.uid
+        && request.resource.data.mchatId
+            == resource.data.mchatId
+        && request.resource.data.mchatId
+            == mchatId;
 
-      // Mchat IDs cannot be deleted from the client.
+      // IDs cannot be deleted by clients.
       allow delete: if false;
     }
 
@@ -85,7 +124,6 @@ service cloud.firestore {
           || isOwner()
         );
 
-      // Financial data must never be client-writable.
       allow write: if false;
     }
 
@@ -96,7 +134,8 @@ service cloud.firestore {
 
     match /ledger/{entryId} {
 
-      allow read: if signedIn() && isOwner();
+      allow read:
+          if signedIn() && isOwner();
 
       allow write: if false;
     }
@@ -108,7 +147,8 @@ service cloud.firestore {
 
     match /recharges/{id} {
 
-      allow read: if signedIn() && isOwner();
+      allow read:
+          if signedIn() && isOwner();
 
       allow write: if false;
     }
@@ -120,7 +160,8 @@ service cloud.firestore {
 
     match /withdrawals/{id} {
 
-      allow read: if signedIn() && isOwner();
+      allow read:
+          if signedIn() && isOwner();
 
       allow write: if false;
     }
@@ -132,7 +173,8 @@ service cloud.firestore {
 
     match /owner_commissions/{id} {
 
-      allow read: if signedIn() && isOwner();
+      allow read:
+          if signedIn() && isOwner();
 
       allow write: if false;
     }
@@ -144,7 +186,8 @@ service cloud.firestore {
 
     match /audit_logs/{id} {
 
-      allow read: if signedIn() && isOwner();
+      allow read:
+          if signedIn() && isOwner();
 
       allow write: if false;
     }
@@ -156,13 +199,17 @@ service cloud.firestore {
 
     match /rooms/{id} {
 
-      allow read: if signedIn();
+      allow read:
+          if signedIn();
 
-      allow create: if signedIn();
+      allow create:
+          if signedIn();
 
-      allow update: if signedIn();
+      allow update:
+          if signedIn();
 
-      allow delete: if isOwner();
+      allow delete:
+          if isOwner();
     }
 
 
