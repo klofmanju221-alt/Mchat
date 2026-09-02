@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
+
+import 'payment_service.dart';
 
 class PaymentScreen extends StatefulWidget {
   final String packageName;
@@ -20,7 +23,195 @@ class _PaymentScreenState extends State<PaymentScreen> {
   static const Color primaryColor = Color(0xFF673AB7);
   static const Color backgroundColor = Color(0xFFFFF9FF);
 
-  String selectedMethod = '';
+  final PaymentService _paymentService = PaymentService.instance;
+
+  ProductDetails? _product;
+  bool _loading = true;
+  bool _purchasing = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _loadProduct();
+
+    _paymentService.listenToPurchases(_handlePurchase);
+  }
+
+  Future<void> _loadProduct() async {
+    try {
+      final products = await _paymentService.loadProducts();
+
+      final productId = _productIdForCoins(widget.coins);
+
+      ProductDetails? found;
+
+      for (final product in products) {
+        if (product.id == productId) {
+          found = product;
+          break;
+        }
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _product = found;
+        _loading = false;
+
+        if (found == null) {
+          _errorMessage =
+              'This coin package is not available yet.';
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _loading = false;
+        _errorMessage = 'Unable to load payment details.';
+      });
+    }
+  }
+
+  String _productIdForCoins(int coins) {
+    switch (coins) {
+      case 1000:
+        return 'coins_1000';
+
+      case 5000:
+        return 'coins_5000';
+
+      case 10000:
+        return 'coins_10000';
+
+      case 25000:
+        return 'coins_25000';
+
+      case 50000:
+        return 'coins_50000';
+
+      case 100000:
+        return 'coins_100000';
+
+      case 250000:
+        return 'coins_250000';
+
+      case 500000:
+        return 'coins_500000';
+
+      case 1000000:
+        return 'coins_1000000';
+
+      case 2500000:
+        return 'coins_2500000';
+
+      default:
+        return '';
+    }
+  }
+
+  Future<void> _startPurchase() async {
+    if (_product == null || _purchasing) {
+      return;
+    }
+
+    setState(() {
+      _purchasing = true;
+    });
+
+    try {
+      final started = await _paymentService.buyCoins(_product!);
+
+      if (!started && mounted) {
+        setState(() {
+          _purchasing = false;
+        });
+
+        _showMessage(
+          'Unable to start the purchase.',
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _purchasing = false;
+      });
+
+      _showMessage(
+        'Payment could not be started.',
+      );
+    }
+  }
+
+  void _handlePurchase(PurchaseDetails purchase) {
+    if (!mounted) return;
+
+    if (purchase.status == PurchaseStatus.pending) {
+      setState(() {
+        _purchasing = true;
+      });
+
+      return;
+    }
+
+    if (purchase.status == PurchaseStatus.error) {
+      setState(() {
+        _purchasing = false;
+      });
+
+      _showMessage(
+        purchase.error?.message ??
+            'Payment failed.',
+      );
+
+      return;
+    }
+
+    if (purchase.status == PurchaseStatus.canceled) {
+      setState(() {
+        _purchasing = false;
+      });
+
+      _showMessage(
+        'Payment was cancelled.',
+      );
+
+      return;
+    }
+
+    if (purchase.status == PurchaseStatus.purchased ||
+        purchase.status == PurchaseStatus.restored) {
+      setState(() {
+        _purchasing = false;
+      });
+
+      // IMPORTANT:
+      // Do NOT add coins here yet.
+      //
+      // The purchase must be verified on a trusted
+      // backend/server before coins are credited.
+      _showMessage(
+        'Purchase received. Verification is required before coins are credited.',
+      );
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _paymentService.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,9 +248,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
 
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
 
+          children: [
             // =====================================================
             // ORDER SUMMARY
             // =====================================================
@@ -70,7 +262,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius:
+                    BorderRadius.circular(20),
 
                 boxShadow: const [
                   BoxShadow(
@@ -86,7 +279,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     CrossAxisAlignment.start,
 
                 children: [
-
                   const Text(
                     'Order Summary',
                     style: TextStyle(
@@ -180,44 +372,71 @@ class _PaymentScreenState extends State<PaymentScreen> {
             const SizedBox(height: 28),
 
             // =====================================================
-            // PAYMENT METHODS
+            // GOOGLE PLAY BILLING
             // =====================================================
 
-            const Text(
-              'Select Payment Method',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius:
+                    BorderRadius.circular(18),
+
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 6,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
-            ),
 
-            const SizedBox(height: 14),
+              child: const Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
 
-            _paymentMethod(
-              id: 'UPI',
-              title: 'UPI',
-              subtitle: 'Google Pay • PhonePe • Paytm',
-              icon: Icons.account_balance_wallet,
-            ),
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.shopping_bag,
+                        color: primaryColor,
+                        size: 30,
+                      ),
 
-            _paymentMethod(
-              id: 'CARD',
-              title: 'Debit / Credit Card',
-              subtitle: 'Visa • Mastercard • RuPay',
-              icon: Icons.credit_card,
-            ),
+                      SizedBox(width: 12),
 
-            _paymentMethod(
-              id: 'NETBANKING',
-              title: 'Net Banking',
-              subtitle: 'Pay using your bank account',
-              icon: Icons.account_balance,
+                      Expanded(
+                        child: Text(
+                          'Google Play Billing',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 12),
+
+                  Text(
+                    'Payment will be securely handled through Google Play. Available payment methods are shown by Google Play during checkout.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
             ),
 
             const SizedBox(height: 20),
 
             // =====================================================
-            // SECURITY MESSAGE
+            // SECURITY
             // =====================================================
 
             Container(
@@ -226,7 +445,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
               decoration: BoxDecoration(
                 color: const Color(0xFFF0E7FF),
-                borderRadius: BorderRadius.circular(15),
+                borderRadius:
+                    BorderRadius.circular(15),
               ),
 
               child: const Row(
@@ -240,7 +460,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
                   Expanded(
                     child: Text(
-                      'Your payment will be processed securely.',
+                      'Your payment is processed securely. Coins are credited only after purchase verification.',
                       style: TextStyle(
                         fontSize: 14,
                       ),
@@ -249,6 +469,29 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ],
               ),
             ),
+
+            if (_errorMessage != null) ...[
+              const SizedBox(height: 20),
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(15),
+
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius:
+                      BorderRadius.circular(15),
+                ),
+
+                child: Text(
+                  _errorMessage!,
+                  style: TextStyle(
+                    color: Colors.red.shade800,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -272,6 +515,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,
               foregroundColor: Colors.white,
+              disabledBackgroundColor:
+                  Colors.grey.shade400,
+
               elevation: 3,
 
               shape: RoundedRectangleBorder(
@@ -280,146 +526,34 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ),
             ),
 
-            onPressed: selectedMethod.isEmpty
-                ? null
-                : () {
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Payment method selected: '
-                          '$selectedMethod',
-                        ),
+            onPressed:
+                _loading ||
+                        _product == null ||
+                        _purchasing
+                    ? null
+                    : _startPurchase,
+
+            child: _loading || _purchasing
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor:
+                          AlwaysStoppedAnimation<
+                              Color>(
+                        Colors.white,
                       ),
-                    );
-                  },
-
-            child: Text(
-              'Pay ₹${widget.price}',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ===============================================================
-  // PAYMENT METHOD CARD
-  // ===============================================================
-
-  Widget _paymentMethod({
-    required String id,
-    required String title,
-    required String subtitle,
-    required IconData icon,
-  }) {
-    final bool selected =
-        selectedMethod == id;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedMethod = id;
-        });
-      },
-
-      child: Container(
-        width: double.infinity,
-
-        margin: const EdgeInsets.only(
-          bottom: 14,
-        ),
-
-        padding: const EdgeInsets.all(17),
-
-        decoration: BoxDecoration(
-          color: Colors.white,
-
-          borderRadius:
-              BorderRadius.circular(18),
-
-          border: Border.all(
-            color: selected
-                ? primaryColor
-                : Colors.transparent,
-
-            width: selected ? 2 : 0,
-          ),
-
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 6,
-              offset: Offset(0, 3),
-            ),
-          ],
-        ),
-
-        child: Row(
-          children: [
-
-            Container(
-              width: 52,
-              height: 52,
-
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0E7FF),
-                borderRadius:
-                    BorderRadius.circular(16),
-              ),
-
-              child: const Icon(
-                Icons.payment,
-                color: primaryColor,
-                size: 30,
-              ),
-            ),
-
-            const SizedBox(width: 15),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-
-                children: [
-                  Text(
-                    title,
+                    ),
+                  )
+                : Text(
+                    'Pay ₹${widget.price}',
                     style: const TextStyle(
-                      fontSize: 17,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
-                  const SizedBox(height: 5),
-
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            Icon(
-              selected
-                  ? Icons.check_circle
-                  : Icons.radio_button_unchecked,
-
-              color: selected
-                  ? Colors.green
-                  : Colors.grey,
-
-              size: 29,
-            ),
-          ],
+          ),
         ),
       ),
     );
