@@ -9,12 +9,15 @@ class InboxScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = FirebaseAuth.instance.currentUser;
+    final currentUser =
+        FirebaseAuth.instance.currentUser;
 
     if (currentUser == null) {
       return const Scaffold(
         body: Center(
-          child: Text('Please login to use Free Inbox'),
+          child: Text(
+            'Please login to use Free Inbox',
+          ),
         ),
       );
     }
@@ -28,41 +31,56 @@ class InboxScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+
+      body: StreamBuilder<
+          QuerySnapshot<
+              Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
-            .collection('users')
+            .collection('mchatIds')
+            .orderBy('name')
             .snapshots(),
+
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState ==
+              ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(),
+              child:
+                  CircularProgressIndicator(),
             );
           }
 
           if (snapshot.hasError) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding:
+                    const EdgeInsets.all(20),
                 child: Text(
-                  'Unable to load users.\n\n${snapshot.error}',
-                  textAlign: TextAlign.center,
+                  'Unable to load Mchat users.\n\n'
+                  '${snapshot.error}',
+                  textAlign:
+                      TextAlign.center,
                 ),
               ),
             );
           }
 
-          final documents = snapshot.data?.docs ?? [];
+          final documents =
+              snapshot.data?.docs ?? [];
 
-          final users = documents.where((doc) {
-            return doc.id != currentUser.uid;
+          final users =
+              documents.where((doc) {
+            return doc.data()['uid'] !=
+                currentUser.uid;
           }).toList();
 
           if (users.isEmpty) {
             return const Center(
               child: Padding(
-                padding: EdgeInsets.all(30),
+                padding:
+                    EdgeInsets.all(30),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize:
+                      MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.people_outline,
@@ -72,15 +90,18 @@ class InboxScreen extends StatelessWidget {
                     SizedBox(height: 15),
                     Text(
                       'No other users yet',
-                      style: TextStyle(
+                      style:
+                          TextStyle(
                         fontSize: 19,
-                        fontWeight: FontWeight.bold,
+                        fontWeight:
+                            FontWeight.bold,
                       ),
                     ),
                     SizedBox(height: 8),
                     Text(
                       'Registered Mchat users will appear here.',
-                      textAlign: TextAlign.center,
+                      textAlign:
+                          TextAlign.center,
                     ),
                   ],
                 ),
@@ -89,34 +110,62 @@ class InboxScreen extends StatelessWidget {
           }
 
           return ListView.separated(
-            padding: const EdgeInsets.all(16),
+            padding:
+                const EdgeInsets.all(16),
             itemCount: users.length,
-            separatorBuilder: (_, __) {
-              return const SizedBox(height: 10);
-            },
-            itemBuilder: (context, index) {
-              final user = users[index];
-              final data = user.data();
+            separatorBuilder:
+                (_, __) =>
+                    const SizedBox(
+              height: 10,
+            ),
+            itemBuilder:
+                (context, index) {
+              final data =
+                  users[index].data();
 
               return _userCard(
                 context: context,
-                uid: user.id,
-                name: (data['name'] ?? 'Mchat User').toString(),
-                email: (data['email'] ?? '').toString(),
-                photoUrl: (data['photoUrl'] ?? '').toString(),
-                isOnline: data['isOnline'] == true,
-                mchatId: (data['mchatId'] ?? user.id).toString(),
+                uid: (data['uid'] ?? '')
+                    .toString(),
+                name:
+                    (data['name'] ??
+                            'Mchat User')
+                        .toString(),
+                email:
+                    (data['email'] ?? '')
+                        .toString(),
+                photoUrl:
+                    (data['photoUrl'] ??
+                            '')
+                        .toString(),
+                isOnline:
+                    data['isOnline'] ==
+                        true,
+                mchatId:
+                    (data['mchatId'] ??
+                            '')
+                        .toString(),
               );
             },
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showSearchDialog(context),
-        child: const Icon(Icons.search),
+
+      floatingActionButton:
+          FloatingActionButton(
+        onPressed: () =>
+            _showSearchDialog(
+          context,
+        ),
+        child:
+            const Icon(Icons.search),
       ),
     );
   }
+
+  // ===============================================================
+  // USER CARD
+  // ===============================================================
 
   Widget _userCard({
     required BuildContext context,
@@ -130,75 +179,72 @@ class InboxScreen extends StatelessWidget {
     return Card(
       elevation: 2,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+      shape:
+          RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.circular(18),
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
+        contentPadding:
+            const EdgeInsets.symmetric(
           horizontal: 14,
           vertical: 8,
         ),
-        leading: Stack(
-          children: [
-            CircleAvatar(
-              radius: 27,
-              backgroundImage: photoUrl.isNotEmpty
-                  ? NetworkImage(photoUrl)
-                  : null,
-              child: photoUrl.isEmpty
-                  ? const Icon(
-                      Icons.person,
-                      size: 30,
+
+        leading: CircleAvatar(
+          radius: 27,
+          backgroundImage:
+              photoUrl.isNotEmpty
+                  ? NetworkImage(
+                      photoUrl,
                     )
                   : null,
-            ),
-            if (isOnline)
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  width: 15,
-                  height: 15,
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white,
-                      width: 2,
-                    ),
-                  ),
-                ),
-              ),
-          ],
+          child: photoUrl.isEmpty
+              ? const Icon(
+                  Icons.person,
+                  size: 30,
+                )
+              : null,
         ),
+
         title: Text(
           name,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
+          style:
+              const TextStyle(
+            fontWeight:
+                FontWeight.bold,
             fontSize: 17,
           ),
         ),
+
         subtitle: Text(
           isOnline
               ? 'Online • ID: $mchatId'
-              : email.isNotEmpty
-                  ? email
-                  : 'Mchat ID: $mchatId',
+              : 'Mchat ID: $mchatId',
           maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+          overflow:
+              TextOverflow.ellipsis,
         ),
+
         trailing: const Icon(
           Icons.arrow_forward_ios,
           size: 18,
         ),
-        onTap: () => _openChat(
-          context,
-          uid,
-          name,
-        ),
+
+        onTap: () {
+          _openChat(
+            context,
+            uid,
+            name,
+          );
+        },
       ),
     );
   }
+
+  // ===============================================================
+  // OPEN CHAT
+  // ===============================================================
 
   void _openChat(
     BuildContext context,
@@ -206,20 +252,28 @@ class InboxScreen extends StatelessWidget {
     String name,
   ) {
     final currentUid =
-        FirebaseAuth.instance.currentUser?.uid;
+        FirebaseAuth
+            .instance
+            .currentUser
+            ?.uid;
 
-    if (currentUid == null || currentUid == uid) {
+    if (currentUid == null ||
+        uid.isEmpty ||
+        currentUid == uid) {
       return;
     }
 
-    final ids = [currentUid, uid]..sort();
+    final ids =
+        [currentUid, uid]..sort();
 
-    final chatId = '${ids[0]}_${ids[1]}';
+    final chatId =
+        '${ids[0]}_${ids[1]}';
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ChatScreen(
+        builder: (_) =>
+            ChatScreen(
           chatId: chatId,
           title: name,
         ),
@@ -227,13 +281,20 @@ class InboxScreen extends StatelessWidget {
     );
   }
 
+  // ===============================================================
+  // SEARCH DIALOG
+  // ===============================================================
+
   Future<void> _showSearchDialog(
     BuildContext context,
   ) async {
-    final controller = TextEditingController();
+    final controller =
+        TextEditingController();
 
     final currentUid =
-        FirebaseAuth.instance.currentUser?.uid;
+        FirebaseAuth.instance
+            .currentUser
+            ?.uid;
 
     if (currentUid == null) {
       return;
@@ -241,19 +302,29 @@ class InboxScreen extends StatelessWidget {
 
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) {
+      builder:
+          (dialogContext) {
         return AlertDialog(
           title: const Text(
             'Find Mchat User',
           ),
+
           content: TextField(
-            controller: controller,
+            controller:
+                controller,
             autofocus: true,
-            textInputAction: TextInputAction.search,
-            decoration: const InputDecoration(
-              hintText: 'Enter name or Mchat ID',
-              prefixIcon: Icon(Icons.search),
-              border: OutlineInputBorder(),
+            textInputAction:
+                TextInputAction.search,
+            decoration:
+                const InputDecoration(
+              hintText:
+                  'Enter name or Mchat ID',
+              prefixIcon:
+                  Icon(
+                Icons.search,
+              ),
+              border:
+                  OutlineInputBorder(),
             ),
             onSubmitted: (_) {
               _searchUsers(
@@ -264,13 +335,20 @@ class InboxScreen extends StatelessWidget {
               );
             },
           ),
+
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(dialogContext);
+                Navigator.pop(
+                  dialogContext,
+                );
               },
-              child: const Text('CANCEL'),
+              child:
+                  const Text(
+                'CANCEL',
+              ),
             ),
+
             FilledButton(
               onPressed: () {
                 _searchUsers(
@@ -280,7 +358,10 @@ class InboxScreen extends StatelessWidget {
                   currentUid,
                 );
               },
-              child: const Text('SEARCH'),
+              child:
+                  const Text(
+                'SEARCH',
+              ),
             ),
           ],
         );
@@ -290,16 +371,22 @@ class InboxScreen extends StatelessWidget {
     controller.dispose();
   }
 
+  // ===============================================================
+  // SEARCH USERS
+  // ===============================================================
+
   Future<void> _searchUsers(
     BuildContext context,
     BuildContext dialogContext,
     String value,
     String currentUid,
   ) async {
-    final query = value.trim().toLowerCase();
+    final query =
+        value.trim().toLowerCase();
 
     if (query.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         const SnackBar(
           content: Text(
             'Enter a name or Mchat ID',
@@ -310,32 +397,48 @@ class InboxScreen extends StatelessWidget {
     }
 
     try {
-      final snapshot = await FirebaseFirestore
-          .instance
-          .collection('users')
-          .get();
+      // -----------------------------------------------------------
+      // IMPORTANT:
+      // Search mchatIds, NOT users.
+      // -----------------------------------------------------------
 
-      final matches = snapshot.docs.where((doc) {
-        if (doc.id == currentUid) {
+      final snapshot =
+          await FirebaseFirestore
+              .instance
+              .collection('mchatIds')
+              .get();
+
+      final matches =
+          snapshot.docs.where((doc) {
+        final data =
+            doc.data();
+
+        final uid =
+            (data['uid'] ?? '')
+                .toString();
+
+        if (uid == currentUid) {
           return false;
         }
 
-        final data = doc.data();
-
         final name =
-            (data['name'] ?? '').toString().toLowerCase();
+            (data['name'] ?? '')
+                .toString()
+                .toLowerCase();
 
         final mchatId =
-            (data['mchatId'] ?? doc.id)
+            (data['mchatId'] ??
+                    doc.id)
                 .toString()
                 .toLowerCase();
 
         final email =
-            (data['email'] ?? '').toString().toLowerCase();
+            (data['email'] ?? '')
+                .toString()
+                .toLowerCase();
 
         return name.contains(query) ||
             mchatId.contains(query) ||
-            doc.id.toLowerCase().contains(query) ||
             email.contains(query);
       }).toList();
 
@@ -344,7 +447,8 @@ class InboxScreen extends StatelessWidget {
       }
 
       if (matches.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context)
+            .showSnackBar(
           const SnackBar(
             content: Text(
               'No Mchat user found',
@@ -354,66 +458,105 @@ class InboxScreen extends StatelessWidget {
         return;
       }
 
-      Navigator.pop(dialogContext);
+      Navigator.pop(
+        dialogContext,
+      );
 
       await showModalBottomSheet<void>(
         context: context,
         showDragHandle: true,
-        builder: (sheetContext) {
+        builder:
+            (sheetContext) {
           return SafeArea(
-            child: ListView.separated(
+            child:
+                ListView.separated(
               shrinkWrap: true,
-              padding: const EdgeInsets.fromLTRB(
+              padding:
+                  const EdgeInsets.fromLTRB(
                 16,
                 8,
                 16,
                 20,
               ),
-              itemCount: matches.length,
-              separatorBuilder: (_, __) {
-                return const Divider(height: 1);
-              },
-              itemBuilder: (_, index) {
-                final doc = matches[index];
-                final data = doc.data();
+              itemCount:
+                  matches.length,
+              separatorBuilder:
+                  (_, __) =>
+                      const Divider(
+                height: 1,
+              ),
+              itemBuilder:
+                  (_, index) {
+                final data =
+                    matches[index]
+                        .data();
+
+                final uid =
+                    (data['uid'] ??
+                            '')
+                        .toString();
 
                 final name =
-                    (data['name'] ?? 'Mchat User')
+                    (data['name'] ??
+                            'Mchat User')
                         .toString();
 
                 final photoUrl =
-                    (data['photoUrl'] ?? '').toString();
+                    (data['photoUrl'] ??
+                            '')
+                        .toString();
 
                 final mchatId =
-                    (data['mchatId'] ?? doc.id).toString();
+                    (data['mchatId'] ??
+                            matches[index]
+                                .id)
+                        .toString();
 
                 return ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: photoUrl.isNotEmpty
-                        ? NetworkImage(photoUrl)
-                        : null,
-                    child: photoUrl.isEmpty
-                        ? const Icon(Icons.person)
+                  leading:
+                      CircleAvatar(
+                    backgroundImage:
+                        photoUrl.isNotEmpty
+                            ? NetworkImage(
+                                photoUrl,
+                              )
+                            : null,
+                    child: photoUrl
+                            .isEmpty
+                        ? const Icon(
+                            Icons.person,
+                          )
                         : null,
                   ),
+
                   title: Text(
                     name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
+                    style:
+                        const TextStyle(
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
-                  subtitle: Text(
+
+                  subtitle:
+                      Text(
                     'Mchat ID: $mchatId',
                   ),
-                  trailing: const Icon(
-                    Icons.chat_outlined,
+
+                  trailing:
+                      const Icon(
+                    Icons
+                        .chat_outlined,
                   ),
+
                   onTap: () {
-                    Navigator.pop(sheetContext);
+                    Navigator.pop(
+                      sheetContext,
+                    );
 
                     _openChat(
                       context,
-                      doc.id,
+                      uid,
                       name,
                     );
                   },
@@ -428,7 +571,8 @@ class InboxScreen extends StatelessWidget {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         SnackBar(
           content: Text(
             'Search failed: $e',
