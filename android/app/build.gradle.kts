@@ -1,13 +1,19 @@
 plugins {
     id("com.android.application")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+
+    // The Flutter Gradle Plugin must be applied after
+    // the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+
     id("com.google.gms.google-services")
 }
 
 android {
     namespace = "com.mchat.app"
-    compileSdk = flutter.compileSdkVersion
+
+    // Agora / AndroidX dependencies require a newer compile SDK.
+    compileSdk = 35
+
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -17,9 +23,13 @@ android {
 
     defaultConfig {
         applicationId = "com.mchat.app"
+
         minSdk = flutter.minSdkVersion
+
         targetSdk = flutter.targetSdkVersion
+
         versionCode = flutter.versionCode
+
         versionName = flutter.versionName
     }
 
@@ -32,7 +42,8 @@ android {
 
 kotlin {
     compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        jvmTarget =
+            org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 
