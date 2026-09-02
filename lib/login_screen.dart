@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -20,11 +23,104 @@ class _LoginScreenState extends State<LoginScreen> {
   bool obscurePassword = true;
   bool loading = false;
 
+  static const String ownerMchatId = '11111111';
+
   @override
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
     super.dispose();
+  }
+
+  Future<String> _generateUniqueMchatId() async {
+    final random = Random.secure();
+
+    while (true) {
+      final number = 10000000 + random.nextInt(90000000);
+      final id = number.toString();
+
+      if (id == ownerMchatId) {
+        continue;
+      }
+
+      final result = await FirebaseFirestore.instance
+          .collection('users')
+          .where('mchatId', isEqualTo: id)
+          .limit(1)
+          .get();
+
+      if (result.docs.isEmpty) {
+        return id;
+      }
+    }
+  }
+
+  Future<String?> _ensureMchatId(User user) async {
+    final userRef =
+        FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+    final snapshot = await userRef.get();
+
+    if (!snapshot.exists) {
+      final mchatId = await _generateUniqueMchatId();
+
+      await userRef.set({
+        'uid': user.uid,
+        'name': user.displayName ?? 'Mchat User',
+        'email': user.email ?? '',
+        'mchatId': mchatId,
+        'coins': 0,
+        'vipLevel': 0,
+        'isOwner': false,
+        'isVolunteer': false,
+        'isOnline': true,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      return mchatId;
+    }
+
+    final data = snapshot.data() ?? <String, dynamic>{};
+
+    final isOwner =
+        data['isOwner'] == true || data['role'] == 'owner';
+
+    final existingId =
+        data['mchatId']?.toString().trim() ?? '';
+
+    if (isOwner) {
+      if (existingId != ownerMchatId) {
+        await userRef.update({
+          'mchatId': ownerMchatId,
+          'isOnline': true,
+        });
+
+        return ownerMchatId;
+      }
+
+      await userRef.update({
+        'isOnline': true,
+      });
+
+      return null;
+    }
+
+    if (existingId.isEmpty) {
+      final mchatId = await _generateUniqueMchatId();
+
+      await userRef.update({
+        'mchatId': mchatId,
+        'isOnline': true,
+      });
+
+      return mchatId;
+    }
+
+    await userRef.update({
+      'isOnline': true,
+    });
+
+    return null;
   }
 
   Future<void> login() async {
@@ -41,10 +137,84 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final credential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      final user = credential.user;
+
+      if (user != null) {
+        final newMchatId = await _ensureMchatId(user);
+
+        if (!mounted) return;
+
+        if (newMchatId != null) {
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (dialogContext) {
+              return AlertDialog(
+                title: const Text(
+                  '🎉 Your Mchat ID',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Your unique Mchat ID is',
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 18,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            Colors.deepPurple.withValues(alpha: 0.10),
+                        borderRadius:
+                            BorderRadius.circular(14),
+                      ),
+                      child: Text(
+                        newMchatId,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 3,
+                          color: Colors.deepPurple,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Save this number.\n'
+                      'You can use it to find friends.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+                actions: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(dialogContext).pop();
+                      },
+                      child: const Text('CONTINUE'),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      }
 
       if (!mounted) return;
 
@@ -69,8 +239,8 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       showMessage(message);
-    } catch (_) {
-      showMessage('Something went wrong');
+    } catch (e) {
+      showMessage('Something went wrong: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -133,14 +303,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
               TextField(
                 controller: emailController,
-                keyboardType: TextInputType.emailAddress,
+                keyboardType:
+                    TextInputType.emailAddress,
                 decoration: const InputDecoration(
                   labelText: 'Email',
                   hintText: 'Enter your email',
-                  prefixIcon: Icon(
-                    Icons.email_outlined,
-                  ),
-                  border: OutlineInputBorder(),
+                  prefixIcon:
+                      Icon(Icons.email_outlined),
+                  border:
+                      OutlineInputBorder(),
                 ),
               ),
 
@@ -151,11 +322,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 obscureText: obscurePassword,
                 decoration: InputDecoration(
                   labelText: 'Password',
-                  hintText: 'Enter your password',
-                  prefixIcon: const Icon(
-                    Icons.lock_outline,
-                  ),
-                  border: const OutlineInputBorder(),
+                  hintText:
+                      'Enter your password',
+                  prefixIcon:
+                      const Icon(Icons.lock_outline),
+                  border:
+                      const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     onPressed: () {
                       setState(() {
@@ -177,7 +349,8 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: loading ? null : login,
+                  onPressed:
+                      loading ? null : login,
                   child: loading
                       ? const SizedBox(
                           width: 24,
@@ -267,10 +440,13 @@ class _MchatHomePageState
     return Scaffold(
       body: pages[selectedIndex],
 
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex,
+      bottomNavigationBar:
+          NavigationBar(
+        selectedIndex:
+            selectedIndex,
 
-        onDestinationSelected: (index) {
+        onDestinationSelected:
+            (index) {
           setState(() {
             selectedIndex = index;
           });
