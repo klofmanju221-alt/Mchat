@@ -23,22 +23,15 @@ service cloud.firestore {
 
     match /users/{uid} {
 
-      // User can read own profile.
-      // Owner can read all profiles.
       allow read: if signedIn()
         && (
           request.auth.uid == uid
           || isOwner()
         );
 
-      // New users can create only their own profile.
       allow create: if signedIn()
         && request.auth.uid == uid;
 
-      // User can update own profile.
-      //
-      // Important:
-      // User cannot change isOwner or role.
       allow update: if signedIn()
         && (
           isOwner()
@@ -62,22 +55,15 @@ service cloud.firestore {
 
     match /mchatIds/{mchatId} {
 
-      // All signed-in users can search Mchat IDs.
       allow read: if signedIn();
 
-      // Normal user creates their own ID.
-      //
-      // Owner ID 11111111 is allowed only when the
-      // user's existing profile is marked as owner.
       allow create: if signedIn()
         && (
           (
             request.auth.uid
-                == request.resource.data.uid
+              == request.resource.data.uid
             &&
-            mchatId.matches(
-              '^[0-9]{8}$'
-            )
+            mchatId.matches('^[0-9]{8}$')
             &&
             mchatId != '11111111'
           )
@@ -86,7 +72,7 @@ service cloud.firestore {
             mchatId == '11111111'
             &&
             request.resource.data.uid
-                == request.auth.uid
+              == request.auth.uid
             &&
             get(
               /databases/$(database)/documents/users/$(request.auth.uid)
@@ -94,20 +80,16 @@ service cloud.firestore {
           )
         );
 
-      // User can update only their own index.
-      //
-      // Mchat ID and UID can never be changed.
       allow update: if signedIn()
         && request.auth.uid
-            == resource.data.uid
+          == resource.data.uid
         && request.resource.data.uid
-            == resource.data.uid
+          == resource.data.uid
         && request.resource.data.mchatId
-            == resource.data.mchatId
+          == resource.data.mchatId
         && request.resource.data.mchatId
-            == mchatId;
+          == mchatId;
 
-      // IDs cannot be deleted by clients.
       allow delete: if false;
     }
 
@@ -134,8 +116,8 @@ service cloud.firestore {
 
     match /ledger/{entryId} {
 
-      allow read:
-          if signedIn() && isOwner();
+      allow read: if signedIn()
+        && isOwner();
 
       allow write: if false;
     }
@@ -147,8 +129,8 @@ service cloud.firestore {
 
     match /recharges/{id} {
 
-      allow read:
-          if signedIn() && isOwner();
+      allow read: if signedIn()
+        && isOwner();
 
       allow write: if false;
     }
@@ -160,8 +142,8 @@ service cloud.firestore {
 
     match /withdrawals/{id} {
 
-      allow read:
-          if signedIn() && isOwner();
+      allow read: if signedIn()
+        && isOwner();
 
       allow write: if false;
     }
@@ -173,8 +155,8 @@ service cloud.firestore {
 
     match /owner_commissions/{id} {
 
-      allow read:
-          if signedIn() && isOwner();
+      allow read: if signedIn()
+        && isOwner();
 
       allow write: if false;
     }
@@ -186,30 +168,109 @@ service cloud.firestore {
 
     match /audit_logs/{id} {
 
-      allow read:
-          if signedIn() && isOwner();
+      allow read: if signedIn()
+        && isOwner();
 
       allow write: if false;
     }
 
 
     // ============================================================
-    // ROOMS
+    // LIVE ROOMS
     // ============================================================
 
-    match /rooms/{id} {
+    match /rooms/{roomId} {
 
-      allow read:
-          if signedIn();
+      // Signed-in users can see live rooms.
+      allow read: if signedIn();
 
-      allow create:
-          if signedIn();
+      // A user can create only a room where they are the host.
+      allow create: if signedIn()
+        && request.resource.data.hostUid
+          == request.auth.uid;
 
-      allow update:
-          if signedIn();
+      // Host can update their own room.
+      allow update: if signedIn()
+        && (
+          resource.data.hostUid == request.auth.uid
+          ||
+          (
+            request.resource.data.diff(resource.data)
+              .affectedKeys()
+              .hasOnly([
+                'viewerCount',
+                'updatedAt'
+              ])
+            &&
+            request.resource.data.viewerCount is int
+            &&
+            request.resource.data.viewerCount >= 0
+          )
+        );
 
-      allow delete:
-          if isOwner();
+      // Only owner can delete rooms.
+      allow delete: if isOwner();
+
+
+      // ==========================================================
+      // LIVE ROOM CHAT
+      // ==========================================================
+
+      match /messages/{messageId} {
+
+        // Signed-in users can read live room messages.
+        allow read: if signedIn();
+
+        // A user can create a message only as themselves.
+        allow create: if signedIn()
+          && request.resource.data.senderId
+            == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 500;
+
+        // Messages cannot be edited or deleted by clients.
+        allow update, delete: if false;
+      }
+
+
+      // ==========================================================
+      // LIVE ROOM GIFTS
+      // ==========================================================
+      //
+      // Client cannot directly create/update gifts.
+      // Gifts will later be processed through trusted backend
+      // so coins cannot be cheated.
+      //
+
+      match /gifts/{giftId} {
+
+        allow read: if signedIn();
+
+        allow create, update, delete: if false;
+      }
+
+
+      // ==========================================================
+      // ROOM MEMBERS
+      // ==========================================================
+
+      match /members/{memberId} {
+
+        allow read: if signedIn();
+
+        allow create: if signedIn()
+          && request.auth.uid == memberId;
+
+        allow update: if signedIn()
+          && request.auth.uid == memberId;
+
+        allow delete: if signedIn()
+          && (
+            request.auth.uid == memberId
+            || isOwner()
+          );
+      }
     }
 
 
