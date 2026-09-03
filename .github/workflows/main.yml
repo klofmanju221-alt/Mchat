@@ -119,29 +119,29 @@ jobs:
 
 
               # ----------------------------------------------
-              # Agora compileSdk 31 -> 37
+              # Agora compileSdk -> 37
               # ----------------------------------------------
 
               text = re.sub(
-                  r"(safeExtGet\s*\(\s*['\"]compileSdkVersion['\"]\s*,\s*)31(\s*\))",
+                  r"(safeExtGet\s*\(\s*['\"]compileSdkVersion['\"]\s*,\s*)\d+(\s*\))",
                   r"\g<1>37\g<2>",
                   text
               )
 
               text = re.sub(
-                  r'compileSdkVersion\s+31\b',
+                  r'compileSdkVersion\s+\d+',
                   'compileSdkVersion 37',
                   text
               )
 
               text = re.sub(
-                  r'compileSdk\s*=\s*31\b',
+                  r'compileSdk\s*=\s*\d+',
                   'compileSdk = 37',
                   text
               )
 
               text = re.sub(
-                  r'compileSdk\s+31\b',
+                  r'compileSdk\s+\d+',
                   'compileSdk 37',
                   text
               )
@@ -151,8 +151,6 @@ jobs:
               # Remove duplicate Agora dependency
               # ----------------------------------------------
 
-              old_text = text
-
               text = re.sub(
                   r'^\s*api\s+[\'"]io\.agora\.rtc:agora-special-full:[^\'"]+[\'"]\s*$',
                   '',
@@ -160,20 +158,10 @@ jobs:
                   flags=re.MULTILINE
               )
 
-              if old_text != text:
-                  print(
-                      "SUCCESS: Removed "
-                      "io.agora.rtc:agora-special-full"
-                  )
-              else:
-                  print(
-                      "INFO: agora-special-full already absent"
-                  )
-
-
               gradle.write_text(text)
 
               print("SUCCESS: Agora compileSdk = 37")
+              print("SUCCESS: Agora duplicate dependency handled")
 
 
           # ==================================================
@@ -204,8 +192,7 @@ jobs:
 
               if not gradle.exists():
                   print(
-                      "ERROR: iris_method_channel "
-                      "Gradle file not found"
+                      "ERROR: iris_method_channel Gradle file not found"
                   )
                   sys.exit(1)
 
@@ -215,6 +202,12 @@ jobs:
               # ----------------------------------------------
               # Iris compileSdk -> 37
               # ----------------------------------------------
+
+              text = re.sub(
+                  r"(safeExtGet\s*\(\s*['\"]compileSdkVersion['\"]\s*,\s*)\d+(\s*\))",
+                  r"\g<1>37\g<2>",
+                  text
+              )
 
               text = re.sub(
                   r'compileSdkVersion\s+\d+',
@@ -234,20 +227,11 @@ jobs:
                   text
               )
 
-
-              # Handle safeExtGet if present
-              text = re.sub(
-                  r"(safeExtGet\s*\(\s*['\"]compileSdkVersion['\"]\s*,\s*)\d+(\s*\))",
-                  r"\g<1>37\g<2>",
-                  text
-              )
-
-
               gradle.write_text(text)
 
               print(
                   "SUCCESS: iris_method_channel "
-                  "compileSdk = 37"
+                  "compileSdk configured for 37"
               )
 
 
@@ -270,58 +254,75 @@ jobs:
           echo "VERIFYING CONFIGURATION"
           echo "========================================"
 
+
           echo ""
           echo "Mchat compileSdk:"
           grep -n "compileSdk" \
             android/app/build.gradle.kts || true
 
 
+          # ==================================================
+          # VERIFY AGORA
+          # ==================================================
+
           echo ""
           echo "Agora configuration:"
 
-          find "$HOME/.pub-cache/hosted/pub.dev" \
+          AGORA_FILE=$(find \
+            "$HOME/.pub-cache/hosted/pub.dev" \
             -path "*/agora_rtc_engine-*/android/build.gradle" \
             -type f \
             ! -path "*/example/*" \
-            -print \
-            -exec grep -nE \
-            "compileSdk|agora-special-full|iris-rtc|full-screen-sharing" \
-            {} \; || true
+            | head -n 1)
 
-
-          echo ""
-          echo "Iris Method Channel configuration:"
-
-          find "$HOME/.pub-cache/hosted/pub.dev" \
-            -path "*/iris_method_channel-*/android/build.gradle" \
-            -type f \
-            ! -path "*/example/*" \
-            -print \
-            -exec grep -n "compileSdk" {} \; || true
-
-
-          echo ""
-          echo "Checking duplicate Agora dependency..."
-
-          if grep -R \
-            "io.agora.rtc:agora-special-full" \
-            "$HOME/.pub-cache/hosted/pub.dev"/agora_rtc_engine-*/android/ \
-            2>/dev/null; then
-
-            echo ""
-            echo "ERROR: agora-special-full still exists."
+          if [ -z "$AGORA_FILE" ]; then
+            echo "ERROR: Agora Gradle file not found."
             exit 1
+          fi
+
+          cat "$AGORA_FILE"
+
+
+          echo ""
+          echo "Checking Agora compileSdk..."
+
+          if grep -qE \
+            "compileSdkVersion 37|compileSdk = 37|compileSdk 37|safeExtGet\\('compileSdkVersion', 37\\)|safeExtGet\\(\"compileSdkVersion\", 37\\)" \
+            "$AGORA_FILE"; then
+
+            echo "SUCCESS: Agora compileSdk is configured for 37."
 
           else
 
-            echo ""
-            echo "SUCCESS: Agora duplicate dependency removed."
+            echo "ERROR: Agora compileSdk 37 configuration not found."
+            exit 1
 
           fi
 
 
           echo ""
-          echo "Checking Iris compileSdk..."
+          echo "Checking duplicate Agora dependency..."
+
+          if grep -q \
+            "io.agora.rtc:agora-special-full" \
+            "$AGORA_FILE"; then
+
+            echo "ERROR: agora-special-full is still present."
+            exit 1
+
+          else
+
+            echo "SUCCESS: agora-special-full removed."
+
+          fi
+
+
+          # ==================================================
+          # VERIFY IRIS
+          # ==================================================
+
+          echo ""
+          echo "Iris Method Channel configuration:"
 
           IRIS_FILE=$(find \
             "$HOME/.pub-cache/hosted/pub.dev" \
@@ -335,16 +336,21 @@ jobs:
             exit 1
           fi
 
+          cat "$IRIS_FILE"
+
+
+          echo ""
+          echo "Checking Iris compileSdk..."
+
           if grep -qE \
-            "compileSdkVersion 37|compileSdk = 37|compileSdk 37" \
+            "compileSdkVersion 37|compileSdk = 37|compileSdk 37|safeExtGet\\('compileSdkVersion', 37\\)|safeExtGet\\(\"compileSdkVersion\", 37\\)" \
             "$IRIS_FILE"; then
 
-            echo "SUCCESS: iris_method_channel compileSdk = 37"
+            echo "SUCCESS: iris_method_channel compileSdk is configured for 37."
 
           else
 
-            echo "ERROR: iris_method_channel is NOT compileSdk 37."
-            cat "$IRIS_FILE"
+            echo "ERROR: iris_method_channel compileSdk 37 configuration not found."
             exit 1
 
           fi
@@ -352,7 +358,7 @@ jobs:
 
           echo ""
           echo "========================================"
-          echo "Configuration verification completed"
+          echo "ALL CONFIGURATION CHECKS PASSED"
           echo "========================================"
 
 
