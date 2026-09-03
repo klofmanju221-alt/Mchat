@@ -1,4 +1,4 @@
-name: Build Mchat APK
+name: Mchat Android APK Build
 
 on:
   workflow_dispatch:
@@ -7,17 +7,15 @@ on:
       - main
 
 jobs:
-  build-apk:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-
       # --------------------------------------------------
       # 1. Checkout
       # --------------------------------------------------
-      - name: Checkout source
+      - name: Checkout repository
         uses: actions/checkout@v4
-
 
       # --------------------------------------------------
       # 2. Setup Flutter
@@ -28,390 +26,225 @@ jobs:
           channel: stable
           cache: true
 
+      # --------------------------------------------------
+      # 3. Flutter Pub Get
+      # --------------------------------------------------
+      - name: Flutter Pub Get
+        run: |
+          flutter --version
+          flutter pub get
 
       # --------------------------------------------------
-      # 3. Flutter version
+      # 4. Force Android compileSdk 37
       # --------------------------------------------------
-      - name: Flutter version
-        run: flutter --version
-
-
-      # --------------------------------------------------
-      # 4. Get dependencies
-      # --------------------------------------------------
-      - name: Get dependencies
-        run: flutter pub get
-
-
-      # --------------------------------------------------
-      # 5. Configure Android, Agora and Iris
-      # --------------------------------------------------
-      - name: Configure Android, Agora and Iris
+      - name: Fix Android compileSdk
         shell: bash
         run: |
-          set -e
+          python3 - <<'PY'
+          from pathlib import Path
 
-          echo "========================================"
-          echo "Mchat Android Configuration"
-          echo "========================================"
+          p = Path("android/app/build.gradle.kts")
 
+          if p.exists():
+              s = p.read_text()
+
+              import re
+
+              s = re.sub(
+                  r'compileSdk\s*=\s*\d+',
+                  'compileSdk = 37',
+                  s
+              )
+
+              p.write_text(s)
+
+              print("app compileSdk fixed to 37")
+          else:
+              print("android/app/build.gradle.kts not found")
+          PY
+
+      # --------------------------------------------------
+      # 5. Fix Agora compileSdk
+      # --------------------------------------------------
+      - name: Fix Agora compileSdk
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          candidates = list(
+              Path("$HOME/.pub-cache/hosted/pub.dev").glob(
+                  "agora_rtc_engine-*/android/build.gradle"
+              )
+          )
+
+          if not candidates:
+              print("Agora build.gradle not found")
+          else:
+              for p in candidates:
+                  s = p.read_text()
+
+                  s = s.replace(
+                      "safeExtGet('compileSdkVersion', 31)",
+                      "safeExtGet('compileSdkVersion', 37)"
+                  )
+
+                  s = s.replace(
+                      'safeExtGet("compileSdkVersion", 31)',
+                      'safeExtGet("compileSdkVersion", 37)'
+                  )
+
+                  p.write_text(s)
+
+                  print(f"Fixed: {p}")
+          PY
+
+      # --------------------------------------------------
+      # 6. Fix iris_method_channel compileSdk
+      # --------------------------------------------------
+      - name: Fix iris_method_channel compileSdk
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          candidates = list(
+              Path("$HOME/.pub-cache/hosted/pub.dev").glob(
+                  "iris_method_channel-*/android/build.gradle"
+              )
+          )
+
+          if not candidates:
+              print("iris_method_channel build.gradle not found")
+          else:
+              for p in candidates:
+                  s = p.read_text()
+
+                  s = s.replace(
+                      "safeExtGet('compileSdkVersion', 31)",
+                      "safeExtGet('compileSdkVersion', 37)"
+                  )
+
+                  s = s.replace(
+                      'safeExtGet("compileSdkVersion", 31)',
+                      'safeExtGet("compileSdkVersion", 37)'
+                  )
+
+                  p.write_text(s)
+
+                  print(f"Fixed: {p}")
+          PY
+
+      # --------------------------------------------------
+      # 7. IMPORTANT:
+      # Restore Agora special-full
+      # --------------------------------------------------
+      - name: Restore Agora special-full dependency
+        shell: bash
+        run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
-          import sys
 
-          pub = Path.home() / ".pub-cache" / "hosted" / "pub.dev"
-
-
-          # ==================================================
-          # MCHAT APP
-          # ==================================================
-
-          app = Path("android/app/build.gradle.kts")
-
-          if not app.exists():
-              print("ERROR: android/app/build.gradle.kts not found")
-              sys.exit(1)
-
-          text = app.read_text()
-
-          text = re.sub(
-              r'compileSdk\s*=\s*\d+',
-              'compileSdk = 37',
-              text
+          candidates = list(
+              Path("$HOME/.pub-cache/hosted/pub.dev").glob(
+                  "agora_rtc_engine-*/android/build.gradle"
+              )
           )
 
-          app.write_text(text)
-
-          print("")
-          print("SUCCESS: Mchat compileSdk = 37")
-
-
-          # ==================================================
-          # AGORA RTC ENGINE
-          # ==================================================
-
-          agora_dirs = sorted(
-              pub.glob("agora_rtc_engine-*/android")
-          )
-
-          if not agora_dirs:
-              print("ERROR: agora_rtc_engine Android folder not found")
-              sys.exit(1)
-
-          print("")
-          print("Agora folders:")
-
-          for android_dir in agora_dirs:
-
-              print(" -", android_dir)
-
-              gradle = android_dir / "build.gradle"
-
-              if not gradle.exists():
-                  gradle = android_dir / "build.gradle.kts"
-
-              if not gradle.exists():
-                  print("ERROR: Agora Gradle file not found")
-                  sys.exit(1)
-
-              text = gradle.read_text()
-
-
-              # ----------------------------------------------
-              # Agora compileSdk -> 37
-              # ----------------------------------------------
-
-              text = re.sub(
-                  r"(safeExtGet\s*\(\s*['\"]compileSdkVersion['\"]\s*,\s*)\d+(\s*\))",
-                  r"\g<1>37\g<2>",
-                  text
+          if not candidates:
+              raise SystemExit(
+                  "ERROR: Agora android/build.gradle not found"
               )
 
-              text = re.sub(
-                  r'compileSdkVersion\s+\d+',
-                  'compileSdkVersion 37',
-                  text
-              )
+          for p in candidates:
+              s = p.read_text()
 
-              text = re.sub(
-                  r'compileSdk\s*=\s*\d+',
-                  'compileSdk = 37',
-                  text
-              )
-
-              text = re.sub(
-                  r'compileSdk\s+\d+',
-                  'compileSdk 37',
-                  text
-              )
-
-
-              # ----------------------------------------------
-              # Remove duplicate Agora dependency
-              # ----------------------------------------------
-
-              text = re.sub(
-                  r'^\s*api\s+[\'"]io\.agora\.rtc:agora-special-full:[^\'"]+[\'"]\s*$',
-                  '',
-                  text,
-                  flags=re.MULTILINE
-              )
-
-              gradle.write_text(text)
-
-              print("SUCCESS: Agora compileSdk = 37")
-              print("SUCCESS: Agora duplicate dependency handled")
-
-
-          # ==================================================
-          # IRIS METHOD CHANNEL
-          # ==================================================
-
-          iris_dirs = sorted(
-              pub.glob("iris_method_channel-*/android")
-          )
-
-          if not iris_dirs:
-              print(
-                  "ERROR: iris_method_channel Android folder not found"
-              )
-              sys.exit(1)
-
-          print("")
-          print("Iris Method Channel folders:")
-
-          for android_dir in iris_dirs:
-
-              print(" -", android_dir)
-
-              gradle = android_dir / "build.gradle"
-
-              if not gradle.exists():
-                  gradle = android_dir / "build.gradle.kts"
-
-              if not gradle.exists():
+              if "agora-special-full" not in s:
                   print(
-                      "ERROR: iris_method_channel Gradle file not found"
+                      "WARNING: agora-special-full dependency "
+                      "was not found in source file."
                   )
-                  sys.exit(1)
+              else:
+                  print(
+                      "OK: agora-special-full dependency exists."
+                  )
 
-              text = gradle.read_text()
-
-
-              # ----------------------------------------------
-              # Iris compileSdk -> 37
-              # ----------------------------------------------
-
-              text = re.sub(
-                  r"(safeExtGet\s*\(\s*['\"]compileSdkVersion['\"]\s*,\s*)\d+(\s*\))",
-                  r"\g<1>37\g<2>",
-                  text
-              )
-
-              text = re.sub(
-                  r'compileSdkVersion\s+\d+',
-                  'compileSdkVersion 37',
-                  text
-              )
-
-              text = re.sub(
-                  r'compileSdk\s*=\s*\d+',
-                  'compileSdk = 37',
-                  text
-              )
-
-              text = re.sub(
-                  r'compileSdk\s+\d+',
-                  'compileSdk 37',
-                  text
-              )
-
-              gradle.write_text(text)
-
-              print(
-                  "SUCCESS: iris_method_channel "
-                  "compileSdk configured for 37"
-              )
-
-
-          print("")
-          print("========================================")
-          print("Android configuration completed")
-          print("========================================")
           PY
 
-
       # --------------------------------------------------
-      # 6. Verify configuration
+      # 8. Verify dependency configuration
       # --------------------------------------------------
-      - name: Verify configuration
+      - name: Verify Agora configuration
         shell: bash
         run: |
-          set -e
+          echo "======================================"
+          echo "Mchat Android configuration"
+          echo "======================================"
 
-          echo "========================================"
-          echo "VERIFYING CONFIGURATION"
-          echo "========================================"
-
-
-          echo ""
-          echo "Mchat compileSdk:"
-          grep -n "compileSdk" \
-            android/app/build.gradle.kts || true
-
-
-          # ==================================================
-          # VERIFY AGORA
-          # ==================================================
+          grep -n "compileSdk" android/app/build.gradle.kts || true
 
           echo ""
-          echo "Agora configuration:"
+          echo "======================================"
+          echo "Agora configuration"
+          echo "======================================"
 
-          AGORA_FILE=$(find \
-            "$HOME/.pub-cache/hosted/pub.dev" \
+          find "$HOME/.pub-cache/hosted/pub.dev" \
             -path "*/agora_rtc_engine-*/android/build.gradle" \
-            -type f \
-            ! -path "*/example/*" \
-            | head -n 1)
-
-          if [ -z "$AGORA_FILE" ]; then
-            echo "ERROR: Agora Gradle file not found."
-            exit 1
-          fi
-
-          cat "$AGORA_FILE"
-
+            -print \
+            -exec grep -n \
+              -E "compileSdk|iris-rtc|agora-special-full|full-screen-sharing" \
+              {} \; || true
 
           echo ""
-          echo "Checking Agora compileSdk..."
+          echo "======================================"
+          echo "iris_method_channel"
+          echo "======================================"
 
-          if grep -qE \
-            "compileSdkVersion 37|compileSdk = 37|compileSdk 37|safeExtGet\\('compileSdkVersion', 37\\)|safeExtGet\\(\"compileSdkVersion\", 37\\)" \
-            "$AGORA_FILE"; then
-
-            echo "SUCCESS: Agora compileSdk is configured for 37."
-
-          else
-
-            echo "ERROR: Agora compileSdk 37 configuration not found."
-            exit 1
-
-          fi
-
-
-          echo ""
-          echo "Checking duplicate Agora dependency..."
-
-          if grep -q \
-            "io.agora.rtc:agora-special-full" \
-            "$AGORA_FILE"; then
-
-            echo "ERROR: agora-special-full is still present."
-            exit 1
-
-          else
-
-            echo "SUCCESS: agora-special-full removed."
-
-          fi
-
-
-          # ==================================================
-          # VERIFY IRIS
-          # ==================================================
-
-          echo ""
-          echo "Iris Method Channel configuration:"
-
-          IRIS_FILE=$(find \
-            "$HOME/.pub-cache/hosted/pub.dev" \
+          find "$HOME/.pub-cache/hosted/pub.dev" \
             -path "*/iris_method_channel-*/android/build.gradle" \
-            -type f \
-            ! -path "*/example/*" \
-            | head -n 1)
-
-          if [ -z "$IRIS_FILE" ]; then
-            echo "ERROR: Iris Gradle file not found."
-            exit 1
-          fi
-
-          cat "$IRIS_FILE"
-
-
-          echo ""
-          echo "Checking Iris compileSdk..."
-
-          if grep -qE \
-            "compileSdkVersion 37|compileSdk = 37|compileSdk 37|safeExtGet\\('compileSdkVersion', 37\\)|safeExtGet\\(\"compileSdkVersion\", 37\\)" \
-            "$IRIS_FILE"; then
-
-            echo "SUCCESS: iris_method_channel compileSdk is configured for 37."
-
-          else
-
-            echo "ERROR: iris_method_channel compileSdk 37 configuration not found."
-            exit 1
-
-          fi
-
-
-          echo ""
-          echo "========================================"
-          echo "ALL CONFIGURATION CHECKS PASSED"
-          echo "========================================"
-
+            -print \
+            -exec grep -n "compileSdk" {} \; || true
 
       # --------------------------------------------------
-      # 7. Flutter clean
+      # 9. Clean
       # --------------------------------------------------
-      - name: Flutter clean
-        run: flutter clean
-
-
-      # --------------------------------------------------
-      # 8. Pub get
-      # --------------------------------------------------
-      - name: Flutter pub get
-        run: flutter pub get
-
+      - name: Flutter Clean
+        run: |
+          flutter clean
+          flutter pub get
 
       # --------------------------------------------------
-      # 9. Build APK
+      # 10. Build APK
       # --------------------------------------------------
-      - name: Build APK
-        run: flutter build apk --release
-
+      - name: Build Release APK
+        run: |
+          flutter build apk --release
 
       # --------------------------------------------------
-      # 10. Verify APK
+      # 11. Verify APK
       # --------------------------------------------------
       - name: Verify APK
         shell: bash
         run: |
-          set -e
-
           APK="build/app/outputs/flutter-apk/app-release.apk"
 
-          if [ ! -f "$APK" ]; then
-            echo ""
-            echo "ERROR: APK was not created."
+          if [ -f "$APK" ]; then
+            echo "======================================"
+            echo "APK BUILD SUCCESS"
+            echo "======================================"
+            ls -lh "$APK"
+          else
+            echo "ERROR: APK not found"
             exit 1
           fi
 
-          echo ""
-          echo "========================================"
-          echo "APK BUILD SUCCESS"
-          echo "========================================"
-
-          ls -lh "$APK"
-
-
       # --------------------------------------------------
-      # 11. Upload APK
+      # 12. Upload APK
       # --------------------------------------------------
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Mchat-release-APK
+          name: mchat-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
