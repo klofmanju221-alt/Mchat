@@ -160,7 +160,8 @@ jobs:
 
       - name: Build Release APK
         run: |
-          flutter build apk --release
+          flutter build apk --release \
+            --dart-define=AGORA_TEMP_TOKEN="${{ secrets.AGORA_TEMP_TOKEN }}"
 
       - name: Verify APK
         shell: bash
