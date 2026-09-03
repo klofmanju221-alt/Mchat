@@ -44,15 +44,15 @@ jobs:
 
 
       # --------------------------------------------------
-      # 5. Configure Android + Agora
+      # 5. Configure Android, Agora and Iris
       # --------------------------------------------------
-      - name: Configure Android and Agora
+      - name: Configure Android, Agora and Iris
         shell: bash
         run: |
           set -e
 
           echo "========================================"
-          echo "Mchat Android / Agora Configuration"
+          echo "Mchat Android Configuration"
           echo "========================================"
 
           python3 - <<'PY'
@@ -60,9 +60,13 @@ jobs:
           import re
           import sys
 
-          # ---------------------------------------------
-          # Mchat app compileSdk
-          # ---------------------------------------------
+          pub = Path.home() / ".pub-cache" / "hosted" / "pub.dev"
+
+
+          # ==================================================
+          # MCHAT APP
+          # ==================================================
+
           app = Path("android/app/build.gradle.kts")
 
           if not app.exists():
@@ -80,31 +84,27 @@ jobs:
           app.write_text(text)
 
           print("")
-          print("Mchat compileSdk configured to 37")
+          print("SUCCESS: Mchat compileSdk = 37")
 
 
-          # ---------------------------------------------
-          # Find Agora plugin
-          # ---------------------------------------------
-          pub = Path.home() / ".pub-cache" / "hosted" / "pub.dev"
+          # ==================================================
+          # AGORA RTC ENGINE
+          # ==================================================
 
-          agora_dirs = sorted(pub.glob("agora_rtc_engine-*/android"))
+          agora_dirs = sorted(
+              pub.glob("agora_rtc_engine-*/android")
+          )
 
           if not agora_dirs:
               print("ERROR: agora_rtc_engine Android folder not found")
               sys.exit(1)
 
           print("")
-          print("Agora Android folders found:")
+          print("Agora folders:")
 
-          for directory in agora_dirs:
-              print(" -", directory)
-
-
-          # ---------------------------------------------
-          # Patch Agora Gradle dependency
-          # ---------------------------------------------
           for android_dir in agora_dirs:
+
+              print(" -", android_dir)
 
               gradle = android_dir / "build.gradle"
 
@@ -112,22 +112,15 @@ jobs:
                   gradle = android_dir / "build.gradle.kts"
 
               if not gradle.exists():
-                  print("ERROR: Agora Gradle file not found:")
-                  print(android_dir)
+                  print("ERROR: Agora Gradle file not found")
                   sys.exit(1)
 
               text = gradle.read_text()
 
-              print("")
-              print("----------------------------------------")
-              print("Agora Gradle:")
-              print(gradle)
-              print("----------------------------------------")
 
-
-              # -----------------------------------------
-              # Force Agora compileSdk = 37
-              # -----------------------------------------
+              # ----------------------------------------------
+              # Agora compileSdk 31 -> 37
+              # ----------------------------------------------
 
               text = re.sub(
                   r"(safeExtGet\s*\(\s*['\"]compileSdkVersion['\"]\s*,\s*)31(\s*\))",
@@ -154,23 +147,11 @@ jobs:
               )
 
 
-              # -----------------------------------------
-              # IMPORTANT:
-              #
-              # Remove only agora-special-full.
-              #
-              # iris-rtc remains.
-              # full-screen-sharing remains.
-              #
-              # This directly addresses:
-              #
-              # Namespace 'io.agora.rtc' is used in
-              # multiple modules:
-              # iris-rtc
-              # agora-special-full
-              # -----------------------------------------
+              # ----------------------------------------------
+              # Remove duplicate Agora dependency
+              # ----------------------------------------------
 
-              before = text
+              old_text = text
 
               text = re.sub(
                   r'^\s*api\s+[\'"]io\.agora\.rtc:agora-special-full:[^\'"]+[\'"]\s*$',
@@ -179,33 +160,100 @@ jobs:
                   flags=re.MULTILINE
               )
 
-              if before != text:
-                  print("")
-                  print("SUCCESS: Removed duplicate Agora dependency:")
-                  print("        io.agora.rtc:agora-special-full")
+              if old_text != text:
+                  print(
+                      "SUCCESS: Removed "
+                      "io.agora.rtc:agora-special-full"
+                  )
               else:
-                  print("")
-                  print("WARNING: agora-special-full dependency was not found")
+                  print(
+                      "INFO: agora-special-full already absent"
+                  )
 
 
               gradle.write_text(text)
 
+              print("SUCCESS: Agora compileSdk = 37")
 
-              # -----------------------------------------
-              # Show final dependencies
-              # -----------------------------------------
 
-              print("")
-              print("Final Agora dependencies:")
+          # ==================================================
+          # IRIS METHOD CHANNEL
+          # ==================================================
 
-              for line in text.splitlines():
-                  if "api " in line and "io.agora" in line:
-                      print(" ", line.strip())
+          iris_dirs = sorted(
+              pub.glob("iris_method_channel-*/android")
+          )
+
+          if not iris_dirs:
+              print(
+                  "ERROR: iris_method_channel Android folder not found"
+              )
+              sys.exit(1)
+
+          print("")
+          print("Iris Method Channel folders:")
+
+          for android_dir in iris_dirs:
+
+              print(" -", android_dir)
+
+              gradle = android_dir / "build.gradle"
+
+              if not gradle.exists():
+                  gradle = android_dir / "build.gradle.kts"
+
+              if not gradle.exists():
+                  print(
+                      "ERROR: iris_method_channel "
+                      "Gradle file not found"
+                  )
+                  sys.exit(1)
+
+              text = gradle.read_text()
+
+
+              # ----------------------------------------------
+              # Iris compileSdk -> 37
+              # ----------------------------------------------
+
+              text = re.sub(
+                  r'compileSdkVersion\s+\d+',
+                  'compileSdkVersion 37',
+                  text
+              )
+
+              text = re.sub(
+                  r'compileSdk\s*=\s*\d+',
+                  'compileSdk = 37',
+                  text
+              )
+
+              text = re.sub(
+                  r'compileSdk\s+\d+',
+                  'compileSdk 37',
+                  text
+              )
+
+
+              # Handle safeExtGet if present
+              text = re.sub(
+                  r"(safeExtGet\s*\(\s*['\"]compileSdkVersion['\"]\s*,\s*)\d+(\s*\))",
+                  r"\g<1>37\g<2>",
+                  text
+              )
+
+
+              gradle.write_text(text)
+
+              print(
+                  "SUCCESS: iris_method_channel "
+                  "compileSdk = 37"
+              )
 
 
           print("")
           print("========================================")
-          print("Android / Agora configuration completed")
+          print("Android configuration completed")
           print("========================================")
           PY
 
@@ -213,7 +261,7 @@ jobs:
       # --------------------------------------------------
       # 6. Verify configuration
       # --------------------------------------------------
-      - name: Verify Android and Agora configuration
+      - name: Verify configuration
         shell: bash
         run: |
           set -e
@@ -229,33 +277,75 @@ jobs:
 
 
           echo ""
-          echo "Agora Gradle configuration:"
+          echo "Agora configuration:"
 
           find "$HOME/.pub-cache/hosted/pub.dev" \
             -path "*/agora_rtc_engine-*/android/build.gradle" \
             -type f \
             ! -path "*/example/*" \
             -print \
-            -exec grep -nE "compileSdk|agora-special-full|iris-rtc|full-screen-sharing" {} \; || true
+            -exec grep -nE \
+            "compileSdk|agora-special-full|iris-rtc|full-screen-sharing" \
+            {} \; || true
 
 
           echo ""
-          echo "Checking duplicate dependency..."
+          echo "Iris Method Channel configuration:"
+
+          find "$HOME/.pub-cache/hosted/pub.dev" \
+            -path "*/iris_method_channel-*/android/build.gradle" \
+            -type f \
+            ! -path "*/example/*" \
+            -print \
+            -exec grep -n "compileSdk" {} \; || true
+
+
+          echo ""
+          echo "Checking duplicate Agora dependency..."
 
           if grep -R \
             "io.agora.rtc:agora-special-full" \
-            "$HOME/.pub-cache/hosted/pub.dev"/agora_rtc_engine-*/android/build.gradle \
-            "$HOME/.pub-cache/hosted/pub.dev"/agora_rtc_engine-*/android/build.gradle.kts \
+            "$HOME/.pub-cache/hosted/pub.dev"/agora_rtc_engine-*/android/ \
             2>/dev/null; then
 
             echo ""
-            echo "ERROR: agora-special-full is still present."
+            echo "ERROR: agora-special-full still exists."
             exit 1
 
           else
 
             echo ""
-            echo "SUCCESS: agora-special-full removed."
+            echo "SUCCESS: Agora duplicate dependency removed."
+
+          fi
+
+
+          echo ""
+          echo "Checking Iris compileSdk..."
+
+          IRIS_FILE=$(find \
+            "$HOME/.pub-cache/hosted/pub.dev" \
+            -path "*/iris_method_channel-*/android/build.gradle" \
+            -type f \
+            ! -path "*/example/*" \
+            | head -n 1)
+
+          if [ -z "$IRIS_FILE" ]; then
+            echo "ERROR: Iris Gradle file not found."
+            exit 1
+          fi
+
+          if grep -qE \
+            "compileSdkVersion 37|compileSdk = 37|compileSdk 37" \
+            "$IRIS_FILE"; then
+
+            echo "SUCCESS: iris_method_channel compileSdk = 37"
+
+          else
+
+            echo "ERROR: iris_method_channel is NOT compileSdk 37."
+            cat "$IRIS_FILE"
+            exit 1
 
           fi
 
@@ -267,14 +357,14 @@ jobs:
 
 
       # --------------------------------------------------
-      # 7. Clean Flutter
+      # 7. Flutter clean
       # --------------------------------------------------
       - name: Flutter clean
         run: flutter clean
 
 
       # --------------------------------------------------
-      # 8. Get dependencies again
+      # 8. Pub get
       # --------------------------------------------------
       - name: Flutter pub get
         run: flutter pub get
