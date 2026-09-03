@@ -9,8 +9,6 @@ import 'agora_config.dart';
 class AgoraLiveRoomScreen extends StatefulWidget {
   final String roomName;
   final bool isHost;
-
-  // Optional Firebase room information.
   final String roomId;
   final String hostUid;
   final String hostName;
@@ -41,328 +39,18 @@ class _AgoraLiveRoomScreenState
   bool _loading = true;
   bool _leaving = false;
 
-  String _status = 'Connecting...';
   String? _error;
+
+  int _localLikes = 0;
 
   final TextEditingController _messageController =
       TextEditingController();
-
-  final ScrollController _chatScrollController =
-      ScrollController();
 
   final FirebaseFirestore _firestore =
       FirebaseFirestore.instance;
 
   final FirebaseAuth _auth =
       FirebaseAuth.instance;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeAgora();
-  }
-
-  // ============================================================
-  // AGORA
-  // ============================================================
-
-  Future<void> _initializeAgora() async {
-    try {
-      if (AgoraConfig.appId.isEmpty) {
-        throw Exception('Agora App ID is missing.');
-      }
-
-      if (AgoraConfig.tempToken.isEmpty) {
-        throw Exception(
-          'Agora Temporary Token is missing from build.',
-        );
-      }
-
-      if (widget.isHost) {
-        final permissions = await [
-          Permission.camera,
-          Permission.microphone,
-        ].request();
-
-        final cameraGranted =
-            permissions[Permission.camera]?.isGranted ?? false;
-
-        final microphoneGranted =
-            permissions[Permission.microphone]?.isGranted ?? false;
-
-        if (!cameraGranted || !microphoneGranted) {
-          throw Exception(
-            'Camera and Microphone permission required.',
-          );
-        }
-      }
-
-      final engine = createAgoraRtcEngine();
-
-      await engine.initialize(
-        RtcEngineContext(
-          appId: AgoraConfig.appId,
-          channelProfile:
-              ChannelProfileType.channelProfileLiveBroadcasting,
-        ),
-      );
-
-      _engine = engine;
-
-      engine.registerEventHandler(
-        RtcEngineEventHandler(
-          onJoinChannelSuccess:
-              (RtcConnection connection, int elapsed) {
-            if (!mounted) return;
-
-            setState(() {
-              _joined = true;
-              _loading = false;
-              _status =
-                  widget.isHost ? 'You are LIVE' : 'Connected';
-            });
-
-            if (!widget.isHost) {
-              _updateViewerCount(1);
-            }
-          },
-          onUserJoined:
-              (RtcConnection connection, int remoteUid, int elapsed) {
-            if (!mounted) return;
-
-            setState(() {
-              _remoteUid = remoteUid;
-              _status = 'Host is LIVE';
-            });
-          },
-          onUserOffline:
-              (
-                RtcConnection connection,
-                int remoteUid,
-                UserOfflineReasonType reason,
-              ) {
-            if (!mounted) return;
-
-            if (_remoteUid == remoteUid) {
-              setState(() {
-                _remoteUid = null;
-                _status = 'Host has left the Live';
-              });
-            }
-          },
-          onError:
-              (ErrorCodeType err, String msg) {
-            if (!mounted) return;
-
-            setState(() {
-              _loading = false;
-              _error = 'Agora error: $err\n$msg';
-              _status = 'Connection error';
-            });
-          },
-          onTokenPrivilegeWillExpire:
-              (RtcConnection connection, String token) {
-            debugPrint(
-              'Agora temporary token is expiring.',
-            );
-          },
-        ),
-      );
-
-      if (widget.isHost) {
-        await engine.setClientRole(
-          role: ClientRoleType.clientRoleBroadcaster,
-        );
-
-        await engine.enableVideo();
-        await engine.enableAudio();
-        await engine.startPreview();
-      } else {
-        await engine.setClientRole(
-          role: ClientRoleType.clientRoleAudience,
-        );
-      }
-
-      final options = ChannelMediaOptions(
-        channelProfile:
-            ChannelProfileType.channelProfileLiveBroadcasting,
-        clientRoleType: widget.isHost
-            ? ClientRoleType.clientRoleBroadcaster
-            : ClientRoleType.clientRoleAudience,
-        publishCameraTrack:
-            widget.isHost && _cameraEnabled,
-        publishMicrophoneTrack:
-            widget.isHost && _micEnabled,
-        autoSubscribeVideo: true,
-        autoSubscribeAudio: true,
-      );
-
-      await engine.joinChannel(
-        token: AgoraConfig.tempToken,
-        channelId: AgoraConfig.testChannel,
-        uid: 0,
-        options: options,
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        _loading = false;
-        _status = 'Unable to connect';
-        _error = e.toString();
-      });
-    }
-  }
-
-  // ============================================================
-  // CAMERA
-  // ============================================================
-
-  Future<void> _toggleCamera() async {
-    final engine = _engine;
-
-    if (engine == null || !widget.isHost) return;
-
-    final value = !_cameraEnabled;
-
-    await engine.enableLocalVideo(value);
-
-    await engine.updateChannelMediaOptions(
-      ChannelMediaOptions(
-        channelProfile:
-            ChannelProfileType.channelProfileLiveBroadcasting,
-        clientRoleType:
-            ClientRoleType.clientRoleBroadcaster,
-        publishCameraTrack: value,
-        publishMicrophoneTrack: _micEnabled,
-        autoSubscribeVideo: true,
-        autoSubscribeAudio: true,
-      ),
-    );
-
-    if (!mounted) return;
-
-    setState(() {
-      _cameraEnabled = value;
-    });
-  }
-
-  // ============================================================
-  // MICROPHONE
-  // ============================================================
-
-  Future<void> _toggleMic() async {
-    final engine = _engine;
-
-    if (engine == null || !widget.isHost) return;
-
-    final value = !_micEnabled;
-
-    await engine.enableLocalAudio(value);
-
-    await engine.updateChannelMediaOptions(
-      ChannelMediaOptions(
-        channelProfile:
-            ChannelProfileType.channelProfileLiveBroadcasting,
-        clientRoleType:
-            ClientRoleType.clientRoleBroadcaster,
-        publishCameraTrack: _cameraEnabled,
-        publishMicrophoneTrack: value,
-        autoSubscribeVideo: true,
-        autoSubscribeAudio: true,
-      ),
-    );
-
-    if (!mounted) return;
-
-    setState(() {
-      _micEnabled = value;
-    });
-  }
-
-  // ============================================================
-  // FLIP CAMERA
-  // ============================================================
-
-  Future<void> _flipCamera() async {
-    try {
-      await _engine?.switchCamera();
-    } catch (e) {
-      _showMessage('Could not switch camera.');
-    }
-  }
-
-  // ============================================================
-  // VIEWER COUNT
-  // ============================================================
-
-  Future<void> _updateViewerCount(int change) async {
-    if (widget.roomId.isEmpty) return;
-
-    try {
-      await _firestore
-          .collection('rooms')
-          .doc(widget.roomId)
-          .update({
-        'viewerCount': FieldValue.increment(change),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    } catch (_) {}
-  }
-
-  // ============================================================
-  // CHAT
-  // ============================================================
-
-  Future<void> _sendMessage() async {
-    final text = _messageController.text.trim();
-
-    if (text.isEmpty) return;
-
-    final user = _auth.currentUser;
-
-    if (user == null) return;
-
-    if (widget.roomId.isEmpty) {
-      _showMessage('Chat is unavailable.');
-      return;
-    }
-
-    try {
-      final userDoc = await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .get();
-
-      final data = userDoc.data() ?? {};
-
-      final name =
-          (data['name'] ??
-                  user.displayName ??
-                  'Mchat User')
-              .toString();
-
-      await _firestore
-          .collection('rooms')
-          .doc(widget.roomId)
-          .collection('messages')
-          .add({
-        'senderId': user.uid,
-        'senderName': name,
-        'text': text,
-        'type': 'text',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      _messageController.clear();
-    } catch (e) {
-      _showMessage('Message could not be sent.');
-    }
-  }
-
-  // ============================================================
-  // GIFT
-  // ============================================================
 
   final List<Map<String, dynamic>> _gifts = [
     {
@@ -412,6 +100,629 @@ class _AgoraLiveRoomScreenState
     },
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _initializeAgora();
+  }
+
+  // ============================================================
+  // AGORA INITIALIZATION
+  // ============================================================
+
+  Future<void> _initializeAgora() async {
+    try {
+      if (AgoraConfig.appId.isEmpty) {
+        throw Exception(
+          'Agora App ID is missing.',
+        );
+      }
+
+      if (AgoraConfig.tempToken.isEmpty) {
+        throw Exception(
+          'Agora Temporary Token is missing from build.',
+        );
+      }
+
+      if (widget.isHost) {
+        final permissions = await [
+          Permission.camera,
+          Permission.microphone,
+        ].request();
+
+        final cameraGranted =
+            permissions[Permission.camera]?.isGranted ??
+                false;
+
+        final microphoneGranted =
+            permissions[Permission.microphone]?.isGranted ??
+                false;
+
+        if (!cameraGranted ||
+            !microphoneGranted) {
+          throw Exception(
+            'Camera and Microphone permission required.',
+          );
+        }
+      }
+
+      final engine = createAgoraRtcEngine();
+
+      await engine.initialize(
+        RtcEngineContext(
+          appId: AgoraConfig.appId,
+          channelProfile:
+              ChannelProfileType
+                  .channelProfileLiveBroadcasting,
+        ),
+      );
+
+      _engine = engine;
+
+      engine.registerEventHandler(
+        RtcEngineEventHandler(
+          onJoinChannelSuccess:
+              (
+                RtcConnection connection,
+                int elapsed,
+              ) {
+            if (!mounted) return;
+
+            setState(() {
+              _joined = true;
+              _loading = false;
+            });
+
+            if (!widget.isHost) {
+              _updateViewerCount(1);
+            }
+          },
+
+          onUserJoined:
+              (
+                RtcConnection connection,
+                int remoteUid,
+                int elapsed,
+              ) {
+            if (!mounted) return;
+
+            setState(() {
+              _remoteUid = remoteUid;
+            });
+          },
+
+          onUserOffline:
+              (
+                RtcConnection connection,
+                int remoteUid,
+                UserOfflineReasonType reason,
+              ) {
+            if (!mounted) return;
+
+            if (_remoteUid == remoteUid) {
+              setState(() {
+                _remoteUid = null;
+              });
+            }
+          },
+
+          onError:
+              (
+                ErrorCodeType error,
+                String message,
+              ) {
+            if (!mounted) return;
+
+            setState(() {
+              _loading = false;
+              _error =
+                  'Agora error:\n$error\n$message';
+            });
+          },
+
+          onTokenPrivilegeWillExpire:
+              (
+                RtcConnection connection,
+                String token,
+              ) {
+            debugPrint(
+              'Agora temporary token is expiring.',
+            );
+          },
+        ),
+      );
+
+      if (widget.isHost) {
+        await engine.setClientRole(
+          role:
+              ClientRoleType
+                  .clientRoleBroadcaster,
+        );
+
+        await engine.enableVideo();
+        await engine.enableAudio();
+
+        await engine.startPreview();
+      } else {
+        await engine.setClientRole(
+          role:
+              ClientRoleType
+                  .clientRoleAudience,
+        );
+
+        await engine.enableVideo();
+      }
+
+      final options = ChannelMediaOptions(
+        channelProfile:
+            ChannelProfileType
+                .channelProfileLiveBroadcasting,
+
+        clientRoleType: widget.isHost
+            ? ClientRoleType.clientRoleBroadcaster
+            : ClientRoleType.clientRoleAudience,
+
+        publishCameraTrack:
+            widget.isHost && _cameraEnabled,
+
+        publishMicrophoneTrack:
+            widget.isHost && _micEnabled,
+
+        autoSubscribeVideo: true,
+        autoSubscribeAudio: true,
+      );
+
+      await engine.joinChannel(
+        token: AgoraConfig.tempToken,
+        channelId: AgoraConfig.testChannel,
+        uid: 0,
+        options: options,
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _loading = false;
+        _error = e.toString();
+      });
+    }
+  }
+
+  // ============================================================
+  // VIDEO
+  // ============================================================
+
+  Widget _buildVideo() {
+    final engine = _engine;
+
+    if (engine == null) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: Colors.white,
+        ),
+      );
+    }
+
+    // HOST CAMERA
+    if (widget.isHost) {
+      if (!_cameraEnabled) {
+        return const Center(
+          child: Icon(
+            Icons.videocam_off,
+            color: Colors.white70,
+            size: 80,
+          ),
+        );
+      }
+
+      return AgoraVideoView(
+        controller: VideoViewController(
+          rtcEngine: engine,
+          canvas: const VideoCanvas(
+            uid: 0,
+          ),
+        ),
+      );
+    }
+
+    // VIEWER
+    if (_remoteUid == null) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.live_tv,
+              color: Colors.white54,
+              size: 75,
+            ),
+            SizedBox(height: 15),
+            Text(
+              'Waiting for host...',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 18,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return AgoraVideoView(
+      controller: VideoViewController.remote(
+        rtcEngine: engine,
+        canvas: VideoCanvas(
+          uid: _remoteUid!,
+        ),
+        connection: const RtcConnection(
+          channelId: AgoraConfig.testChannel,
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // CAMERA
+  // ============================================================
+
+  Future<void> _toggleCamera() async {
+    if (!widget.isHost ||
+        _engine == null) {
+      return;
+    }
+
+    try {
+      final newValue = !_cameraEnabled;
+
+      await _engine!.enableLocalVideo(
+        newValue,
+      );
+
+      await _engine!
+          .updateChannelMediaOptions(
+        ChannelMediaOptions(
+          channelProfile:
+              ChannelProfileType
+                  .channelProfileLiveBroadcasting,
+
+          clientRoleType:
+              ClientRoleType.clientRoleBroadcaster,
+
+          publishCameraTrack: newValue,
+
+          publishMicrophoneTrack:
+              _micEnabled,
+
+          autoSubscribeVideo: true,
+          autoSubscribeAudio: true,
+        ),
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _cameraEnabled = newValue;
+      });
+    } catch (e) {
+      _showMessage(
+        'Camera could not be changed.',
+      );
+    }
+  }
+
+  // ============================================================
+  // MICROPHONE
+  // ============================================================
+
+  Future<void> _toggleMic() async {
+    if (!widget.isHost ||
+        _engine == null) {
+      return;
+    }
+
+    try {
+      final newValue = !_micEnabled;
+
+      await _engine!.enableLocalAudio(
+        newValue,
+      );
+
+      await _engine!
+          .updateChannelMediaOptions(
+        ChannelMediaOptions(
+          channelProfile:
+              ChannelProfileType
+                  .channelProfileLiveBroadcasting,
+
+          clientRoleType:
+              ClientRoleType.clientRoleBroadcaster,
+
+          publishCameraTrack:
+              _cameraEnabled,
+
+          publishMicrophoneTrack:
+              newValue,
+
+          autoSubscribeVideo: true,
+          autoSubscribeAudio: true,
+        ),
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _micEnabled = newValue;
+      });
+    } catch (e) {
+      _showMessage(
+        'Microphone could not be changed.',
+      );
+    }
+  }
+
+  // ============================================================
+  // FLIP CAMERA
+  // ============================================================
+
+  Future<void> _flipCamera() async {
+    try {
+      await _engine?.switchCamera();
+    } catch (e) {
+      _showMessage(
+        'Could not switch camera.',
+      );
+    }
+  }
+
+  // ============================================================
+  // VIEWER COUNT
+  // ============================================================
+
+  Future<void> _updateViewerCount(
+    int change,
+  ) async {
+    if (widget.roomId.isEmpty) {
+      return;
+    }
+
+    try {
+      await _firestore
+          .collection('rooms')
+          .doc(widget.roomId)
+          .update({
+        'viewerCount':
+            FieldValue.increment(change),
+        'updatedAt':
+            FieldValue.serverTimestamp(),
+      });
+    } catch (_) {}
+  }
+
+  Stream<int> _viewerCountStream() {
+    if (widget.roomId.isEmpty) {
+      return Stream.value(
+        _remoteUid == null ? 0 : 1,
+      );
+    }
+
+    return _firestore
+        .collection('rooms')
+        .doc(widget.roomId)
+        .snapshots()
+        .map((snapshot) {
+      final data = snapshot.data();
+
+      final count =
+          (data?['viewerCount'] as num?)
+                  ?.toInt() ??
+              0;
+
+      return count < 0 ? 0 : count;
+    });
+  }
+
+  // ============================================================
+  // CHAT SEND
+  // ============================================================
+
+  Future<void> _sendMessage() async {
+    final text =
+        _messageController.text.trim();
+
+    if (text.isEmpty) return;
+
+    final user =
+        _auth.currentUser;
+
+    if (user == null) {
+      return;
+    }
+
+    if (widget.roomId.isEmpty) {
+      _showMessage(
+        'Chat is unavailable.',
+      );
+      return;
+    }
+
+    try {
+      final userDoc =
+          await _firestore
+              .collection('users')
+              .doc(user.uid)
+              .get();
+
+      final data =
+          userDoc.data() ?? {};
+
+      final name =
+          (data['name'] ??
+                  user.displayName ??
+                  'Mchat User')
+              .toString();
+
+      await _firestore
+          .collection('rooms')
+          .doc(widget.roomId)
+          .collection('messages')
+          .add({
+        'senderId': user.uid,
+        'senderName': name,
+        'text': text,
+        'type': 'text',
+        'createdAt':
+            FieldValue.serverTimestamp(),
+      });
+
+      _messageController.clear();
+    } catch (_) {
+      _showMessage(
+        'Message could not be sent.',
+      );
+    }
+  }
+
+  // ============================================================
+  // CHAT UI
+  // ============================================================
+
+  Widget _buildChat() {
+    if (widget.roomId.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned(
+      left: 14,
+      right: 14,
+      bottom: widget.isHost
+          ? 165
+          : 85,
+      child: SizedBox(
+        height: 190,
+        child: StreamBuilder<
+            QuerySnapshot<
+                Map<String, dynamic>>>(
+          stream: _firestore
+              .collection('rooms')
+              .doc(widget.roomId)
+              .collection('messages')
+              .orderBy(
+                'createdAt',
+                descending: true,
+              )
+              .limit(30)
+              .snapshots(),
+          builder: (
+            context,
+            snapshot,
+          ) {
+            if (!snapshot.hasData) {
+              return const SizedBox.shrink();
+            }
+
+            final messages =
+                snapshot.data!.docs;
+
+            return ListView.builder(
+              reverse: true,
+              itemCount:
+                  messages.length,
+              itemBuilder: (
+                context,
+                index,
+              ) {
+                final data =
+                    messages[index]
+                        .data();
+
+                final name =
+                    (data['senderName'] ??
+                            'User')
+                        .toString();
+
+                final text =
+                    (data['text'] ?? '')
+                        .toString();
+
+                final type =
+                    (data['type'] ??
+                            'text')
+                        .toString();
+
+                return Padding(
+                  padding:
+                      const EdgeInsets.only(
+                    bottom: 6,
+                  ),
+                  child: Align(
+                    alignment:
+                        Alignment.centerLeft,
+                    child: Container(
+                      padding:
+                          const EdgeInsets
+                              .symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration:
+                          BoxDecoration(
+                        color:
+                            Colors.black54,
+                        borderRadius:
+                            BorderRadius.circular(
+                          18,
+                        ),
+                      ),
+                      child: RichText(
+                        text:
+                            TextSpan(
+                          children: [
+                            TextSpan(
+                              text:
+                                  '$name  ',
+                              style:
+                                  const TextStyle(
+                                color:
+                                    Colors.amber,
+                                fontWeight:
+                                    FontWeight.bold,
+                              ),
+                            ),
+                            TextSpan(
+                              text:
+                                  text,
+                              style:
+                                  const TextStyle(
+                                color:
+                                    Colors.white,
+                              ),
+                            ),
+                            if (type ==
+                                'gift')
+                              const TextSpan(
+                                text:
+                                    ' 🎁',
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // GIFT SHEET
+  // ============================================================
+
   Future<void> _showGiftSheet() async {
     if (widget.isHost) {
       _showMessage(
@@ -420,56 +731,77 @@ class _AgoraLiveRoomScreenState
       return;
     }
 
-    showModalBottomSheet(
+    await showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF17121E),
+      backgroundColor:
+          const Color(0xFF17121E),
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
+      shape:
+          const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(
           top: Radius.circular(28),
         ),
       ),
-      builder: (_) {
+      builder: (context) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(18),
+            padding:
+                const EdgeInsets.all(18),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize:
+                  MainAxisSize.min,
               children: [
                 Container(
                   width: 45,
                   height: 5,
-                  decoration: BoxDecoration(
+                  decoration:
+                      BoxDecoration(
                     color: Colors.white30,
                     borderRadius:
-                        BorderRadius.circular(10),
+                        BorderRadius.circular(
+                      10,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 18),
+
+                const SizedBox(
+                  height: 18,
+                ),
+
                 const Row(
                   children: [
                     Icon(
                       Icons.card_giftcard,
-                      color: Colors.pink,
+                      color:
+                          Colors.pinkAccent,
                       size: 30,
                     ),
                     SizedBox(width: 10),
                     Text(
                       'Send Gift',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 25,
-                        fontWeight: FontWeight.bold,
+                      style:
+                          TextStyle(
+                        color:
+                            Colors.white,
+                        fontSize: 24,
+                        fontWeight:
+                            FontWeight.bold,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+
+                const SizedBox(
+                  height: 20,
+                ),
+
                 GridView.builder(
                   shrinkWrap: true,
                   physics:
                       const NeverScrollableScrollPhysics(),
-                  itemCount: _gifts.length,
+                  itemCount:
+                      _gifts.length,
                   gridDelegate:
                       const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
@@ -477,49 +809,73 @@ class _AgoraLiveRoomScreenState
                     mainAxisSpacing: 10,
                     childAspectRatio: .9,
                   ),
-                  itemBuilder: (_, index) {
-                    final gift = _gifts[index];
+                  itemBuilder: (
+                    context,
+                    index,
+                  ) {
+                    final gift =
+                        _gifts[index];
 
                     return InkWell(
                       borderRadius:
-                          BorderRadius.circular(18),
+                          BorderRadius.circular(
+                        18,
+                      ),
                       onTap: () {
-                        Navigator.pop(context);
-                        _confirmGift(gift);
+                        Navigator.pop(
+                          context,
+                        );
+
+                        _confirmGift(
+                          gift,
+                        );
                       },
                       child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white10,
+                        decoration:
+                            BoxDecoration(
+                          color:
+                              Colors.white10,
                           borderRadius:
-                              BorderRadius.circular(18),
-                          border: Border.all(
-                            color: Colors.white12,
+                              BorderRadius.circular(
+                            18,
                           ),
                         ),
                         child: Column(
                           mainAxisAlignment:
-                              MainAxisAlignment.center,
+                              MainAxisAlignment
+                                  .center,
                           children: [
                             Text(
-                              gift['emoji'],
-                              style: const TextStyle(
-                                fontSize: 40,
+                              gift['emoji']
+                                  .toString(),
+                              style:
+                                  const TextStyle(
+                                fontSize: 38,
                               ),
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(
+                              height: 5,
+                            ),
                             Text(
-                              gift['name'],
-                              style: const TextStyle(
-                                color: Colors.white,
+                              gift['name']
+                                  .toString(),
+                              style:
+                                  const TextStyle(
+                                color:
+                                    Colors.white,
                                 fontWeight:
                                     FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(
+                              height: 4,
+                            ),
                             Text(
                               '🪙 ${gift['coins']}',
-                              style: const TextStyle(
-                                color: Colors.amber,
+                              style:
+                                  const TextStyle(
+                                color:
+                                    Colors.amber,
                                 fontWeight:
                                     FontWeight.bold,
                               ),
@@ -539,12 +895,15 @@ class _AgoraLiveRoomScreenState
   }
 
   Future<void> _confirmGift(
-      Map<String, dynamic> gift) async {
-    final result = await showDialog<bool>(
+    Map<String, dynamic> gift,
+  ) async {
+    final result =
+        await showDialog<bool>(
       context: context,
-      builder: (_) {
+      builder: (context) {
         return AlertDialog(
-          title: const Text('Send Gift?'),
+          title:
+              const Text('Send Gift?'),
           content: Text(
             '${gift['emoji']} ${gift['name']}\n\n'
             'Cost: ${gift['coins']} Coins\n'
@@ -552,17 +911,28 @@ class _AgoraLiveRoomScreenState
           ),
           actions: [
             TextButton(
-              onPressed: () =>
-                  Navigator.pop(context, false),
-              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.pop(
+                  context,
+                  false,
+                );
+              },
+              child:
+                  const Text('Cancel'),
             ),
             FilledButton.icon(
-              onPressed: () =>
-                  Navigator.pop(context, true),
-              icon: const Icon(
+              onPressed: () {
+                Navigator.pop(
+                  context,
+                  true,
+                );
+              },
+              icon:
+                  const Icon(
                 Icons.card_giftcard,
               ),
-              label: const Text('Send Gift'),
+              label:
+                  const Text('Send'),
             ),
           ],
         );
@@ -574,64 +944,90 @@ class _AgoraLiveRoomScreenState
     }
   }
 
+  // ============================================================
+  // SEND GIFT
+  // ============================================================
+
   Future<void> _sendGift(
-      Map<String, dynamic> gift) async {
-    final sender = _auth.currentUser;
+    Map<String, dynamic> gift,
+  ) async {
+    final sender =
+        _auth.currentUser;
 
-    if (sender == null) return;
+    if (sender == null) {
+      return;
+    }
 
-    if (widget.hostUid.isEmpty) {
+    if (widget.hostUid.isEmpty ||
+        widget.roomId.isEmpty) {
       _showMessage(
         'Host information unavailable.',
       );
       return;
     }
 
-    if (sender.uid == widget.hostUid) {
+    if (sender.uid ==
+        widget.hostUid) {
       _showMessage(
         'You cannot send a gift to yourself.',
       );
       return;
     }
 
-    final senderRef =
-        _firestore.collection('users').doc(sender.uid);
-
-    final hostRef =
-        _firestore.collection('users').doc(widget.hostUid);
-
-    final roomRef =
-        _firestore.collection('rooms').doc(widget.roomId);
-
     final coins =
         (gift['coins'] as num).toInt();
 
+    final senderRef =
+        _firestore
+            .collection('users')
+            .doc(sender.uid);
+
+    final hostRef =
+        _firestore
+            .collection('users')
+            .doc(widget.hostUid);
+
+    final roomRef =
+        _firestore
+            .collection('rooms')
+            .doc(widget.roomId);
+
     try {
-      await _firestore.runTransaction(
+      await _firestore
+          .runTransaction(
         (transaction) async {
           final senderSnap =
-              await transaction.get(senderRef);
+              await transaction.get(
+            senderRef,
+          );
 
           final hostSnap =
-              await transaction.get(hostRef);
+              await transaction.get(
+            hostRef,
+          );
 
           final senderData =
-              senderSnap.data() ?? {};
+              senderSnap.data() ??
+                  {};
 
           final hostData =
-              hostSnap.data() ?? {};
+              hostSnap.data() ??
+                  {};
 
           final senderCoins =
-              (senderData['coins'] as num?)
+              (senderData['coins']
+                          as num?)
                       ?.toInt() ??
                   0;
 
           final hostCoins =
-              (hostData['coins'] as num?)
+              (hostData['coins']
+                          as num?)
                       ?.toInt() ??
                   0;
 
-          if (senderCoins < coins) {
+          if (senderCoins <
+              coins) {
             throw Exception(
               'INSUFFICIENT_COINS',
             );
@@ -640,55 +1036,69 @@ class _AgoraLiveRoomScreenState
           transaction.update(
             senderRef,
             {
-              'coins': senderCoins - coins,
+              'coins':
+                  senderCoins -
+                      coins,
             },
           );
 
           transaction.update(
             hostRef,
             {
-              'coins': hostCoins + coins,
+              'coins':
+                  hostCoins +
+                      coins,
             },
           );
 
-          if (widget.roomId.isNotEmpty) {
-            final giftRef = roomRef
-                .collection('gifts')
-                .doc();
+          final giftRef =
+              roomRef
+                  .collection(
+                      'gifts')
+                  .doc();
 
-            transaction.set(
-              giftRef,
-              {
-                'senderId': sender.uid,
-                'hostUid': widget.hostUid,
-                'giftName': gift['name'],
-                'giftEmoji': gift['emoji'],
-                'coins': coins,
-                'createdAt':
-                    FieldValue.serverTimestamp(),
-              },
-            );
-          }
+          transaction.set(
+            giftRef,
+            {
+              'senderId':
+                  sender.uid,
+              'hostUid':
+                  widget.hostUid,
+              'giftName':
+                  gift['name'],
+              'giftEmoji':
+                  gift['emoji'],
+              'coins':
+                  coins,
+              'createdAt':
+                  FieldValue
+                      .serverTimestamp(),
+            },
+          );
         },
       );
 
-      if (widget.roomId.isNotEmpty) {
-        await roomRef
-            .collection('messages')
-            .add({
-          'senderId': sender.uid,
-          'senderName':
-              sender.displayName ?? 'Mchat User',
-          'text':
-              '${gift['emoji']} Sent ${gift['name']}',
-          'type': 'gift',
-          'giftName': gift['name'],
-          'giftEmoji': gift['emoji'],
-          'coins': coins,
-          'createdAt':
-              FieldValue.serverTimestamp(),
-        });
-      }
+      await roomRef
+          .collection('messages')
+          .add({
+        'senderId':
+            sender.uid,
+        'senderName':
+            sender.displayName ??
+                'Mchat User',
+        'text':
+            '${gift['emoji']} Sent ${gift['name']}',
+        'type': 'gift',
+        'giftName':
+            gift['name'],
+        'giftEmoji':
+            gift['emoji'],
+        'coins':
+            coins,
+        'createdAt':
+            FieldValue
+                .serverTimestamp(),
+      });
 
       _showMessage(
         '${gift['emoji']} Gift sent successfully!',
@@ -709,234 +1119,39 @@ class _AgoraLiveRoomScreenState
   }
 
   // ============================================================
-  // CHAT UI
-  // ============================================================
-
-  Widget _buildChat() {
-    if (widget.roomId.isEmpty) {
-      return const Positioned(
-        left: 20,
-        bottom: 95,
-        child: Text(
-          'Chat unavailable',
-          style: TextStyle(
-            color: Colors.white60,
-          ),
-        ),
-      );
-    }
-
-    return Positioned(
-      left: 16,
-      right: 16,
-      bottom: 82,
-      child: SizedBox(
-        height: 210,
-        child: StreamBuilder<
-            QuerySnapshot<Map<String, dynamic>>>(
-          stream: _firestore
-              .collection('rooms')
-              .doc(widget.roomId)
-              .collection('messages')
-              .orderBy(
-                'createdAt',
-                descending: true,
-              )
-              .limit(30)
-              .snapshots(),
-          builder: (_, snapshot) {
-            if (!snapshot.hasData) {
-              return const SizedBox.shrink();
-            }
-
-            final messages =
-                snapshot.data!.docs;
-
-            return ListView.builder(
-              controller: _chatScrollController,
-              reverse: true,
-              itemCount: messages.length,
-              itemBuilder: (_, index) {
-                final data =
-                    messages[index].data();
-
-                final name =
-                    (data['senderName'] ??
-                            'User')
-                        .toString();
-
-                final text =
-                    (data['text'] ?? '')
-                        .toString();
-
-                final type =
-                    (data['type'] ?? 'text')
-                        .toString();
-
-                return Padding(
-                  padding:
-                      const EdgeInsets.only(
-                    bottom: 6,
-                  ),
-                  child: Row(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                    children: [
-                      Flexible(
-                        child: Container(
-                          padding:
-                              const EdgeInsets
-                                  .symmetric(
-                            horizontal: 12,
-                            vertical: 7,
-                          ),
-                          decoration:
-                              BoxDecoration(
-                            color: Colors.black54,
-                            borderRadius:
-                                BorderRadius.circular(
-                              18,
-                            ),
-                          ),
-                          child: RichText(
-                            text: TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: '$name ',
-                                  style:
-                                      const TextStyle(
-                                    color: Colors.amber,
-                                    fontWeight:
-                                        FontWeight.bold,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: text,
-                                  style:
-                                      const TextStyle(
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                if (type == 'gift')
-                                  const TextSpan(
-                                    text: ' 🎁',
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // VIDEO
-  // ============================================================
-
-  Widget _buildVideo() {
-    final engine = _engine;
-
-    if (engine == null) {
-      return const Center(
-        child: CircularProgressIndicator(
-          color: Colors.white,
-        ),
-      );
-    }
-
-    if (widget.isHost) {
-      if (!_cameraEnabled) {
-        return const Center(
-          child: Icon(
-            Icons.videocam_off,
-            color: Colors.white70,
-            size: 75,
-          ),
-        );
-      }
-
-      return Positioned.fill(
-        child: AgoraVideoView(
-          controller: VideoViewController(
-            rtcEngine: engine,
-            canvas: const VideoCanvas(uid: 0),
-          ),
-        ),
-      );
-    }
-
-    if (_remoteUid == null) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.person,
-              color: Colors.white54,
-              size: 75,
-            ),
-            SizedBox(height: 12),
-            Text(
-              'Waiting for host...',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 17,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Positioned.fill(
-      child: AgoraVideoView(
-        controller: VideoViewController.remote(
-          rtcEngine: engine,
-          canvas: VideoCanvas(
-            uid: _remoteUid!,
-          ),
-          connection: const RtcConnection(
-            channelId: AgoraConfig.testChannel,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
   // TOP BAR
   // ============================================================
 
   Widget _buildTopBar() {
     return Positioned(
-      top: 45,
-      left: 16,
-      right: 16,
+      top: 38,
+      left: 12,
+      right: 8,
       child: Row(
         children: [
           CircleAvatar(
-            radius: 23,
-            backgroundColor: Colors.black54,
+            radius: 24,
+            backgroundColor:
+                Colors.pinkAccent,
             child: Text(
               widget.hostName.isNotEmpty
-                  ? widget.hostName[0].toUpperCase()
+                  ? widget.hostName[0]
+                      .toUpperCase()
                   : 'M',
-              style: const TextStyle(
+              style:
+                  const TextStyle(
                 color: Colors.white,
-                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                fontWeight:
+                    FontWeight.bold,
               ),
             ),
           ),
-          const SizedBox(width: 9),
+
+          const SizedBox(
+            width: 8,
+          ),
+
           Expanded(
             child: Column(
               crossAxisAlignment:
@@ -947,71 +1162,86 @@ class _AgoraLiveRoomScreenState
                   maxLines: 1,
                   overflow:
                       TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style:
+                      const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontWeight:
+                        FontWeight.bold,
                   ),
                 ),
-                Row(
+                const Text(
+                  'Mchat Live',
+                  style:
+                      TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          StreamBuilder<int>(
+            stream:
+                _viewerCountStream(),
+            builder:
+                (context, snapshot) {
+              final count =
+                  snapshot.data ??
+                      0;
+
+              return Container(
+                padding:
+                    const EdgeInsets
+                        .symmetric(
+                  horizontal: 11,
+                  vertical: 8,
+                ),
+                decoration:
+                    BoxDecoration(
+                  color:
+                      Colors.black54,
+                  borderRadius:
+                      BorderRadius.circular(
+                    20,
+                  ),
+                ),
+                child: Row(
                   children: [
                     const Icon(
-                      Icons.verified,
-                      color: Colors.pink,
-                      size: 14,
+                      Icons.visibility,
+                      color:
+                          Colors.white,
+                      size: 17,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(
+                      width: 5,
+                    ),
                     Text(
-                      widget.isHost
-                          ? 'HOST • LIVE'
-                          : 'LIVE',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
+                      '$count',
+                      style:
+                          const TextStyle(
+                        color:
+                            Colors.white,
+                        fontWeight:
+                            FontWeight.bold,
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.black54,
-              borderRadius:
-                  BorderRadius.circular(22),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.visibility,
-                  color: Colors.white,
-                  size: 18,
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  _remoteUid == null
-                      ? '0'
-                      : '1',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 7),
+
           IconButton(
-            onPressed: _leaveRoom,
-            icon: const Icon(
+            onPressed:
+                _leaveRoom,
+            icon:
+                const Icon(
               Icons.close,
-              color: Colors.white,
+              color:
+                  Colors.white,
               size: 30,
             ),
           ),
@@ -1026,33 +1256,43 @@ class _AgoraLiveRoomScreenState
 
   Widget _buildLiveBadge() {
     return Positioned(
-      top: 110,
-      left: 18,
+      top: 100,
+      left: 16,
       child: Container(
         padding:
             const EdgeInsets.symmetric(
-          horizontal: 15,
+          horizontal: 14,
           vertical: 8,
         ),
-        decoration: BoxDecoration(
+        decoration:
+            BoxDecoration(
           color: Colors.red,
           borderRadius:
-              BorderRadius.circular(22),
+              BorderRadius.circular(
+            22,
+          ),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize:
+              MainAxisSize.min,
           children: [
             const Icon(
               Icons.circle,
               color: Colors.white,
-              size: 9,
+              size: 8,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(
+              width: 6,
+            ),
             Text(
-              _joined ? 'LIVE' : 'CONNECTING',
-              style: const TextStyle(
+              _joined
+                  ? 'LIVE'
+                  : 'CONNECTING',
+              style:
+                  const TextStyle(
                 color: Colors.white,
-                fontWeight: FontWeight.bold,
+                fontWeight:
+                    FontWeight.bold,
               ),
             ),
           ],
@@ -1062,98 +1302,153 @@ class _AgoraLiveRoomScreenState
   }
 
   // ============================================================
-  // BOTTOM CONTROLS
+  // BOTTOM UI
   // ============================================================
 
   Widget _buildBottom() {
     return Positioned(
       left: 12,
       right: 12,
-      bottom: 15,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius:
-                        BorderRadius.circular(28),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(
-                    horizontal: 18,
-                  ),
-                  child: TextField(
-                    controller:
-                        _messageController,
-                    style: const TextStyle(
-                      color: Colors.white,
-                    ),
+      bottom: 12,
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 50,
                     decoration:
-                        const InputDecoration(
-                      border: InputBorder.none,
-                      hintText:
-                          'Say something...',
-                      hintStyle:
-                          TextStyle(
-                        color: Colors.white60,
+                        BoxDecoration(
+                      color:
+                          Colors.black54,
+                      borderRadius:
+                          BorderRadius.circular(
+                        28,
                       ),
                     ),
-                    onSubmitted: (_) =>
-                        _sendMessage(),
+                    padding:
+                        const EdgeInsets
+                            .symmetric(
+                      horizontal: 16,
+                    ),
+                    child:
+                        TextField(
+                      controller:
+                          _messageController,
+                      style:
+                          const TextStyle(
+                        color:
+                            Colors.white,
+                      ),
+                      decoration:
+                          const InputDecoration(
+                        border:
+                            InputBorder.none,
+                        hintText:
+                            'Say something...',
+                        hintStyle:
+                            TextStyle(
+                          color:
+                              Colors.white60,
+                        ),
+                      ),
+                      onSubmitted:
+                          (_) {
+                        _sendMessage();
+                      },
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              _roundButton(
-                Icons.send,
-                _sendMessage,
-              ),
-              const SizedBox(width: 8),
-              _roundButton(
-                Icons.card_giftcard,
-                _showGiftSheet,
-                color: Colors.pink,
-              ),
-            ],
-          ),
-          if (widget.isHost)
-            const SizedBox(height: 12),
-          if (widget.isHost)
-            Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.center,
-              children: [
-                _controlButton(
-                  _micEnabled
-                      ? Icons.mic
-                      : Icons.mic_off,
-                  _toggleMic,
+
+                const SizedBox(
+                  width: 7,
                 ),
-                const SizedBox(width: 15),
-                _controlButton(
-                  _cameraEnabled
-                      ? Icons.videocam
-                      : Icons.videocam_off,
-                  _toggleCamera,
+
+                _roundButton(
+                  Icons.send,
+                  _sendMessage,
                 ),
-                const SizedBox(width: 15),
-                _controlButton(
-                  Icons.flip_camera_ios,
-                  _flipCamera,
+
+                const SizedBox(
+                  width: 7,
                 ),
-                const SizedBox(width: 15),
-                _controlButton(
-                  Icons.call_end,
-                  _leaveRoom,
-                  danger: true,
+
+                _roundButton(
+                  Icons.favorite,
+                  () {
+                    setState(() {
+                      _localLikes++;
+                    });
+                  },
+                ),
+
+                const SizedBox(
+                  width: 7,
+                ),
+
+                _roundButton(
+                  Icons.card_giftcard,
+                  _showGiftSheet,
+                  color:
+                      Colors.pink,
                 ),
               ],
             ),
-        ],
+
+            if (widget.isHost)
+              const SizedBox(
+                height: 12,
+              ),
+
+            if (widget.isHost)
+              Row(
+                mainAxisAlignment:
+                    MainAxisAlignment
+                        .center,
+                children: [
+                  _controlButton(
+                    _micEnabled
+                        ? Icons.mic
+                        : Icons.mic_off,
+                    _toggleMic,
+                  ),
+
+                  const SizedBox(
+                    width: 15,
+                  ),
+
+                  _controlButton(
+                    _cameraEnabled
+                        ? Icons.videocam
+                        : Icons.videocam_off,
+                    _toggleCamera,
+                  ),
+
+                  const SizedBox(
+                    width: 15,
+                  ),
+
+                  _controlButton(
+                    Icons
+                        .flip_camera_ios,
+                    _flipCamera,
+                  ),
+
+                  const SizedBox(
+                    width: 15,
+                  ),
+
+                  _controlButton(
+                    Icons.call_end,
+                    _leaveRoom,
+                    danger: true,
+                  ),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -1161,16 +1456,19 @@ class _AgoraLiveRoomScreenState
   Widget _roundButton(
     IconData icon,
     VoidCallback onPressed, {
-    Color color = Colors.black54,
+    Color color =
+        Colors.black54,
   }) {
     return CircleAvatar(
       radius: 25,
       backgroundColor: color,
       child: IconButton(
-        onPressed: onPressed,
+        onPressed:
+            onPressed,
         icon: Icon(
           icon,
-          color: Colors.white,
+          color:
+              Colors.white,
         ),
       ),
     );
@@ -1184,12 +1482,16 @@ class _AgoraLiveRoomScreenState
     return CircleAvatar(
       radius: 28,
       backgroundColor:
-          danger ? Colors.red : Colors.white12,
+          danger
+              ? Colors.red
+              : Colors.black54,
       child: IconButton(
-        onPressed: onPressed,
+        onPressed:
+            onPressed,
         icon: Icon(
           icon,
-          color: Colors.white,
+          color:
+              Colors.white,
           size: 27,
         ),
       ),
@@ -1218,16 +1520,20 @@ class _AgoraLiveRoomScreenState
             .update({
           'status': 'ended',
           'updatedAt':
-              FieldValue.serverTimestamp(),
+              FieldValue
+                  .serverTimestamp(),
         });
       }
 
-      final engine = _engine;
+      final engine =
+          _engine;
 
       if (engine != null) {
         await engine.leaveChannel();
         await engine.release();
       }
+
+      _engine = null;
     } catch (_) {}
 
     if (!mounted) return;
@@ -1235,13 +1541,20 @@ class _AgoraLiveRoomScreenState
     Navigator.pop(context);
   }
 
-  void _showMessage(String message) {
+  // ============================================================
+  // MESSAGE
+  // ============================================================
+
+  void _showMessage(
+    String message,
+  ) {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context)
         .showSnackBar(
       SnackBar(
-        content: Text(message),
+        content:
+            Text(message),
       ),
     );
   }
@@ -1251,72 +1564,85 @@ class _AgoraLiveRoomScreenState
   // ============================================================
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+      BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor:
+          Colors.black,
+      resizeToAvoidBottomInset:
+          true,
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          Positioned.fill(
-            child: Container(
-              color: Colors.black,
-              child: _buildVideo(),
-            ),
-          ),
+          // FULL SCREEN VIDEO
+          _buildVideo(),
 
-          // Dark gradient at top.
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 190,
-            child: IgnorePointer(
-              child: Container(
-                decoration:
-                    const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black87,
-                      Colors.transparent,
-                    ],
-                  ),
+          // TOP GRADIENT
+          IgnorePointer(
+            child: Container(
+              decoration:
+                  const BoxDecoration(
+                gradient:
+                    LinearGradient(
+                  begin:
+                      Alignment.topCenter,
+                  end:
+                      Alignment.center,
+                  colors: [
+                    Colors.black87,
+                    Colors.transparent,
+                  ],
                 ),
               ),
             ),
           ),
 
           _buildTopBar(),
+
           _buildLiveBadge(),
+
           _buildChat(),
+
           _buildBottom(),
 
+          // ERROR
           if (_error != null)
             Positioned(
-              left: 20,
-              right: 20,
-              top: 180,
+              top: 160,
+              left: 18,
+              right: 18,
               child: Container(
                 padding:
-                    const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(.85),
+                    const EdgeInsets.all(
+                  14,
+                ),
+                decoration:
+                    BoxDecoration(
+                  color: Colors.red
+                      .withOpacity(.88),
                   borderRadius:
-                      BorderRadius.circular(14),
+                      BorderRadius.circular(
+                    15,
+                  ),
                 ),
                 child: Text(
                   _error!,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style:
+                      const TextStyle(
+                    color:
+                        Colors.white,
                   ),
                 ),
               ),
             ),
 
+          // LOADING
           if (_loading)
             const Center(
-              child: CircularProgressIndicator(
-                color: Colors.white,
+              child:
+                  CircularProgressIndicator(
+                color:
+                    Colors.white,
               ),
             ),
         ],
@@ -1324,22 +1650,22 @@ class _AgoraLiveRoomScreenState
     );
   }
 
+  // ============================================================
+  // DISPOSE
+  // ============================================================
+
   @override
   void dispose() {
     _messageController.dispose();
-    _chatScrollController.dispose();
-    _disposeAgora();
+
+    final engine =
+        _engine;
+
+    if (engine != null) {
+      engine.leaveChannel();
+      engine.release();
+    }
+
     super.dispose();
-  }
-
-  Future<void> _disposeAgora() async {
-    try {
-      final engine = _engine;
-
-      if (engine != null) {
-        await engine.leaveChannel();
-        await engine.release();
-      }
-    } catch (_) {}
   }
 }
