@@ -11,44 +11,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # --------------------------------------------------
-      # 1. Checkout
-      # --------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # --------------------------------------------------
-      # 2. Setup Flutter
-      # --------------------------------------------------
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
-      # --------------------------------------------------
-      # 3. Flutter Pub Get
-      # --------------------------------------------------
       - name: Flutter Pub Get
         run: |
           flutter --version
           flutter pub get
 
-      # --------------------------------------------------
-      # 4. Force Android compileSdk 37
-      # --------------------------------------------------
       - name: Fix Android compileSdk
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
           p = Path("android/app/build.gradle.kts")
 
           if p.exists():
               s = p.read_text()
-
-              import re
 
               s = re.sub(
                   r'compileSdk\s*=\s*\d+',
@@ -57,97 +44,23 @@ jobs:
               )
 
               p.write_text(s)
-
-              print("app compileSdk fixed to 37")
+              print("OK: app compileSdk = 37")
           else:
-              print("android/app/build.gradle.kts not found")
+              raise SystemExit(
+                  "ERROR: android/app/build.gradle.kts not found"
+              )
           PY
 
-      # --------------------------------------------------
-      # 5. Fix Agora compileSdk
-      # --------------------------------------------------
       - name: Fix Agora compileSdk
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          candidates = list(
-              Path("$HOME/.pub-cache/hosted/pub.dev").glob(
-                  "agora_rtc_engine-*/android/build.gradle"
-              )
-          )
-
-          if not candidates:
-              print("Agora build.gradle not found")
-          else:
-              for p in candidates:
-                  s = p.read_text()
-
-                  s = s.replace(
-                      "safeExtGet('compileSdkVersion', 31)",
-                      "safeExtGet('compileSdkVersion', 37)"
-                  )
-
-                  s = s.replace(
-                      'safeExtGet("compileSdkVersion", 31)',
-                      'safeExtGet("compileSdkVersion", 37)'
-                  )
-
-                  p.write_text(s)
-
-                  print(f"Fixed: {p}")
-          PY
-
-      # --------------------------------------------------
-      # 6. Fix iris_method_channel compileSdk
-      # --------------------------------------------------
-      - name: Fix iris_method_channel compileSdk
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
+          home = Path.home()
 
           candidates = list(
-              Path("$HOME/.pub-cache/hosted/pub.dev").glob(
-                  "iris_method_channel-*/android/build.gradle"
-              )
-          )
-
-          if not candidates:
-              print("iris_method_channel build.gradle not found")
-          else:
-              for p in candidates:
-                  s = p.read_text()
-
-                  s = s.replace(
-                      "safeExtGet('compileSdkVersion', 31)",
-                      "safeExtGet('compileSdkVersion', 37)"
-                  )
-
-                  s = s.replace(
-                      'safeExtGet("compileSdkVersion", 31)',
-                      'safeExtGet("compileSdkVersion", 37)'
-                  )
-
-                  p.write_text(s)
-
-                  print(f"Fixed: {p}")
-          PY
-
-      # --------------------------------------------------
-      # 7. IMPORTANT:
-      # Restore Agora special-full
-      # --------------------------------------------------
-      - name: Restore Agora special-full dependency
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-
-          candidates = list(
-              Path("$HOME/.pub-cache/hosted/pub.dev").glob(
+              (home / ".pub-cache/hosted/pub.dev").glob(
                   "agora_rtc_engine-*/android/build.gradle"
               )
           )
@@ -160,70 +73,95 @@ jobs:
           for p in candidates:
               s = p.read_text()
 
-              if "agora-special-full" not in s:
-                  print(
-                      "WARNING: agora-special-full dependency "
-                      "was not found in source file."
-                  )
-              else:
-                  print(
-                      "OK: agora-special-full dependency exists."
-                  )
+              s = s.replace(
+                  "safeExtGet('compileSdkVersion', 31)",
+                  "safeExtGet('compileSdkVersion', 37)"
+              )
 
+              s = s.replace(
+                  'safeExtGet("compileSdkVersion", 31)',
+                  'safeExtGet("compileSdkVersion", 37)'
+              )
+
+              p.write_text(s)
+
+              print(f"OK: Agora compileSdk fixed: {p}")
           PY
 
-      # --------------------------------------------------
-      # 8. Verify dependency configuration
-      # --------------------------------------------------
-      - name: Verify Agora configuration
+      - name: Fix iris_method_channel compileSdk
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          home = Path.home()
+
+          candidates = list(
+              (home / ".pub-cache/hosted/pub.dev").glob(
+                  "iris_method_channel-*/android/build.gradle"
+              )
+          )
+
+          if not candidates:
+              print(
+                  "WARNING: iris_method_channel build.gradle not found"
+              )
+          else:
+              for p in candidates:
+                  s = p.read_text()
+
+                  s = s.replace(
+                      "safeExtGet('compileSdkVersion', 31)",
+                      "safeExtGet('compileSdkVersion', 37)"
+                  )
+
+                  s = s.replace(
+                      'safeExtGet("compileSdkVersion", 31)',
+                      'safeExtGet("compileSdkVersion", 37)'
+                  )
+
+                  p.write_text(s)
+
+                  print(
+                      f"OK: iris_method_channel compileSdk fixed: {p}"
+                  )
+          PY
+
+      - name: Verify Agora dependencies
         shell: bash
         run: |
           echo "======================================"
-          echo "Mchat Android configuration"
+          echo "AGORA CONFIGURATION"
           echo "======================================"
 
-          grep -n "compileSdk" android/app/build.gradle.kts || true
+          HOME_DIR="$HOME"
 
-          echo ""
-          echo "======================================"
-          echo "Agora configuration"
-          echo "======================================"
-
-          find "$HOME/.pub-cache/hosted/pub.dev" \
+          find "$HOME_DIR/.pub-cache/hosted/pub.dev" \
             -path "*/agora_rtc_engine-*/android/build.gradle" \
             -print \
             -exec grep -n \
-              -E "compileSdk|iris-rtc|agora-special-full|full-screen-sharing" \
-              {} \; || true
+            -E "compileSdk|iris-rtc|agora-special-full|full-screen-sharing" \
+            {} \;
 
           echo ""
           echo "======================================"
-          echo "iris_method_channel"
+          echo "IRIS METHOD CHANNEL"
           echo "======================================"
 
-          find "$HOME/.pub-cache/hosted/pub.dev" \
+          find "$HOME_DIR/.pub-cache/hosted/pub.dev" \
             -path "*/iris_method_channel-*/android/build.gradle" \
             -print \
-            -exec grep -n "compileSdk" {} \; || true
+            -exec grep -n "compileSdk" {} \;
 
-      # --------------------------------------------------
-      # 9. Clean
-      # --------------------------------------------------
       - name: Flutter Clean
         run: |
           flutter clean
           flutter pub get
 
-      # --------------------------------------------------
-      # 10. Build APK
-      # --------------------------------------------------
       - name: Build Release APK
         run: |
           flutter build apk --release
 
-      # --------------------------------------------------
-      # 11. Verify APK
-      # --------------------------------------------------
       - name: Verify APK
         shell: bash
         run: |
@@ -239,9 +177,6 @@ jobs:
             exit 1
           fi
 
-      # --------------------------------------------------
-      # 12. Upload APK
-      # --------------------------------------------------
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
