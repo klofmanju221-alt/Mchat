@@ -20,7 +20,7 @@ dependencies:
   in_app_purchase: ^3.3.0
 
   # Real-time Live Video / Audio
-  agora_rtc_engine: ^6.6.3
+  agora_rtc_engine: 6.5.4
 
   # Camera / Microphone runtime permissions
   permission_handler: ^13.0.1
