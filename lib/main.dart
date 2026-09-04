@@ -119,6 +119,7 @@ class HomeContent extends StatelessWidget {
     ['Private Chat', Icons.lock_outline],
     ['Family Room', Icons.groups_rounded],
     ['Room Mode & Games', Icons.sports_esports_outlined],
+    ['Room PK', Icons.flash_on_rounded],
     ['Voice', Icons.mic_none],
     ['Live Room', Icons.live_tv_outlined],
     ['VIP', Icons.emoji_events_outlined],
@@ -134,6 +135,7 @@ class HomeContent extends StatelessWidget {
       'Private Chat': const PrivateChatScreen(),
       'Family Room': const FamilyRoomScreen(),
       'Room Mode & Games': const RoomModeGamesScreen(),
+      'Room PK': const RoomPkScreen(),
       'Voice': const FeatureScreen(
         title: 'Voice',
         icon: Icons.mic,
@@ -1448,6 +1450,26 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
           ListTile(
+            leading: const Icon(
+              Icons.flash_on_rounded,
+            ),
+            title: const Text('Room PK'),
+            subtitle: const Text(
+              'PK battle between room hosts',
+            ),
+            trailing:
+                const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const RoomPkScreen(),
+                ),
+              );
+            },
+          ),
+          ListTile(
             leading:
                 const Icon(Icons.info_outline),
             title: const Text('About Mchat'),
@@ -1693,6 +1715,20 @@ class ProfileScreen extends StatelessWidget {
             },
           ),
           _ProfileMenuTile(
+            icon: Icons.flash_on_rounded,
+            title: 'Room PK',
+            subtitle: 'PK battle',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const RoomPkScreen(),
+                ),
+              );
+            },
+          ),
+          _ProfileMenuTile(
             icon: Icons.settings_outlined,
             title: 'Settings',
             subtitle:
@@ -1831,11 +1867,9 @@ class OwnerDashboardScreen extends StatelessWidget {
     const items = [
       ['Users', Icons.people],
       ['Live Rooms', Icons.live_tv],
+      ['Room PK', Icons.flash_on],
       ['Transactions', Icons.receipt_long],
-      [
-        'Recharges',
-        Icons.account_balance_wallet
-      ],
+      ['Recharges', Icons.account_balance_wallet],
       ['Withdraw Requests', Icons.payments],
       ['VIP Management', Icons.emoji_events],
       ['Gifts', Icons.card_giftcard],
@@ -2097,9 +2131,7 @@ class _FamilyRoomScreenState
         seats.indexWhere((s) => s.name == 'You');
 
     if (mySeat != -1) {
-      setState(() {
-        seats[mySeat].micOn = micOn;
-      });
+      seats[mySeat].micOn = micOn;
     }
   }
 
@@ -2400,7 +2432,18 @@ class _FamilyRoomScreenState
             icon: const Icon(
               Icons.sports_esports_outlined,
             ),
-            tooltip: 'Room Mode & Games',
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const RoomPkScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.flash_on),
           ),
           IconButton(
             onPressed: showRules,
@@ -2756,7 +2799,6 @@ class FamilyRule extends StatelessWidget {
 }
 
 /* =========================================================
-   BUILD #123
    ROOM MODE + GAMES
    ========================================================= */
 
@@ -2841,6 +2883,20 @@ class _RoomModeGamesScreenState
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const RoomPkScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.flash_on),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -3203,6 +3259,543 @@ class _GameDetailScreenState
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   BUILD #124
+   ROOM PK
+   ========================================================= */
+
+class RoomPkScreen extends StatelessWidget {
+  const RoomPkScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Room PK',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF8E35FF),
+                  Color(0xFF4F46E5),
+                ],
+              ),
+              borderRadius:
+                  BorderRadius.all(
+                Radius.circular(26),
+              ),
+            ),
+            child: const Column(
+              children: [
+                Icon(
+                  Icons.flash_on_rounded,
+                  color: Colors.white,
+                  size: 65,
+                ),
+                SizedBox(height: 12),
+                Text(
+                  'ROOM PK BATTLE',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Challenge another room and compete together.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 22),
+          const Text(
+            'Choose PK Mode',
+            style: TextStyle(
+              fontSize: 23,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _PkModeTile(
+            icon: Icons.person,
+            title: '1 vs 1 PK',
+            subtitle:
+                'Two hosts compete in a direct PK battle.',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const PkBattleScreen(
+                    mode: '1 vs 1 PK',
+                  ),
+                ),
+              );
+            },
+          ),
+          _PkModeTile(
+            icon: Icons.groups,
+            title: 'Team PK',
+            subtitle:
+                'Family members support their room host.',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const PkBattleScreen(
+                    mode: 'Team PK',
+                  ),
+                ),
+              );
+            },
+          ),
+          _PkModeTile(
+            icon: Icons.flash_on,
+            title: 'Quick PK',
+            subtitle:
+                'Start a short competitive room battle.',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const PkBattleScreen(
+                    mode: 'Quick PK',
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 20),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.security),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'PK UI is ready. Real-time room matching, '
+                      'live scores, gifts, timers and server-side '
+                      'validation will be connected in the backend phase.',
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PkModeTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _PkModeTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin:
+          const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        contentPadding:
+            const EdgeInsets.all(14),
+        leading: CircleAvatar(
+          radius: 27,
+          child: Icon(icon, size: 28),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Padding(
+          padding:
+              const EdgeInsets.only(top: 5),
+          child: Text(subtitle),
+        ),
+        trailing:
+            const Icon(Icons.chevron_right),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   PK BATTLE
+   ========================================================= */
+
+class PkBattleScreen extends StatefulWidget {
+  final String mode;
+
+  const PkBattleScreen({
+    super.key,
+    required this.mode,
+  });
+
+  @override
+  State<PkBattleScreen> createState() =>
+      _PkBattleScreenState();
+}
+
+class _PkBattleScreenState
+    extends State<PkBattleScreen> {
+  int leftScore = 0;
+  int rightScore = 0;
+  int seconds = 60;
+  bool started = false;
+
+  void startPk() {
+    setState(() {
+      started = true;
+      seconds = 60;
+      leftScore = 0;
+      rightScore = 0;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'PK Battle started.',
+        ),
+      ),
+    );
+  }
+
+  void sendGiftToLeft() {
+    if (!started) return;
+
+    setState(() {
+      leftScore += 100;
+    });
+  }
+
+  void sendGiftToRight() {
+    if (!started) return;
+
+    setState(() {
+      rightScore += 100;
+    });
+  }
+
+  void endPk() {
+    setState(() {
+      started = false;
+    });
+
+    final winner = leftScore == rightScore
+        ? 'Draw'
+        : leftScore > rightScore
+            ? 'Room A Wins'
+            : 'Room B Wins';
+
+    showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: const Text(
+            'PK Result',
+          ),
+          content: Text(
+            '$winner\n\n'
+            'Room A: $leftScore points\n'
+            'Room B: $rightScore points',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          widget.mode,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          if (started)
+            IconButton(
+              onPressed: endPk,
+              icon: const Icon(
+                Icons.stop_circle_outlined,
+              ),
+            ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Theme.of(context)
+                  .colorScheme
+                  .surfaceContainerHighest,
+              borderRadius:
+                  BorderRadius.circular(22),
+            ),
+            child: Column(
+              children: [
+                const Text(
+                  'PK BATTLE',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  started
+                      ? 'Battle in progress'
+                      : 'Ready to start',
+                  style: const TextStyle(
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _PkScoreCard(
+                        roomName: 'ROOM A',
+                        score: leftScore,
+                        icon: Icons.groups,
+                      ),
+                    ),
+                    const Padding(
+                      padding:
+                          EdgeInsets.symmetric(
+                        horizontal: 10,
+                      ),
+                      child: Text(
+                        'VS',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight:
+                              FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: _PkScoreCard(
+                        roomName: 'ROOM B',
+                        score: rightScore,
+                        icon: Icons.groups,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                LinearProgressIndicator(
+                  value: (leftScore +
+                              rightScore) ==
+                          0
+                      ? 0
+                      : leftScore /
+                          (leftScore +
+                              rightScore),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  started
+                      ? 'Time: $seconds sec'
+                      : 'Time: 60 sec',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 22),
+          const Text(
+            'PK Actions',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed:
+                      started
+                          ? sendGiftToLeft
+                          : null,
+                  icon: const Icon(
+                    Icons.card_giftcard,
+                  ),
+                  label: const Text(
+                    'Gift Room A',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed:
+                      started
+                          ? sendGiftToRight
+                          : null,
+                  icon: const Icon(
+                    Icons.card_giftcard,
+                  ),
+                  label: const Text(
+                    'Gift Room B',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed:
+                  started ? endPk : startPk,
+              icon: Icon(
+                started
+                    ? Icons.stop
+                    : Icons.play_arrow,
+              ),
+              label: Text(
+                started
+                    ? 'End PK Battle'
+                    : 'Start PK Battle',
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(18),
+              child: Row(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'This is the PK UI foundation. '
+                      'Live multiplayer synchronization, '
+                      'real gifts, coin deduction, timers '
+                      'and anti-cheat validation require backend integration.',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PkScoreCard extends StatelessWidget {
+  final String roomName;
+  final int score;
+  final IconData icon;
+
+  const _PkScoreCard({
+    required this.roomName,
+    required this.score,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding:
+            const EdgeInsets.symmetric(
+          vertical: 18,
+          horizontal: 8,
+        ),
+        child: Column(
+          children: [
+            CircleAvatar(
+              radius: 28,
+              child: Icon(icon),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              roomName,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$score',
+              style: const TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const Text(
+              'Points',
+              style: TextStyle(
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
