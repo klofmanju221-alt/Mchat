@@ -117,6 +117,7 @@ class HomeContent extends StatelessWidget {
   static const services = [
     ['Free Inbox', Icons.chat_bubble_outline],
     ['Private Chat', Icons.lock_outline],
+    ['Family Room', Icons.groups_rounded],
     ['Voice', Icons.mic_none],
     ['Live Room', Icons.live_tv_outlined],
     ['VIP', Icons.emoji_events_outlined],
@@ -130,6 +131,7 @@ class HomeContent extends StatelessWidget {
     final Map<String, Widget> pages = {
       'Free Inbox': const InboxScreen(),
       'Private Chat': const PrivateChatScreen(),
+      'Family Room': const FamilyRoomScreen(),
       'Voice': const FeatureScreen(
         title: 'Voice',
         icon: Icons.mic,
@@ -193,9 +195,7 @@ class HomeContent extends StatelessWidget {
               ],
             ),
           ),
-
           const SizedBox(height: 28),
-
           const Text(
             'Mchat Services',
             style: TextStyle(
@@ -203,9 +203,7 @@ class HomeContent extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 18),
-
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -249,9 +247,7 @@ class HomeContent extends StatelessWidget {
               );
             },
           ),
-
           const SizedBox(height: 22),
-
           Card(
             child: ListTile(
               leading: const CircleAvatar(
@@ -608,8 +604,6 @@ class _PrivateChatScreenState
       ),
       body: Column(
         children: [
-          /* SECURITY BANNER */
-
           Container(
             width: double.infinity,
             margin: const EdgeInsets.fromLTRB(
@@ -638,9 +632,6 @@ class _PrivateChatScreenState
               ],
             ),
           ),
-
-          /* CHAT */
-
           Expanded(
             child: blocked
                 ? const Center(
@@ -724,9 +715,6 @@ class _PrivateChatScreenState
                         },
                       ),
           ),
-
-          /* INPUT */
-
           if (!blocked)
             SafeArea(
               child: Padding(
@@ -734,9 +722,7 @@ class _PrivateChatScreenState
                 child: Row(
                   children: [
                     IconButton(
-                      onPressed: () {
-                        showRules();
-                      },
+                      onPressed: showRules,
                       icon: const Icon(
                         Icons.shield_outlined,
                       ),
@@ -846,9 +832,7 @@ class _PrivateChatRulesScreenState
               ],
             ),
           ),
-
           const SizedBox(height: 24),
-
           const Text(
             'Privacy Controls',
             style: TextStyle(
@@ -856,9 +840,7 @@ class _PrivateChatRulesScreenState
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 8),
-
           Card(
             child: SwitchListTile(
               value: allowMessages,
@@ -878,7 +860,6 @@ class _PrivateChatRulesScreenState
               ),
             ),
           ),
-
           Card(
             child: SwitchListTile(
               value: allowRequests,
@@ -898,7 +879,6 @@ class _PrivateChatRulesScreenState
               ),
             ),
           ),
-
           Card(
             child: SwitchListTile(
               value: readReceipts,
@@ -918,7 +898,6 @@ class _PrivateChatRulesScreenState
               ),
             ),
           ),
-
           Card(
             child: SwitchListTile(
               value: onlineStatus,
@@ -938,9 +917,7 @@ class _PrivateChatRulesScreenState
               ),
             ),
           ),
-
           const SizedBox(height: 22),
-
           const Text(
             'Chat Safety Rules',
             style: TextStyle(
@@ -948,46 +925,38 @@ class _PrivateChatRulesScreenState
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 10),
-
           const _RuleTile(
             icon: Icons.privacy_tip_outlined,
             title: 'Respect Privacy',
             text:
                 'Do not share another person’s private information without permission.',
           ),
-
           const _RuleTile(
             icon: Icons.no_adult_content,
             title: 'No Harassment',
             text:
                 'Do not threaten, bully, harass or repeatedly disturb other users.',
           ),
-
           const _RuleTile(
             icon: Icons.link_off,
             title: 'Avoid Suspicious Links',
             text:
                 'Do not send harmful, suspicious or misleading links.',
           ),
-
           const _RuleTile(
             icon: Icons.password_outlined,
             title: 'Never Share Passwords',
             text:
                 'Mchat support will never ask for your password or verification code.',
           ),
-
           const _RuleTile(
             icon: Icons.report_outlined,
             title: 'Report Problems',
             text:
                 'Use Report User when you see abuse, scams or rule violations.',
           ),
-
           const SizedBox(height: 20),
-
           Card(
             child: Padding(
               padding: const EdgeInsets.all(18),
@@ -995,9 +964,7 @@ class _PrivateChatRulesScreenState
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.info_outline,
-                  ),
+                  const Icon(Icons.info_outline),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -1354,9 +1321,7 @@ class ReferEarnScreen extends StatelessWidget {
               ],
             ),
           ),
-
           const SizedBox(height: 22),
-
           Card(
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -1421,9 +1386,7 @@ class ReferEarnScreen extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(height: 22),
-
           const Text(
             'How it works?',
             style: TextStyle(
@@ -1431,9 +1394,7 @@ class ReferEarnScreen extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 12),
-
           const _StepTile(
             number: '1',
             text: 'Share your code',
@@ -1534,6 +1495,29 @@ class SettingsScreen extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (_) =>
                       const PrivateChatRulesScreen(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(
+              Icons.groups_rounded,
+            ),
+            title: const Text(
+              'Family Room',
+            ),
+            subtitle: const Text(
+              '30 seats • Voice • Chat • Gifts',
+            ),
+            trailing: const Icon(
+              Icons.chevron_right,
+            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const FamilyRoomScreen(),
                 ),
               );
             },
@@ -1681,9 +1665,7 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
           ),
-
           const SizedBox(height: 20),
-
           Card(
             child: Padding(
               padding: const EdgeInsets.symmetric(
@@ -1714,9 +1696,7 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(height: 20),
-
           const Text(
             'My Account',
             style: TextStyle(
@@ -1724,9 +1704,7 @@ class ProfileScreen extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 10),
-
           _ProfileMenuTile(
             icon: Icons.account_balance_wallet_outlined,
             title: 'My Wallet',
@@ -1740,7 +1718,6 @@ class ProfileScreen extends StatelessWidget {
               );
             },
           ),
-
           _ProfileMenuTile(
             icon: Icons.emoji_events_outlined,
             title: 'My Level',
@@ -1754,7 +1731,6 @@ class ProfileScreen extends StatelessWidget {
               );
             },
           ),
-
           _ProfileMenuTile(
             icon: Icons.grid_view_outlined,
             title: 'My Posts',
@@ -1766,7 +1742,6 @@ class ProfileScreen extends StatelessWidget {
               );
             },
           ),
-
           _ProfileMenuTile(
             icon: Icons.meeting_room_outlined,
             title: 'My Rooms',
@@ -1778,7 +1753,6 @@ class ProfileScreen extends StatelessWidget {
               );
             },
           ),
-
           _ProfileMenuTile(
             icon: Icons.history,
             title: 'History',
@@ -1790,7 +1764,6 @@ class ProfileScreen extends StatelessWidget {
               );
             },
           ),
-
           _ProfileMenuTile(
             icon: Icons.lock_outline,
             title: 'Private Chat Security',
@@ -1805,7 +1778,20 @@ class ProfileScreen extends StatelessWidget {
               );
             },
           ),
-
+          _ProfileMenuTile(
+            icon: Icons.groups_rounded,
+            title: 'Family Room',
+            subtitle: '30 seats • Voice • Chat • Gifts',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const FamilyRoomScreen(),
+                ),
+              );
+            },
+          ),
           _ProfileMenuTile(
             icon: Icons.settings_outlined,
             title: 'Settings',
@@ -1819,9 +1805,7 @@ class ProfileScreen extends StatelessWidget {
               );
             },
           ),
-
           const SizedBox(height: 20),
-
           const Text(
             'Owner',
             style: TextStyle(
@@ -1829,9 +1813,7 @@ class ProfileScreen extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 10),
-
           Card(
             child: ListTile(
               leading: const CircleAvatar(
@@ -2012,9 +1994,7 @@ class OwnerDashboardScreen extends StatelessWidget {
               ],
             ),
           ),
-
           const SizedBox(height: 18),
-
           const Row(
             children: [
               Expanded(
@@ -2034,9 +2014,7 @@ class OwnerDashboardScreen extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 10),
-
           const Row(
             children: [
               Expanded(
@@ -2056,9 +2034,7 @@ class OwnerDashboardScreen extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 18),
-
           const Text(
             'Management',
             style: TextStyle(
@@ -2066,7 +2042,6 @@ class OwnerDashboardScreen extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           ...items.map(
             (item) => Card(
               child: ListTile(
@@ -2132,6 +2107,820 @@ class StatCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   FAMILY ROOM - 30 SEATS
+   ========================================================= */
+
+class FamilyRoomScreen extends StatefulWidget {
+  const FamilyRoomScreen({super.key});
+
+  @override
+  State<FamilyRoomScreen> createState() =>
+      _FamilyRoomScreenState();
+}
+
+class _FamilyRoomScreenState
+    extends State<FamilyRoomScreen> {
+  late final List<FamilySeat> seats = List.generate(
+    30,
+    (index) => FamilySeat(
+      number: index + 1,
+      name: index == 0 ? 'Host' : '',
+      occupied: index == 0,
+      isHost: index == 0,
+      micOn: index == 0,
+    ),
+  );
+
+  bool joined = false;
+  bool micOn = true;
+  bool roomLocked = false;
+
+  int get occupiedCount =>
+      seats.where((seat) => seat.occupied).length;
+
+  void joinRoom() {
+    if (roomLocked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'This family room is locked.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final emptySeat = seats.indexWhere(
+      (seat) => !seat.occupied,
+    );
+
+    if (emptySeat == -1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'All 30 seats are occupied.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      seats[emptySeat].occupied = true;
+      seats[emptySeat].name = 'You';
+      seats[emptySeat].micOn = micOn;
+      joined = true;
+    });
+  }
+
+  void leaveRoom() {
+    final mySeat = seats.indexWhere(
+      (seat) => seat.name == 'You',
+    );
+
+    if (mySeat != -1) {
+      setState(() {
+        seats[mySeat].occupied = false;
+        seats[mySeat].name = '';
+        seats[mySeat].micOn = false;
+        joined = false;
+      });
+    }
+  }
+
+  void toggleMic() {
+    setState(() {
+      micOn = !micOn;
+    });
+
+    final mySeat = seats.indexWhere(
+      (seat) => seat.name == 'You',
+    );
+
+    if (mySeat != -1) {
+      setState(() {
+        seats[mySeat].micOn = micOn;
+      });
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          micOn ? 'Microphone ON' : 'Microphone OFF',
+        ),
+      ),
+    );
+  }
+
+  void showRoomChat() {
+    final controller = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final messages = [
+          'Welcome to the Family Room 👋',
+          'Please respect all members.',
+          'Have fun and enjoy Mchat!',
+        ];
+
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            bottom:
+                MediaQuery.of(sheetContext).viewInsets.bottom +
+                    16,
+          ),
+          child: SizedBox(
+            height: 420,
+            child: Column(
+              children: [
+                const Text(
+                  'Room Chat',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: messages.length,
+                    itemBuilder: (_, index) {
+                      return ListTile(
+                        leading: const CircleAvatar(
+                          child: Icon(Icons.person),
+                        ),
+                        title: Text(messages[index]),
+                      );
+                    },
+                  ),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: controller,
+                        decoration: const InputDecoration(
+                          hintText: 'Type in room...',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      onPressed: () {
+                        if (controller.text.trim().isEmpty) {
+                          return;
+                        }
+
+                        Navigator.pop(sheetContext);
+
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Room message sent.',
+                            ),
+                          ),
+                        );
+
+                        controller.dispose();
+                      },
+                      icon: const Icon(Icons.send),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ).whenComplete(() {
+      controller.dispose();
+    });
+  }
+
+  void showGifts() {
+    const gifts = [
+      '🌹 Rose',
+      '❤️ Heart',
+      '🎁 Gift',
+      '☕ Coffee',
+      '🧸 Teddy',
+      '💎 Diamond',
+      '🦁 Lion',
+      '🏰 Castle',
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Room Gifts',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              GridView.builder(
+                shrinkWrap: true,
+                itemCount: gifts.length,
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 1,
+                ),
+                itemBuilder: (_, index) {
+                  return Card(
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '${gifts[index]} sent to the room.',
+                            ),
+                          ),
+                        );
+                      },
+                      child: Center(
+                        child: Text(
+                          gifts[index],
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void showRules() {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (_) {
+        return const Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            10,
+            20,
+            30,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Family Room Rules',
+                style: TextStyle(
+                  fontSize: 23,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 16),
+              FamilyRule(
+                icon: Icons.favorite_outline,
+                text: 'Respect every family member.',
+              ),
+              FamilyRule(
+                icon: Icons.block,
+                text: 'No harassment, abuse or spam.',
+              ),
+              FamilyRule(
+                icon: Icons.security,
+                text: 'Do not share private information.',
+              ),
+              FamilyRule(
+                icon: Icons.mic_off_outlined,
+                text: 'Use the microphone responsibly.',
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void toggleRoomLock() {
+    setState(() {
+      roomLocked = !roomLocked;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          roomLocked
+              ? 'Family Room locked.'
+              : 'Family Room unlocked.',
+        ),
+      ),
+    );
+  }
+
+  void showSeatOptions(FamilySeat seat) {
+    if (!seat.occupied) {
+      if (roomLocked) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Room is locked.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Seat ${seat.number} is available.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const CircleAvatar(
+                  child: Icon(Icons.person),
+                ),
+                title: Text(
+                  seat.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(
+                  'Seat ${seat.number}',
+                ),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.card_giftcard,
+                ),
+                title: const Text('Send Gift'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  showGifts();
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.flag_outlined,
+                ),
+                title: const Text('Report User'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Report submitted for review.',
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Family Room',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          IconButton(
+            onPressed: showRules,
+            icon: const Icon(
+              Icons.info_outline,
+            ),
+            tooltip: 'Room Rules',
+          ),
+          IconButton(
+            onPressed: toggleRoomLock,
+            icon: Icon(
+              roomLocked
+                  ? Icons.lock
+                  : Icons.lock_open,
+            ),
+            tooltip: 'Room Lock',
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.fromLTRB(
+              12,
+              12,
+              12,
+              8,
+            ),
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF8E35FF),
+                  Color(0xFF4F46E5),
+                ],
+              ),
+              borderRadius: BorderRadius.all(
+                Radius.circular(24),
+              ),
+            ),
+            child: Row(
+              children: [
+                const CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.white,
+                  child: Icon(
+                    Icons.groups_rounded,
+                    size: 34,
+                    color: Color(0xFF6D4C8F),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Mchat Family Room',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 21,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 5),
+                      Text(
+                        '30 Seats • Voice • Chat • Gifts',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius:
+                        BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    '$occupiedCount/30',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 6,
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.people_outline,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '$occupiedCount members in room',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                if (roomLocked)
+                  const Chip(
+                    avatar: Icon(
+                      Icons.lock,
+                      size: 16,
+                    ),
+                    label: Text('Locked'),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: GridView.builder(
+              padding: const EdgeInsets.fromLTRB(
+                12,
+                8,
+                12,
+                12,
+              ),
+              itemCount: 30,
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 5,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 10,
+                childAspectRatio: 0.78,
+              ),
+              itemBuilder: (_, index) {
+                return FamilySeatWidget(
+                  seat: seats[index],
+                  onTap: () {
+                    showSeatOptions(seats[index]);
+                  },
+                );
+              },
+            ),
+          ),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                10,
+                6,
+                10,
+                10,
+              ),
+              child: Row(
+                children: [
+                  IconButton.filledTonal(
+                    onPressed: toggleMic,
+                    icon: Icon(
+                      micOn
+                          ? Icons.mic
+                          : Icons.mic_off,
+                    ),
+                    tooltip: 'Microphone',
+                  ),
+                  const SizedBox(width: 6),
+                  IconButton.filledTonal(
+                    onPressed: showRoomChat,
+                    icon: const Icon(
+                      Icons.chat_bubble_outline,
+                    ),
+                    tooltip: 'Room Chat',
+                  ),
+                  const SizedBox(width: 6),
+                  IconButton.filledTonal(
+                    onPressed: showGifts,
+                    icon: const Icon(
+                      Icons.card_giftcard,
+                    ),
+                    tooltip: 'Gifts',
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: joined
+                          ? leaveRoom
+                          : joinRoom,
+                      icon: Icon(
+                        joined
+                            ? Icons.logout
+                            : Icons.login,
+                      ),
+                      label: Text(
+                        joined
+                            ? 'Leave Room'
+                            : 'Join Room',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   FAMILY SEAT MODEL
+   ========================================================= */
+
+class FamilySeat {
+  final int number;
+  String name;
+  bool occupied;
+  bool isHost;
+  bool micOn;
+
+  FamilySeat({
+    required this.number,
+    required this.name,
+    required this.occupied,
+    required this.isHost,
+    required this.micOn,
+  });
+}
+
+/* =========================================================
+   FAMILY SEAT WIDGET
+   ========================================================= */
+
+class FamilySeatWidget extends StatelessWidget {
+  final FamilySeat seat;
+  final VoidCallback onTap;
+
+  const FamilySeatWidget({
+    super.key,
+    required this.seat,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: Column(
+        children: [
+          Expanded(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .surfaceContainerHighest,
+                    borderRadius:
+                        BorderRadius.circular(18),
+                  ),
+                  child: Center(
+                    child: CircleAvatar(
+                      radius: 25,
+                      child: Icon(
+                        seat.occupied
+                            ? Icons.person
+                            : Icons.add,
+                        size: 27,
+                      ),
+                    ),
+                  ),
+                ),
+                if (seat.isHost)
+                  Positioned(
+                    top: 5,
+                    left: 5,
+                    child: Container(
+                      padding:
+                          const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary,
+                        borderRadius:
+                            BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'HOST',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (seat.occupied)
+                  Positioned(
+                    bottom: 5,
+                    right: 5,
+                    child: Icon(
+                      seat.micOn
+                          ? Icons.mic
+                          : Icons.mic_off,
+                      size: 15,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            seat.occupied
+                ? seat.name
+                : 'Seat ${seat.number}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   FAMILY ROOM RULE
+   ========================================================= */
+
+class FamilyRule extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const FamilyRule({
+    super.key,
+    required this.icon,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 18,
+            child: Icon(
+              icon,
+              size: 19,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
