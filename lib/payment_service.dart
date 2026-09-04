@@ -35,7 +35,7 @@ class PaymentService {
       return [];
     }
 
-    const ids = <String>{
+    const productIds = <String>{
       'coins_1000',
       'coins_5000',
       'coins_10000',
@@ -48,16 +48,20 @@ class PaymentService {
       'coins_2500000',
     };
 
-    final response = await _iap.queryProductDetails(ids);
+    final response = await _iap.queryProductDetails(productIds);
 
     if (response.error != null) {
-      throw Exception(response.error!.message);
+      throw Exception(
+        response.error!.message,
+      );
     }
 
     return response.productDetails;
   }
 
-  Future<bool> buyCoins(ProductDetails product) async {
+  Future<bool> buyCoins(
+    ProductDetails product,
+  ) async {
     final available = await _iap.isAvailable();
 
     if (!available) {
@@ -74,27 +78,84 @@ class PaymentService {
     );
   }
 
-  void listenToPurchases(
-    void Function(PurchaseDetails purchase) onPurchase,
-  ) {
+  void listenToPurchases({
+    required Future<bool> Function(
+      PurchaseDetails purchase,
+    ) verifyAndDeliver,
+    void Function(
+      PurchaseDetails purchase,
+    )? onPurchase,
+    void Function(
+      Object error,
+    )? onError,
+  }) {
     _subscription ??= _iap.purchaseStream.listen(
       (purchases) async {
         for (final purchase in purchases) {
-          onPurchase(purchase);
+          onPurchase?.call(purchase);
 
-          if (purchase.pendingCompletePurchase) {
-            await _iap.completePurchase(purchase);
+          switch (purchase.status) {
+            case PurchaseStatus.pending:
+              break;
+
+            case PurchaseStatus.purchased:
+            case PurchaseStatus.restored:
+              try {
+                /*
+                 * IMPORTANT:
+                 *
+                 * Coins are NOT credited here directly.
+                 *
+                 * The purchase must first be verified
+                 * by a trusted backend/server.
+                 */
+                final verified = await verifyAndDeliver(
+                  purchase,
+                );
+
+                if (verified &&
+                    purchase.pendingCompletePurchase) {
+                  await _iap.completePurchase(
+                    purchase,
+                  );
+                }
+              } catch (e) {
+                onError?.call(e);
+              }
+              break;
+
+            case PurchaseStatus.error:
+              onError?.call(
+                purchase.error ??
+                    Exception(
+                      'Purchase failed.',
+                    ),
+              );
+              break;
+
+            case PurchaseStatus.canceled:
+              break;
           }
         }
       },
-      onError: (error) {
-        // Purchase stream error
+      onError: (Object error) {
+        onError?.call(error);
       },
     );
   }
 
-  int coinsForProduct(String productId) {
+  int coinsForProduct(
+    String productId,
+  ) {
     return coinProducts[productId] ?? 0;
+  }
+
+  bool isCoinProduct(
+    String productId,
+  ) {
+    return coinProducts.containsKey(
+      productId,
+    );
   }
 
   Future<void> dispose() async {
