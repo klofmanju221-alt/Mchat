@@ -362,12 +362,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     const Spacer(),
                     GestureDetector(
                       onTap: () {
-                        _openScreen(
-                          const PaymentScreen(
-                            packageName: '1K Coins',
-                            coins: 1000,
-                            price: 100,
-                          ),
+                   _openScreen(
+                  const PaymentScreen(),
                         );
                       },
                       child: Container(
