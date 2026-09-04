@@ -118,6 +118,7 @@ class HomeContent extends StatelessWidget {
     ['Free Inbox', Icons.chat_bubble_outline],
     ['Private Chat', Icons.lock_outline],
     ['Family Room', Icons.groups_rounded],
+    ['Room Mode & Games', Icons.sports_esports_outlined],
     ['Voice', Icons.mic_none],
     ['Live Room', Icons.live_tv_outlined],
     ['VIP', Icons.emoji_events_outlined],
@@ -132,6 +133,7 @@ class HomeContent extends StatelessWidget {
       'Free Inbox': const InboxScreen(),
       'Private Chat': const PrivateChatScreen(),
       'Family Room': const FamilyRoomScreen(),
+      'Room Mode & Games': const RoomModeGamesScreen(),
       'Voice': const FeatureScreen(
         title: 'Voice',
         icon: Icons.mic,
@@ -255,9 +257,7 @@ class HomeContent extends StatelessWidget {
               ),
               title: const Text(
                 'My Coins',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
               subtitle: const Text(
                 '0 Coins',
@@ -389,7 +389,6 @@ class PrivateChatScreen extends StatefulWidget {
 class _PrivateChatScreenState
     extends State<PrivateChatScreen> {
   final controller = TextEditingController();
-
   final List<String> messages = [];
 
   bool muted = false;
@@ -458,7 +457,6 @@ class _PrivateChatScreenState
             FilledButton(
               onPressed: () {
                 Navigator.pop(context);
-
                 ScaffoldMessenger.of(this.context)
                     .showSnackBar(
                   const SnackBar(
@@ -519,9 +517,7 @@ class _PrivateChatScreenState
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) {
-              if (value == 'rules') {
-                showRules();
-              }
+              if (value == 'rules') showRules();
 
               if (value == 'mute') {
                 setState(() {
@@ -537,9 +533,7 @@ class _PrivateChatScreenState
                 }
               }
 
-              if (value == 'report') {
-                reportUser();
-              }
+              if (value == 'report') reportUser();
             },
             itemBuilder: (_) => [
               const PopupMenuItem(
@@ -726,7 +720,6 @@ class _PrivateChatScreenState
                       icon: const Icon(
                         Icons.shield_outlined,
                       ),
-                      tooltip: 'Security Rules',
                     ),
                     Expanded(
                       child: TextField(
@@ -736,11 +729,6 @@ class _PrivateChatScreenState
                           border: OutlineInputBorder(
                             borderRadius:
                                 BorderRadius.circular(24),
-                          ),
-                          contentPadding:
-                              const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 12,
                           ),
                         ),
                         onSubmitted: (_) =>
@@ -840,21 +828,15 @@ class _PrivateChatRulesScreenState
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
           Card(
             child: SwitchListTile(
               value: allowMessages,
-              onChanged: (value) {
-                setState(() {
-                  allowMessages = value;
-                });
+              onChanged: (v) {
+                setState(() => allowMessages = v);
               },
-              secondary: const Icon(
-                Icons.chat_outlined,
-              ),
-              title: const Text(
-                'Allow Private Messages',
-              ),
+              secondary:
+                  const Icon(Icons.chat_outlined),
+              title: const Text('Allow Private Messages'),
               subtitle: const Text(
                 'Allow other users to send you private messages.',
               ),
@@ -863,17 +845,12 @@ class _PrivateChatRulesScreenState
           Card(
             child: SwitchListTile(
               value: allowRequests,
-              onChanged: (value) {
-                setState(() {
-                  allowRequests = value;
-                });
+              onChanged: (v) {
+                setState(() => allowRequests = v);
               },
-              secondary: const Icon(
-                Icons.person_add_outlined,
-              ),
-              title: const Text(
-                'Message Requests',
-              ),
+              secondary:
+                  const Icon(Icons.person_add_outlined),
+              title: const Text('Message Requests'),
               subtitle: const Text(
                 'Allow private chat requests from other users.',
               ),
@@ -882,17 +859,11 @@ class _PrivateChatRulesScreenState
           Card(
             child: SwitchListTile(
               value: readReceipts,
-              onChanged: (value) {
-                setState(() {
-                  readReceipts = value;
-                });
+              onChanged: (v) {
+                setState(() => readReceipts = v);
               },
-              secondary: const Icon(
-                Icons.done_all,
-              ),
-              title: const Text(
-                'Read Receipts',
-              ),
+              secondary: const Icon(Icons.done_all),
+              title: const Text('Read Receipts'),
               subtitle: const Text(
                 'Show when messages have been read.',
               ),
@@ -901,23 +872,18 @@ class _PrivateChatRulesScreenState
           Card(
             child: SwitchListTile(
               value: onlineStatus,
-              onChanged: (value) {
-                setState(() {
-                  onlineStatus = value;
-                });
+              onChanged: (v) {
+                setState(() => onlineStatus = v);
               },
-              secondary: const Icon(
-                Icons.visibility_outlined,
-              ),
-              title: const Text(
-                'Online Status',
-              ),
+              secondary:
+                  const Icon(Icons.visibility_outlined),
+              title: const Text('Online Status'),
               subtitle: const Text(
                 'Show your online status to other users.',
               ),
             ),
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 20),
           const Text(
             'Chat Safety Rules',
             style: TextStyle(
@@ -925,7 +891,6 @@ class _PrivateChatRulesScreenState
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 10),
           const _RuleTile(
             icon: Icons.privacy_tip_outlined,
             title: 'Respect Privacy',
@@ -955,30 +920,6 @@ class _PrivateChatRulesScreenState
             title: 'Report Problems',
             text:
                 'Use Report User when you see abuse, scams or rule violations.',
-          ),
-          const SizedBox(height: 20),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.info_outline),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'These controls are currently UI settings. '
-                      'Server-side security and enforcement will be connected '
-                      'during the backend security phase.',
-                      style: TextStyle(
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
         ],
       ),
@@ -1011,10 +952,7 @@ class _RuleTile extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 5),
-          child: Text(text),
-        ),
+        subtitle: Text(text),
       ),
     );
   }
@@ -1053,13 +991,10 @@ class FeatureScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-      ),
+      appBar: AppBar(title: Text(title)),
       body: Center(
         child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
@@ -1075,9 +1010,7 @@ class FeatureScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            Text(
-              '$title screen is ready.',
-            ),
+            Text('$title screen is ready.'),
           ],
         ),
       ),
@@ -1108,27 +1041,18 @@ class VipScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('VIP Center'),
-      ),
+      appBar: AppBar(title: const Text('VIP Center')),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: 10,
         itemBuilder: (_, i) {
           return Card(
             child: ListTile(
-              leading: const Icon(
-                Icons.emoji_events,
-              ),
-              title: Text(
-                'VIP ${i + 1}',
-              ),
-              subtitle: Text(
-                '${coins[i]} Coins',
-              ),
-              trailing: const Icon(
-                Icons.chevron_right,
-              ),
+              leading: const Icon(Icons.emoji_events),
+              title: Text('VIP ${i + 1}'),
+              subtitle: Text('${coins[i]} Coins'),
+              trailing:
+                  const Icon(Icons.chevron_right),
             ),
           );
         },
@@ -1147,9 +1071,7 @@ class CoinsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Coins'),
-      ),
+      appBar: AppBar(title: const Text('Coins')),
       body: Center(
         child: Card(
           child: Padding(
@@ -1220,9 +1142,7 @@ class GiftsScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Gifts'),
-      ),
+      appBar: AppBar(title: const Text('Gifts')),
       body: GridView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: gifts.length,
@@ -1275,9 +1195,7 @@ class ReferEarnScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Refer & Earn'),
-      ),
+      appBar: AppBar(title: const Text('Refer & Earn')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -1290,9 +1208,8 @@ class ReferEarnScreen extends StatelessWidget {
                   Color(0xFF4F46E5),
                 ],
               ),
-              borderRadius: BorderRadius.all(
-                Radius.circular(26),
-              ),
+              borderRadius:
+                  BorderRadius.all(Radius.circular(26)),
             ),
             child: const Column(
               children: [
@@ -1354,9 +1271,8 @@ class ReferEarnScreen extends StatelessWidget {
                           ScaffoldMessenger.of(context)
                               .showSnackBar(
                             const SnackBar(
-                              content: Text(
-                                'Referral code copied.',
-                              ),
+                              content:
+                                  Text('Referral code copied.'),
                             ),
                           );
                         },
@@ -1372,9 +1288,8 @@ class ReferEarnScreen extends StatelessWidget {
                         ScaffoldMessenger.of(context)
                             .showSnackBar(
                           const SnackBar(
-                            content: Text(
-                              'Share feature UI is ready.',
-                            ),
+                            content:
+                                Text('Share feature UI is ready.'),
                           ),
                         );
                       },
@@ -1456,39 +1371,32 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
           SwitchListTile(
             value: true,
             onChanged: (_) {},
             title: const Text('Notifications'),
-            secondary: const Icon(
-              Icons.notifications,
-            ),
+            secondary:
+                const Icon(Icons.notifications),
           ),
           ListTile(
             leading: const Icon(Icons.language),
             title: const Text('Language'),
-            trailing: const Icon(
-              Icons.chevron_right,
-            ),
+            trailing:
+                const Icon(Icons.chevron_right),
           ),
           ListTile(
-            leading: const Icon(
-              Icons.lock_outline,
-            ),
-            title: const Text(
-              'Private Chat Security',
-            ),
+            leading:
+                const Icon(Icons.lock_outline),
+            title:
+                const Text('Private Chat Security'),
             subtitle: const Text(
               'Privacy controls and chat rules',
             ),
-            trailing: const Icon(
-              Icons.chevron_right,
-            ),
+            trailing:
+                const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(
                 context,
@@ -1500,18 +1408,14 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(
-              Icons.groups_rounded,
-            ),
-            title: const Text(
-              'Family Room',
-            ),
+            leading:
+                const Icon(Icons.groups_rounded),
+            title: const Text('Family Room'),
             subtitle: const Text(
               '30 seats • Voice • Chat • Gifts',
             ),
-            trailing: const Icon(
-              Icons.chevron_right,
-            ),
+            trailing:
+                const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(
                 context,
@@ -1524,12 +1428,31 @@ class SettingsScreen extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(
-              Icons.info_outline,
+              Icons.sports_esports_outlined,
             ),
+            title:
+                const Text('Room Mode & Games'),
+            subtitle: const Text(
+              'Room modes and mini games',
+            ),
+            trailing:
+                const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const RoomModeGamesScreen(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading:
+                const Icon(Icons.info_outline),
             title: const Text('About Mchat'),
-            trailing: const Icon(
-              Icons.chevron_right,
-            ),
+            trailing:
+                const Icon(Icons.chevron_right),
           ),
         ],
       ),
@@ -1559,9 +1482,7 @@ class ProfileScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'Profile',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
@@ -1569,7 +1490,8 @@ class ProfileScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const SettingsScreen(),
+                  builder: (_) =>
+                      const SettingsScreen(),
                 ),
               );
             },
@@ -1596,37 +1518,19 @@ class ProfileScreen extends StatelessWidget {
                   Color(0xFF4F46E5),
                 ],
               ),
-              borderRadius: BorderRadius.all(
-                Radius.circular(28),
-              ),
+              borderRadius:
+                  BorderRadius.all(Radius.circular(28)),
             ),
             child: Column(
               children: [
-                Stack(
-                  alignment: Alignment.bottomRight,
-                  children: [
-                    const CircleAvatar(
-                      radius: 52,
-                      backgroundColor: Colors.white,
-                      child: Icon(
-                        Icons.person,
-                        size: 62,
-                        color: Color(0xFF6D4C8F),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(7),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        size: 20,
-                        color: Color(0xFF6D4C8F),
-                      ),
-                    ),
-                  ],
+                const CircleAvatar(
+                  radius: 52,
+                  backgroundColor: Colors.white,
+                  child: Icon(
+                    Icons.person,
+                    size: 62,
+                    color: Color(0xFF6D4C8F),
+                  ),
                 ),
                 const SizedBox(height: 14),
                 const Text(
@@ -1706,7 +1610,8 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _ProfileMenuTile(
-            icon: Icons.account_balance_wallet_outlined,
+            icon:
+                Icons.account_balance_wallet_outlined,
             title: 'My Wallet',
             subtitle: 'Coins & balance',
             onTap: () {
@@ -1732,17 +1637,6 @@ class ProfileScreen extends StatelessWidget {
             },
           ),
           _ProfileMenuTile(
-            icon: Icons.grid_view_outlined,
-            title: 'My Posts',
-            subtitle: 'Your posts and media',
-            onTap: () {
-              showMessage(
-                context,
-                'My Posts UI is ready.',
-              );
-            },
-          ),
-          _ProfileMenuTile(
             icon: Icons.meeting_room_outlined,
             title: 'My Rooms',
             subtitle: 'Your live rooms',
@@ -1750,17 +1644,6 @@ class ProfileScreen extends StatelessWidget {
               showMessage(
                 context,
                 'My Rooms UI is ready.',
-              );
-            },
-          ),
-          _ProfileMenuTile(
-            icon: Icons.history,
-            title: 'History',
-            subtitle: 'Activity history',
-            onTap: () {
-              showMessage(
-                context,
-                'History UI is ready.',
               );
             },
           ),
@@ -1781,7 +1664,8 @@ class ProfileScreen extends StatelessWidget {
           _ProfileMenuTile(
             icon: Icons.groups_rounded,
             title: 'Family Room',
-            subtitle: '30 seats • Voice • Chat • Gifts',
+            subtitle:
+                '30 seats • Voice • Chat • Gifts',
             onTap: () {
               Navigator.push(
                 context,
@@ -1793,14 +1677,32 @@ class ProfileScreen extends StatelessWidget {
             },
           ),
           _ProfileMenuTile(
-            icon: Icons.settings_outlined,
-            title: 'Settings',
-            subtitle: 'Account & app settings',
+            icon:
+                Icons.sports_esports_outlined,
+            title: 'Room Mode & Games',
+            subtitle:
+                'Modes and mini games',
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const SettingsScreen(),
+                  builder: (_) =>
+                      const RoomModeGamesScreen(),
+                ),
+              );
+            },
+          ),
+          _ProfileMenuTile(
+            icon: Icons.settings_outlined,
+            title: 'Settings',
+            subtitle:
+                'Account & app settings',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const SettingsScreen(),
                 ),
               );
             },
@@ -1827,12 +1729,10 @@ class ProfileScreen extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              subtitle: const Text(
-                'Development access',
-              ),
-              trailing: const Icon(
-                Icons.chevron_right,
-              ),
+              subtitle:
+                  const Text('Development access'),
+              trailing:
+                  const Icon(Icons.chevron_right),
               onTap: () {
                 Navigator.push(
                   context,
@@ -1898,7 +1798,8 @@ class _ProfileMenuTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 9),
+      margin:
+          const EdgeInsets.only(bottom: 9),
       child: ListTile(
         leading: CircleAvatar(
           child: Icon(icon),
@@ -1910,9 +1811,8 @@ class _ProfileMenuTile extends StatelessWidget {
           ),
         ),
         subtitle: Text(subtitle),
-        trailing: const Icon(
-          Icons.chevron_right,
-        ),
+        trailing:
+            const Icon(Icons.chevron_right),
         onTap: onTap,
       ),
     );
@@ -1932,7 +1832,10 @@ class OwnerDashboardScreen extends StatelessWidget {
       ['Users', Icons.people],
       ['Live Rooms', Icons.live_tv],
       ['Transactions', Icons.receipt_long],
-      ['Recharges', Icons.account_balance_wallet],
+      [
+        'Recharges',
+        Icons.account_balance_wallet
+      ],
       ['Withdraw Requests', Icons.payments],
       ['VIP Management', Icons.emoji_events],
       ['Gifts', Icons.card_giftcard],
@@ -1943,9 +1846,8 @@ class OwnerDashboardScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Owner Dashboard',
-        ),
+        title:
+            const Text('Owner Dashboard'),
         actions: [
           IconButton(
             onPressed: () {},
@@ -1967,9 +1869,8 @@ class OwnerDashboardScreen extends StatelessWidget {
                   Color(0xFF4F46E5),
                 ],
               ),
-              borderRadius: BorderRadius.all(
-                Radius.circular(22),
-              ),
+              borderRadius:
+                  BorderRadius.all(Radius.circular(22)),
             ),
             child: const Column(
               crossAxisAlignment:
@@ -2045,15 +1946,12 @@ class OwnerDashboardScreen extends StatelessWidget {
           ...items.map(
             (item) => Card(
               child: ListTile(
-                leading: Icon(
-                  item[1] as IconData,
-                ),
-                title: Text(
-                  item[0] as String,
-                ),
-                trailing: const Icon(
-                  Icons.chevron_right,
-                ),
+                leading:
+                    Icon(item[1] as IconData),
+                title:
+                    Text(item[0] as String),
+                trailing:
+                    const Icon(Icons.chevron_right),
                 onTap: () {
                   ScaffoldMessenger.of(context)
                       .showSnackBar(
@@ -2092,10 +1990,7 @@ class StatCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 30,
-            ),
+            Icon(icon, size: 30),
             const SizedBox(height: 6),
             Text(title),
             Text(
@@ -2126,7 +2021,8 @@ class FamilyRoomScreen extends StatefulWidget {
 
 class _FamilyRoomScreenState
     extends State<FamilyRoomScreen> {
-  late final List<FamilySeat> seats = List.generate(
+  late final List<FamilySeat> seats =
+      List.generate(
     30,
     (index) => FamilySeat(
       number: index + 1,
@@ -2142,7 +2038,7 @@ class _FamilyRoomScreenState
   bool roomLocked = false;
 
   int get occupiedCount =>
-      seats.where((seat) => seat.occupied).length;
+      seats.where((s) => s.occupied).length;
 
   void joinRoom() {
     if (roomLocked) {
@@ -2156,9 +2052,8 @@ class _FamilyRoomScreenState
       return;
     }
 
-    final emptySeat = seats.indexWhere(
-      (seat) => !seat.occupied,
-    );
+    final emptySeat =
+        seats.indexWhere((s) => !s.occupied);
 
     if (emptySeat == -1) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2180,9 +2075,8 @@ class _FamilyRoomScreenState
   }
 
   void leaveRoom() {
-    final mySeat = seats.indexWhere(
-      (seat) => seat.name == 'You',
-    );
+    final mySeat =
+        seats.indexWhere((s) => s.name == 'You');
 
     if (mySeat != -1) {
       setState(() {
@@ -2199,115 +2093,82 @@ class _FamilyRoomScreenState
       micOn = !micOn;
     });
 
-    final mySeat = seats.indexWhere(
-      (seat) => seat.name == 'You',
-    );
+    final mySeat =
+        seats.indexWhere((s) => s.name == 'You');
 
     if (mySeat != -1) {
       setState(() {
         seats[mySeat].micOn = micOn;
       });
     }
+  }
+
+  void toggleRoomLock() {
+    setState(() {
+      roomLocked = !roomLocked;
+    });
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          micOn ? 'Microphone ON' : 'Microphone OFF',
+          roomLocked
+              ? 'Family Room locked.'
+              : 'Family Room unlocked.',
         ),
       ),
     );
   }
 
-  void showRoomChat() {
-    final controller = TextEditingController();
-
+  void showRules() {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
       showDragHandle: true,
-      builder: (sheetContext) {
-        final messages = [
-          'Welcome to the Family Room 👋',
-          'Please respect all members.',
-          'Have fun and enjoy Mchat!',
-        ];
-
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            bottom:
-                MediaQuery.of(sheetContext).viewInsets.bottom +
-                    16,
+      builder: (_) {
+        return const Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            10,
+            20,
+            30,
           ),
-          child: SizedBox(
-            height: 420,
-            child: Column(
-              children: [
-                const Text(
-                  'Room Chat',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Family Room Rules',
+                style: TextStyle(
+                  fontSize: 23,
+                  fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: messages.length,
-                    itemBuilder: (_, index) {
-                      return ListTile(
-                        leading: const CircleAvatar(
-                          child: Icon(Icons.person),
-                        ),
-                        title: Text(messages[index]),
-                      );
-                    },
-                  ),
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: controller,
-                        decoration: const InputDecoration(
-                          hintText: 'Type in room...',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton.filled(
-                      onPressed: () {
-                        if (controller.text.trim().isEmpty) {
-                          return;
-                        }
-
-                        Navigator.pop(sheetContext);
-
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Room message sent.',
-                            ),
-                          ),
-                        );
-
-                        controller.dispose();
-                      },
-                      icon: const Icon(Icons.send),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+              SizedBox(height: 16),
+              FamilyRule(
+                icon: Icons.favorite_outline,
+                text:
+                    'Respect every family member.',
+              ),
+              FamilyRule(
+                icon: Icons.block,
+                text:
+                    'No harassment, abuse or spam.',
+              ),
+              FamilyRule(
+                icon: Icons.security,
+                text:
+                    'Do not share private information.',
+              ),
+              FamilyRule(
+                icon: Icons.mic_off_outlined,
+                text:
+                    'Use the microphone responsibly.',
+              ),
+            ],
           ),
         );
       },
-    ).whenComplete(() {
-      controller.dispose();
-    });
+    );
   }
 
   void showGifts() {
@@ -2349,30 +2210,25 @@ class _FamilyRoomScreenState
                   crossAxisCount: 4,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
-                  childAspectRatio: 1,
                 ),
-                itemBuilder: (_, index) {
+                itemBuilder: (_, i) {
                   return Card(
                     child: InkWell(
                       onTap: () {
                         Navigator.pop(sheetContext);
-
                         ScaffoldMessenger.of(context)
                             .showSnackBar(
                           SnackBar(
                             content: Text(
-                              '${gifts[index]} sent to the room.',
+                              '${gifts[i]} sent to the room.',
                             ),
                           ),
                         );
                       },
                       child: Center(
                         child: Text(
-                          gifts[index],
+                          gifts[i],
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 14,
-                          ),
                         ),
                       ),
                     ),
@@ -2386,88 +2242,12 @@ class _FamilyRoomScreenState
     );
   }
 
-  void showRules() {
-    showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      builder: (_) {
-        return const Padding(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            10,
-            20,
-            30,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Family Room Rules',
-                style: TextStyle(
-                  fontSize: 23,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 16),
-              FamilyRule(
-                icon: Icons.favorite_outline,
-                text: 'Respect every family member.',
-              ),
-              FamilyRule(
-                icon: Icons.block,
-                text: 'No harassment, abuse or spam.',
-              ),
-              FamilyRule(
-                icon: Icons.security,
-                text: 'Do not share private information.',
-              ),
-              FamilyRule(
-                icon: Icons.mic_off_outlined,
-                text: 'Use the microphone responsibly.',
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void toggleRoomLock() {
-    setState(() {
-      roomLocked = !roomLocked;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          roomLocked
-              ? 'Family Room locked.'
-              : 'Family Room unlocked.',
-        ),
-      ),
-    );
-  }
-
   void showSeatOptions(FamilySeat seat) {
     if (!seat.occupied) {
-      if (roomLocked) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Room is locked.',
-            ),
-          ),
-        );
-        return;
-      }
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Seat ${seat.number} is available.',
-          ),
+          content:
+              Text('Seat ${seat.number} is available.'),
         ),
       );
       return;
@@ -2490,14 +2270,12 @@ class _FamilyRoomScreenState
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                subtitle: Text(
-                  'Seat ${seat.number}',
-                ),
+                subtitle:
+                    Text('Seat ${seat.number}'),
               ),
               ListTile(
-                leading: const Icon(
-                  Icons.card_giftcard,
-                ),
+                leading:
+                    const Icon(Icons.card_giftcard),
                 title: const Text('Send Gift'),
                 onTap: () {
                   Navigator.pop(sheetContext);
@@ -2505,24 +2283,93 @@ class _FamilyRoomScreenState
                 },
               ),
               ListTile(
-                leading: const Icon(
-                  Icons.flag_outlined,
-                ),
-                title: const Text('Report User'),
+                leading:
+                    const Icon(Icons.flag_outlined),
+                title:
+                    const Text('Report User'),
                 onTap: () {
                   Navigator.pop(sheetContext);
-
                   ScaffoldMessenger.of(context)
                       .showSnackBar(
                     const SnackBar(
-                      content: Text(
-                        'Report submitted for review.',
-                      ),
+                      content:
+                          Text('Report submitted for review.'),
                     ),
                   );
                 },
               ),
             ],
+          ),
+        );
+      },
+    );
+  }
+
+  void showRoomChat() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            bottom:
+                MediaQuery.of(sheetContext)
+                        .viewInsets
+                        .bottom +
+                    16,
+          ),
+          child: SizedBox(
+            height: 420,
+            child: Column(
+              children: [
+                const Text(
+                  'Room Chat',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Expanded(
+                  child: Center(
+                    child: Text(
+                      'Welcome to the Family Room 👋\n\n'
+                      'Room chat UI is ready.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    const Expanded(
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Type in room...',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      onPressed: () {
+                        Navigator.pop(sheetContext);
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(
+                          const SnackBar(
+                            content:
+                                Text('Room message sent.'),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.send),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -2541,11 +2388,24 @@ class _FamilyRoomScreenState
         ),
         actions: [
           IconButton(
-            onPressed: showRules,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const RoomModeGamesScreen(),
+                ),
+              );
+            },
             icon: const Icon(
-              Icons.info_outline,
+              Icons.sports_esports_outlined,
             ),
-            tooltip: 'Room Rules',
+            tooltip: 'Room Mode & Games',
+          ),
+          IconButton(
+            onPressed: showRules,
+            icon:
+                const Icon(Icons.info_outline),
           ),
           IconButton(
             onPressed: toggleRoomLock,
@@ -2554,7 +2414,6 @@ class _FamilyRoomScreenState
                   ? Icons.lock
                   : Icons.lock_open,
             ),
-            tooltip: 'Room Lock',
           ),
         ],
       ),
@@ -2576,9 +2435,8 @@ class _FamilyRoomScreenState
                   Color(0xFF4F46E5),
                 ],
               ),
-              borderRadius: BorderRadius.all(
-                Radius.circular(24),
-              ),
+              borderRadius:
+                  BorderRadius.all(Radius.circular(24)),
             ),
             child: Row(
               children: [
@@ -2616,38 +2474,25 @@ class _FamilyRoomScreenState
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius:
-                        BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    '$occupiedCount/30',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                Text(
+                  '$occupiedCount/30',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(
+            padding:
+                const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 6,
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.people_outline,
-                  size: 20,
-                ),
+                const Icon(Icons.people_outline),
                 const SizedBox(width: 8),
                 Text(
                   '$occupiedCount members in room',
@@ -2696,7 +2541,8 @@ class _FamilyRoomScreenState
           SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(
+              padding:
+                  const EdgeInsets.fromLTRB(
                 10,
                 6,
                 10,
@@ -2711,25 +2557,22 @@ class _FamilyRoomScreenState
                           ? Icons.mic
                           : Icons.mic_off,
                     ),
-                    tooltip: 'Microphone',
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 5),
                   IconButton.filledTonal(
                     onPressed: showRoomChat,
                     icon: const Icon(
                       Icons.chat_bubble_outline,
                     ),
-                    tooltip: 'Room Chat',
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 5),
                   IconButton.filledTonal(
                     onPressed: showGifts,
                     icon: const Icon(
                       Icons.card_giftcard,
                     ),
-                    tooltip: 'Gifts',
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 7),
                   Expanded(
                     child: FilledButton.icon(
                       onPressed: joined
@@ -2757,10 +2600,6 @@ class _FamilyRoomScreenState
   }
 }
 
-/* =========================================================
-   FAMILY SEAT MODEL
-   ========================================================= */
-
 class FamilySeat {
   final int number;
   String name;
@@ -2776,10 +2615,6 @@ class FamilySeat {
     required this.micOn,
   });
 }
-
-/* =========================================================
-   FAMILY SEAT WIDGET
-   ========================================================= */
 
 class FamilySeatWidget extends StatelessWidget {
   final FamilySeat seat;
@@ -2882,10 +2717,6 @@ class FamilySeatWidget extends StatelessWidget {
   }
 }
 
-/* =========================================================
-   FAMILY ROOM RULE
-   ========================================================= */
-
 class FamilyRule extends StatelessWidget {
   final IconData icon;
   final String text;
@@ -2899,17 +2730,15 @@ class FamilyRule extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding:
+          const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment:
             CrossAxisAlignment.start,
         children: [
           CircleAvatar(
             radius: 18,
-            child: Icon(
-              icon,
-              size: 19,
-            ),
+            child: Icon(icon, size: 19),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -2917,6 +2746,459 @@ class FamilyRule extends StatelessWidget {
               text,
               style: const TextStyle(
                 fontSize: 15,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   BUILD #123
+   ROOM MODE + GAMES
+   ========================================================= */
+
+class RoomModeGamesScreen extends StatefulWidget {
+  const RoomModeGamesScreen({super.key});
+
+  @override
+  State<RoomModeGamesScreen> createState() =>
+      _RoomModeGamesScreenState();
+}
+
+class _RoomModeGamesScreenState
+    extends State<RoomModeGamesScreen> {
+  String selectedMode = 'Normal';
+
+  final modes = const [
+    ['Normal', Icons.groups_rounded],
+    ['Music', Icons.music_note],
+    ['Party', Icons.celebration],
+    ['Game', Icons.sports_esports],
+    ['Study', Icons.menu_book],
+  ];
+
+  final games = const [
+    [
+      'Lucky Wheel',
+      'Spin and win a random reward',
+      Icons.casino,
+    ],
+    [
+      'Dice',
+      'Roll the dice with room members',
+      Icons.casino_outlined,
+    ],
+    [
+      'Quick Quiz',
+      'Answer questions with friends',
+      Icons.quiz_outlined,
+    ],
+    [
+      'Truth or Dare',
+      'Fun group challenge',
+      Icons.question_mark,
+    ],
+  ];
+
+  void selectMode(String mode) {
+    setState(() {
+      selectedMode = mode;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '$mode Room Mode selected.',
+        ),
+      ),
+    );
+  }
+
+  void openGame(
+    BuildContext context,
+    String game,
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GameDetailScreen(
+          gameName: game,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Room Mode & Games',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(22),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF8E35FF),
+                  Color(0xFF4F46E5),
+                ],
+              ),
+              borderRadius:
+                  BorderRadius.all(Radius.circular(24)),
+            ),
+            child: const Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.sports_esports,
+                  color: Colors.white,
+                  size: 52,
+                ),
+                SizedBox(height: 12),
+                Text(
+                  'Room Mode + Games',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 7),
+                Text(
+                  'Choose a room style and enjoy games with your family.',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Room Mode',
+            style: TextStyle(
+              fontSize: 23,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...modes.map(
+            (mode) {
+              final name = mode[0] as String;
+              final icon = mode[1] as IconData;
+              final selected =
+                  selectedMode == name;
+
+              return Card(
+                child: ListTile(
+                  leading: CircleAvatar(
+                    child: Icon(icon),
+                  ),
+                  title: Text(
+                    name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '$name room mode',
+                  ),
+                  trailing: selected
+                      ? const Icon(
+                          Icons.check_circle,
+                        )
+                      : const Icon(
+                          Icons.chevron_right,
+                        ),
+                  onTap: () {
+                    selectMode(name);
+                  },
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 20),
+          Card(
+            child: ListTile(
+              leading: const Icon(
+                Icons.check_circle,
+              ),
+              title: const Text(
+                'Selected Room Mode',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: Text(
+                selectedMode,
+                style: const TextStyle(
+                  fontSize: 17,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Mini Games',
+            style: TextStyle(
+              fontSize: 23,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...games.map(
+            (game) {
+              final name = game[0] as String;
+              final description =
+                  game[1] as String;
+              final icon = game[2] as IconData;
+
+              return Card(
+                margin:
+                    const EdgeInsets.only(bottom: 12),
+                child: ListTile(
+                  contentPadding:
+                      const EdgeInsets.all(14),
+                  leading: CircleAvatar(
+                    radius: 27,
+                    child: Icon(icon, size: 28),
+                  ),
+                  title: Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: Padding(
+                    padding:
+                        const EdgeInsets.only(top: 5),
+                    child: Text(description),
+                  ),
+                  trailing: const Icon(
+                    Icons.play_arrow_rounded,
+                  ),
+                  onTap: () {
+                    openGame(context, name);
+                  },
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 10),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Room modes and games are currently UI-ready. '
+                      'Real-time multiplayer game logic, room synchronization '
+                      'and server validation will be connected in the backend phase.',
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   GAME DETAIL
+   ========================================================= */
+
+class GameDetailScreen extends StatefulWidget {
+  final String gameName;
+
+  const GameDetailScreen({
+    super.key,
+    required this.gameName,
+  });
+
+  @override
+  State<GameDetailScreen> createState() =>
+      _GameDetailScreenState();
+}
+
+class _GameDetailScreenState
+    extends State<GameDetailScreen> {
+  int result = 0;
+
+  void playGame() {
+    setState(() {
+      result =
+          DateTime.now().millisecond % 6 + 1;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${widget.gameName} played.',
+        ),
+      ),
+    );
+  }
+
+  IconData get gameIcon {
+    switch (widget.gameName) {
+      case 'Lucky Wheel':
+        return Icons.casino;
+      case 'Dice':
+        return Icons.casino_outlined;
+      case 'Quick Quiz':
+        return Icons.quiz_outlined;
+      default:
+        return Icons.question_mark;
+    }
+  }
+
+  String get description {
+    switch (widget.gameName) {
+      case 'Lucky Wheel':
+        return 'Spin the wheel and see your lucky result.';
+      case 'Dice':
+        return 'Roll a virtual dice with your room members.';
+      case 'Quick Quiz':
+        return 'Answer quick questions and challenge your friends.';
+      default:
+        return 'Choose truth or dare and have fun with the room.';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.gameName),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(28),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF8E35FF),
+                  Color(0xFF4F46E5),
+                ],
+              ),
+              borderRadius:
+                  BorderRadius.all(Radius.circular(28)),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  gameIcon,
+                  size: 80,
+                  color: Colors.white,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  widget.gameName,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  description,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 25),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  const Text(
+                    'Game Result',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  CircleAvatar(
+                    radius: 45,
+                    child: Text(
+                      result == 0
+                          ? '?'
+                          : '$result',
+                      style: const TextStyle(
+                        fontSize: 34,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: playGame,
+                      icon: const Icon(
+                        Icons.play_arrow,
+                      ),
+                      label: const Text(
+                        'Play Game',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(18),
+              child: Row(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.groups_outlined),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Multiplayer room synchronization will be connected during the real-time backend phase.',
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
