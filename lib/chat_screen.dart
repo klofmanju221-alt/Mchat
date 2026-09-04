@@ -17,87 +17,147 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final TextEditingController controller =
-      TextEditingController();
-
   final FirebaseFirestore _firestore =
       FirebaseFirestore.instance;
 
   final FirebaseAuth _auth =
       FirebaseAuth.instance;
 
-  CollectionReference<Map<String, dynamic>> get messages =>
-      _firestore
-          .collection('chats')
-          .doc(widget.chatId)
-          .collection('messages');
+  final TextEditingController _controller =
+      TextEditingController();
 
-  DocumentReference<Map<String, dynamic>> get chatRef =>
-      _firestore
-          .collection('chats')
-          .doc(widget.chatId);
+  final ScrollController _scrollController =
+      ScrollController();
+
+  bool _sending = false;
+
+  CollectionReference<Map<String, dynamic>>
+      get _messages =>
+          _firestore
+              .collection('chats')
+              .doc(widget.chatId)
+              .collection('messages');
+
+  DocumentReference<Map<String, dynamic>>
+      get _chatRef =>
+          _firestore
+              .collection('chats')
+              .doc(widget.chatId);
+
+  // ============================================================
+  // GET PARTICIPANT IDS
+  // ============================================================
+
+  List<String> get _participantIds {
+    final ids = widget.chatId.split('_');
+
+    return ids
+        .where((id) => id.trim().isNotEmpty)
+        .toList();
+  }
+
+  // ============================================================
+  // GET OTHER USER ID
+  // ============================================================
+
+  String get _otherUserId {
+    final currentUid = _auth.currentUser?.uid;
+
+    if (currentUid == null) {
+      return '';
+    }
+
+    for (final id in _participantIds) {
+      if (id != currentUid) {
+        return id;
+      }
+    }
+
+    return '';
+  }
 
   // ============================================================
   // SEND MESSAGE
   // ============================================================
 
-  Future<void> send() async {
-    final text = controller.text.trim();
+  Future<void> _sendMessage() async {
     final user = _auth.currentUser;
 
-    if (text.isEmpty || user == null) {
+    if (user == null) {
+      _showError('Please login first.');
       return;
     }
 
-    try {
-      // ----------------------------------------------------------
-      // The chat ID is created by InboxScreen from two UIDs.
-      // Store both participants in the chat document.
-      // ----------------------------------------------------------
+    final text = _controller.text.trim();
 
-      final ids = widget.chatId.split('_');
+    if (text.isEmpty) {
+      return;
+    }
 
-      if (ids.length != 2 ||
-          !ids.contains(user.uid)) {
-        _showMessage(
-          'This chat is not available.',
-        );
-        return;
-      }
-
-      final otherUid =
-          ids.firstWhere(
-        (id) => id != user.uid,
-        orElse: () => '',
+    if (text.length > 500) {
+      _showError(
+        'Message cannot exceed 500 characters.',
       );
+      return;
+    }
 
-      if (otherUid.isEmpty) {
-        _showMessage(
-          'Chat participant unavailable.',
-        );
-        return;
-      }
+    final ids = _participantIds;
 
-      final userDoc = await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .get();
+    if (ids.length != 2 ||
+        !ids.contains(user.uid)) {
+      _showError(
+        'This private chat is not available.',
+      );
+      return;
+    }
+
+    final otherUid = _otherUserId;
+
+    if (otherUid.isEmpty) {
+      _showError(
+        'Chat participant unavailable.',
+      );
+      return;
+    }
+
+    if (_sending) {
+      return;
+    }
+
+    setState(() {
+      _sending = true;
+    });
+
+    try {
+      // --------------------------------------------------------
+      // LOAD SENDER PROFILE
+      // --------------------------------------------------------
+
+      final userSnapshot =
+          await _firestore
+              .collection('users')
+              .doc(user.uid)
+              .get();
 
       final userData =
-          userDoc.data() ?? {};
+          userSnapshot.data() ?? {};
 
       final senderName =
           (userData['name'] ??
                   user.displayName ??
                   'Mchat User')
+              .toString()
+              .trim();
+
+      final senderMchatId =
+          (userData['mchatId'] ?? '')
               .toString();
 
-      // ----------------------------------------------------------
-      // Create/update chat metadata first.
-      // Firestore rules will only allow the two participants.
-      // ----------------------------------------------------------
+      // --------------------------------------------------------
+      // CREATE CHAT METADATA
+      // --------------------------------------------------------
 
-      await chatRef.set(
+      await _chatRef.set(
         {
           'participants': [
             ids[0],
@@ -108,42 +168,123 @@ class _ChatScreenState extends State<ChatScreen> {
               FieldValue.serverTimestamp(),
           'updatedAt':
               FieldValue.serverTimestamp(),
+          'lastSenderId': user.uid,
+          'lastSenderName':
+              senderName.isEmpty
+                  ? 'Mchat User'
+                  : senderName,
         },
         SetOptions(merge: true),
       );
 
-      // ----------------------------------------------------------
-      // Add message
-      // ----------------------------------------------------------
+      // --------------------------------------------------------
+      // ADD MESSAGE
+      // --------------------------------------------------------
 
-      await messages.add({
-        'senderId': user.uid,
-        'senderName': senderName,
-        'text': text,
-        'createdAt':
-            FieldValue.serverTimestamp(),
-      });
+      await _messages.add(
+        {
+          'senderId': user.uid,
+          'senderName':
+              senderName.isEmpty
+                  ? 'Mchat User'
+                  : senderName,
+          'senderMchatId':
+              senderMchatId,
+          'text': text,
+          'createdAt':
+              FieldValue.serverTimestamp(),
+        },
+      );
 
-      controller.clear();
+      _controller.clear();
+
+      if (mounted) {
+        setState(() {
+          _sending = false;
+        });
+      }
+
+      _scrollToBottom();
     } catch (e) {
-      _showMessage(
+      if (mounted) {
+        setState(() {
+          _sending = false;
+        });
+      }
+
+      _showError(
         'Message could not be sent.',
       );
     }
   }
 
   // ============================================================
-  // MESSAGE
+  // SCROLL
   // ============================================================
 
-  void _showMessage(String message) {
-    if (!mounted) return;
+  void _scrollToBottom() {
+    Future.delayed(
+      const Duration(milliseconds: 200),
+      () {
+        if (!_scrollController.hasClients) {
+          return;
+        }
 
-    ScaffoldMessenger.of(context).showSnackBar(
+        _scrollController.animateTo(
+          0,
+          duration:
+              const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      },
+    );
+  }
+
+  // ============================================================
+  // ERROR
+  // ============================================================
+
+  void _showError(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
       SnackBar(
         content: Text(message),
       ),
     );
+  }
+
+  // ============================================================
+  // FORMAT TIME
+  // ============================================================
+
+  String _formatTime(
+    Timestamp? timestamp,
+  ) {
+    if (timestamp == null) {
+      return '';
+    }
+
+    final date = timestamp.toDate();
+
+    final hour =
+        date.hour % 12 == 0
+            ? 12
+            : date.hour % 12;
+
+    final minute =
+        date.minute.toString().padLeft(
+              2,
+              '0',
+            );
+
+    final period =
+        date.hour >= 12 ? 'PM' : 'AM';
+
+    return '$hour:$minute $period';
   }
 
   // ============================================================
@@ -158,22 +299,118 @@ class _ChatScreenState extends State<ChatScreen> {
       return const Scaffold(
         body: Center(
           child: Text(
-            'Please login',
+            'Please login to use Free Inbox.',
           ),
         ),
       );
     }
 
     return Scaffold(
+      backgroundColor:
+          const Color(0xFFF7F4FB),
+
       appBar: AppBar(
-        title: Text(
-          widget.title,
+        elevation: 0,
+        titleSpacing: 0,
+
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              child: Text(
+                widget.title.isNotEmpty
+                    ? widget.title[0]
+                        .toUpperCase()
+                    : 'M',
+              ),
+            ),
+
+            const SizedBox(width: 10),
+
+            Expanded(
+              child: StreamBuilder<
+                  DocumentSnapshot<
+                      Map<String, dynamic>>>(
+                stream: _firestore
+                    .collection('users')
+                    .doc(_otherUserId)
+                    .snapshots(),
+
+                builder:
+                    (context, snapshot) {
+                  final data =
+                      snapshot.data?.data();
+
+                  final online =
+                      data?['isOnline'] ==
+                          true;
+
+                  final name =
+                      (data?['name'] ??
+                              widget.title)
+                          .toString();
+
+                  return Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow:
+                            TextOverflow.ellipsis,
+                        style:
+                            const TextStyle(
+                          fontWeight:
+                              FontWeight.bold,
+                          fontSize: 17,
+                        ),
+                      ),
+
+                      Row(
+                        children: [
+                          Container(
+                            width: 7,
+                            height: 7,
+                            decoration:
+                                BoxDecoration(
+                              shape:
+                                  BoxShape.circle,
+                              color: online
+                                  ? Colors.green
+                                  : Colors.grey,
+                            ),
+                          ),
+
+                          const SizedBox(
+                            width: 5,
+                          ),
+
+                          Text(
+                            online
+                                ? 'Online'
+                                : 'Offline',
+                            style:
+                                TextStyle(
+                              fontSize: 11,
+                              color: online
+                                  ? Colors.green
+                                  : Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
 
       body: Column(
         children: [
-
           // ======================================================
           // MESSAGES
           // ======================================================
@@ -182,26 +419,32 @@ class _ChatScreenState extends State<ChatScreen> {
             child: StreamBuilder<
                 QuerySnapshot<
                     Map<String, dynamic>>>(
-              stream: messages
+              stream: _messages
                   .orderBy(
                     'createdAt',
                     descending: true,
                   )
                   .snapshots(),
 
-              builder: (
-                context,
-                snapshot,
-              ) {
+              builder:
+                  (context, snapshot) {
                 if (snapshot.hasError) {
                   return const Center(
-                    child: Text(
-                      'Unable to load messages',
+                    child: Padding(
+                      padding:
+                          EdgeInsets.all(25),
+                      child: Text(
+                        'Unable to load messages.',
+                        textAlign:
+                            TextAlign.center,
+                      ),
                     ),
                   );
                 }
 
-                if (!snapshot.hasData) {
+                if (snapshot.connectionState ==
+                        ConnectionState.waiting &&
+                    !snapshot.hasData) {
                   return const Center(
                     child:
                         CircularProgressIndicator(),
@@ -209,40 +452,106 @@ class _ChatScreenState extends State<ChatScreen> {
                 }
 
                 final docs =
-                    snapshot.data!.docs;
+                    snapshot.data?.docs ?? [];
 
                 if (docs.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'Start a conversation',
+                  return Center(
+                    child: Column(
+                      mainAxisSize:
+                          MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration:
+                              BoxDecoration(
+                            color: Colors
+                                .deepPurple
+                                .withValues(
+                              alpha: 0.10,
+                            ),
+                            shape:
+                                BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons
+                                .chat_bubble_outline,
+                            size: 38,
+                            color: Colors
+                                .deepPurple,
+                          ),
+                        ),
+
+                        const SizedBox(
+                          height: 15,
+                        ),
+
+                        Text(
+                          'Start a conversation',
+                          style:
+                              const TextStyle(
+                            fontSize: 19,
+                            fontWeight:
+                                FontWeight.bold,
+                          ),
+                        ),
+
+                        const SizedBox(
+                          height: 6,
+                        ),
+
+                        Text(
+                          'Send a message to ${widget.title}',
+                          style:
+                              const TextStyle(
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }
 
                 return ListView.builder(
+                  controller:
+                      _scrollController,
                   reverse: true,
                   padding:
-                      const EdgeInsets.all(12),
-                  itemCount: docs.length,
+                      const EdgeInsets.fromLTRB(
+                    12,
+                    16,
+                    12,
+                    12,
+                  ),
+                  itemCount:
+                      docs.length,
 
                   itemBuilder:
                       (context, index) {
                     final data =
                         docs[index].data();
 
-                    final mine =
-                        data['senderId'] ==
-                            user.uid;
+                    final senderId =
+                        (data['senderId'] ??
+                                '')
+                            .toString();
 
                     final text =
-                        (data['text'] ??
-                                '')
+                        (data['text'] ?? '')
                             .toString();
 
                     final senderName =
                         (data['senderName'] ??
-                                'User')
+                                'Mchat User')
                             .toString();
+
+                    final timestamp =
+                        data['createdAt']
+                            as Timestamp?;
+
+                    final mine =
+                        senderId ==
+                            user.uid;
 
                     return Align(
                       alignment: mine
@@ -250,19 +559,21 @@ class _ChatScreenState extends State<ChatScreen> {
                           : Alignment.centerLeft,
 
                       child: Container(
+                        constraints:
+                            const BoxConstraints(
+                          maxWidth: 310,
+                        ),
+
                         margin:
                             const EdgeInsets.only(
                           bottom: 8,
                         ),
 
                         padding:
-                            const EdgeInsets.all(
-                          12,
-                        ),
-
-                        constraints:
-                            const BoxConstraints(
-                          maxWidth: 300,
+                            const EdgeInsets
+                                .symmetric(
+                          horizontal: 14,
+                          vertical: 10,
                         ),
 
                         decoration:
@@ -270,15 +581,45 @@ class _ChatScreenState extends State<ChatScreen> {
                           color: mine
                               ? Colors
                                   .deepPurple
-                                  .shade100
-                              : Colors
-                                  .grey
-                                  .shade200,
+                              : Colors.white,
 
                           borderRadius:
-                              BorderRadius.circular(
-                            16,
+                              BorderRadius
+                                  .only(
+                            topLeft:
+                                const Radius
+                                    .circular(
+                              18,
+                            ),
+                            topRight:
+                                const Radius
+                                    .circular(
+                              18,
+                            ),
+                            bottomLeft:
+                                Radius.circular(
+                              mine ? 18 : 4,
+                            ),
+                            bottomRight:
+                                Radius.circular(
+                              mine ? 4 : 18,
+                            ),
                           ),
+
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black
+                                  .withValues(
+                                alpha: 0.05,
+                              ),
+                              blurRadius: 5,
+                              offset:
+                                  const Offset(
+                                0,
+                                2,
+                              ),
+                            ),
+                          ],
                         ),
 
                         child: Column(
@@ -290,7 +631,6 @@ class _ChatScreenState extends State<ChatScreen> {
                                       .start,
 
                           children: [
-
                             if (!mine)
                               Text(
                                 senderName,
@@ -298,7 +638,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                     const TextStyle(
                                   fontWeight:
                                       FontWeight.bold,
-                                  fontSize: 12,
+                                  fontSize: 11,
+                                  color: Colors
+                                      .deepPurple,
                                 ),
                               ),
 
@@ -309,9 +651,30 @@ class _ChatScreenState extends State<ChatScreen> {
 
                             Text(
                               text,
-                              style:
-                                  const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
+                                color: mine
+                                    ? Colors.white
+                                    : Colors.black87,
+                              ),
+                            ),
+
+                            const SizedBox(
+                              height: 4,
+                            ),
+
+                            Text(
+                              _formatTime(
+                                timestamp,
+                              ),
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: mine
+                                    ? Colors.white
+                                        .withValues(
+                                        alpha: 0.75,
+                                      )
+                                    : Colors.grey,
                               ),
                             ),
                           ],
@@ -329,40 +692,75 @@ class _ChatScreenState extends State<ChatScreen> {
           // ======================================================
 
           SafeArea(
-            child: Padding(
+            top: false,
+            child: Container(
               padding:
-                  const EdgeInsets.all(10),
+                  const EdgeInsets.fromLTRB(
+                10,
+                8,
+                10,
+                8,
+              ),
+
+              decoration:
+                  const BoxDecoration(
+                color: Colors.white,
+              ),
 
               child: Row(
+                crossAxisAlignment:
+                    CrossAxisAlignment.end,
                 children: [
-
                   Expanded(
                     child: TextField(
                       controller:
-                          controller,
+                          _controller,
 
-                      maxLines: 3,
                       minLines: 1,
+                      maxLines: 4,
 
-                      textInputAction:
-                          TextInputAction.send,
+                      textCapitalization:
+                          TextCapitalization
+                              .sentences,
 
                       decoration:
                           InputDecoration(
                         hintText:
                             'Type a message...',
 
+                        filled: true,
+
+                        fillColor:
+                            const Color(
+                          0xFFF2EEF7,
+                        ),
+
+                        contentPadding:
+                            const EdgeInsets
+                                .symmetric(
+                          horizontal: 18,
+                          vertical: 12,
+                        ),
+
                         border:
                             OutlineInputBorder(
                           borderRadius:
-                              BorderRadius.circular(
-                            24,
+                              BorderRadius
+                                  .circular(
+                            25,
                           ),
+                          borderSide:
+                              BorderSide.none,
                         ),
+
+                        counterText: '',
                       ),
 
+                      maxLength: 500,
+
                       onSubmitted:
-                          (_) => send(),
+                          (_) =>
+                              _sendMessage(),
                     ),
                   ),
 
@@ -370,11 +768,32 @@ class _ChatScreenState extends State<ChatScreen> {
                     width: 8,
                   ),
 
-                  IconButton.filled(
-                    onPressed: send,
-                    icon: const Icon(
-                      Icons.send,
-                    ),
+                  SizedBox(
+                    width: 50,
+                    height: 50,
+                    child: _sending
+                        ? const Center(
+                            child:
+                                CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : IconButton(
+                            onPressed:
+                                _sendMessage,
+                            style:
+                                IconButton.styleFrom(
+                              backgroundColor:
+                                  Colors
+                                      .deepPurple,
+                              foregroundColor:
+                                  Colors.white,
+                            ),
+                            icon:
+                                const Icon(
+                              Icons.send_rounded,
+                            ),
+                          ),
                   ),
                 ],
               ),
@@ -391,7 +810,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
-    controller.dispose();
+    _controller.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 }
