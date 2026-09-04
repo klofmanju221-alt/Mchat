@@ -3,10 +3,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ============================================================
-    // AUTH
-    // ============================================================
-
     function signedIn() {
       return request.auth != null;
     }
@@ -16,13 +12,11 @@ service cloud.firestore {
         && request.auth.token.owner == true;
     }
 
-
     // ============================================================
     // USERS
     // ============================================================
 
     match /users/{uid} {
-
       allow read: if signedIn()
         && (
           request.auth.uid == uid
@@ -48,13 +42,11 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-
     // ============================================================
     // MCHAT ID INDEX
     // ============================================================
 
     match /mchatIds/{mchatId} {
-
       allow read: if signedIn();
 
       allow create: if signedIn()
@@ -62,19 +54,15 @@ service cloud.firestore {
           (
             request.auth.uid
               == request.resource.data.uid
-            &&
-            mchatId.matches('^[0-9]{8}$')
-            &&
-            mchatId != '11111111'
+            && mchatId.matches('^[0-9]{8}$')
+            && mchatId != '11111111'
           )
           ||
           (
             mchatId == '11111111'
-            &&
-            request.resource.data.uid
+            && request.resource.data.uid
               == request.auth.uid
-            &&
-            get(
+            && get(
               /databases/$(database)/documents/users/$(request.auth.uid)
             ).data.isOwner == true
           )
@@ -93,13 +81,11 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-
     // ============================================================
     // WALLETS
     // ============================================================
 
     match /wallets/{uid} {
-
       allow read: if signedIn()
         && (
           request.auth.uid == uid
@@ -109,71 +95,105 @@ service cloud.firestore {
       allow write: if false;
     }
 
-
     // ============================================================
     // LEDGER
     // ============================================================
 
     match /ledger/{entryId} {
-
-      allow read: if signedIn()
-        && isOwner();
-
+      allow read: if signedIn() && isOwner();
       allow write: if false;
     }
-
 
     // ============================================================
     // RECHARGES
     // ============================================================
 
     match /recharges/{id} {
-
-      allow read: if signedIn()
-        && isOwner();
-
+      allow read: if signedIn() && isOwner();
       allow write: if false;
     }
-
 
     // ============================================================
     // WITHDRAWALS
     // ============================================================
 
     match /withdrawals/{id} {
-
-      allow read: if signedIn()
-        && isOwner();
-
+      allow read: if signedIn() && isOwner();
       allow write: if false;
     }
-
 
     // ============================================================
     // OWNER COMMISSIONS
     // ============================================================
 
     match /owner_commissions/{id} {
-
-      allow read: if signedIn()
-        && isOwner();
-
+      allow read: if signedIn() && isOwner();
       allow write: if false;
     }
-
 
     // ============================================================
     // AUDIT LOGS
     // ============================================================
 
     match /audit_logs/{id} {
-
-      allow read: if signedIn()
-        && isOwner();
-
+      allow read: if signedIn() && isOwner();
       allow write: if false;
     }
 
+    // ============================================================
+    // PRIVATE CHAT
+    // ============================================================
+
+    match /chats/{chatId} {
+
+      // ----------------------------------------------------------
+      // CHAT DOCUMENT
+      // ----------------------------------------------------------
+
+      allow read: if signedIn()
+        && request.auth.uid
+          in resource.data.participants;
+
+      allow create: if signedIn()
+        && request.resource.data.participants is list
+        && request.resource.data.participants.size() == 2
+        && request.auth.uid
+          in request.resource.data.participants;
+
+      allow update: if signedIn()
+        && request.auth.uid
+          in resource.data.participants
+        && request.resource.data.participants
+          == resource.data.participants;
+
+      allow delete: if false;
+
+      // ----------------------------------------------------------
+      // CHAT MESSAGES
+      // ----------------------------------------------------------
+
+      match /messages/{messageId} {
+
+        allow read: if signedIn()
+          && request.auth.uid
+            in get(
+              /databases/$(database)/documents/chats/$(chatId)
+            ).data.participants;
+
+        allow create: if signedIn()
+          && request.auth.uid
+            in get(
+              /databases/$(database)/documents/chats/$(chatId)
+            ).data.participants
+          && request.resource.data.senderId
+            == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 500;
+
+        allow update, delete: if false;
+      }
+    }
 
     // ============================================================
     // LIVE ROOMS
@@ -181,15 +201,12 @@ service cloud.firestore {
 
     match /rooms/{roomId} {
 
-      // Signed-in users can see live rooms.
       allow read: if signedIn();
 
-      // A user can create only a room where they are the host.
       allow create: if signedIn()
         && request.resource.data.hostUid
           == request.auth.uid;
 
-      // Host can update their own room.
       allow update: if signedIn()
         && (
           resource.data.hostUid == request.auth.uid
@@ -208,20 +225,15 @@ service cloud.firestore {
           )
         );
 
-      // Only owner can delete rooms.
       allow delete: if isOwner();
 
-
-      // ==========================================================
+      // ----------------------------------------------------------
       // LIVE ROOM CHAT
-      // ==========================================================
+      // ----------------------------------------------------------
 
       match /messages/{messageId} {
-
-        // Signed-in users can read live room messages.
         allow read: if signedIn();
 
-        // A user can create a message only as themselves.
         allow create: if signedIn()
           && request.resource.data.senderId
             == request.auth.uid
@@ -229,34 +241,23 @@ service cloud.firestore {
           && request.resource.data.text.size() > 0
           && request.resource.data.text.size() <= 500;
 
-        // Messages cannot be edited or deleted by clients.
         allow update, delete: if false;
       }
 
-
-      // ==========================================================
-      // LIVE ROOM GIFTS
-      // ==========================================================
-      //
-      // Client cannot directly create/update gifts.
-      // Gifts will later be processed through trusted backend
-      // so coins cannot be cheated.
-      //
+      // ----------------------------------------------------------
+      // LIVE GIFTS
+      // ----------------------------------------------------------
 
       match /gifts/{giftId} {
-
         allow read: if signedIn();
-
         allow create, update, delete: if false;
       }
 
-
-      // ==========================================================
+      // ----------------------------------------------------------
       // ROOM MEMBERS
-      // ==========================================================
+      // ----------------------------------------------------------
 
       match /members/{memberId} {
-
         allow read: if signedIn();
 
         allow create: if signedIn()
@@ -272,7 +273,6 @@ service cloud.firestore {
           );
       }
     }
-
 
     // ============================================================
     // EVERYTHING ELSE BLOCKED
