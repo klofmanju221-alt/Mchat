@@ -1469,11 +1469,7 @@ class _CoinPackagesScreenState
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => PaymentScreen(
-                    packageName: selectedPackage.name,
-                    coins: selectedPackage.coins,
-                    price: selectedPackage.price,
-                  ),
+                builder: (context) => const PaymentScreen(),
                 ),
               );
             },
