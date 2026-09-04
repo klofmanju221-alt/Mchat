@@ -64,9 +64,7 @@ class _MchatHomePageState extends State<MchatHomePage> {
             icon: const Icon(Icons.notifications_none),
           ),
           IconButton(
-            onPressed: () {
-              setState(() => index = 3);
-            },
+            onPressed: () => setState(() => index = 3),
             icon: const Icon(Icons.account_circle_outlined),
           ),
         ],
@@ -119,7 +117,8 @@ class HomeContent extends StatelessWidget {
     ['Private Chat', Icons.lock_outline],
     ['Family Room', Icons.groups_rounded],
     ['Room Mode & Games', Icons.sports_esports_outlined],
-    ['Room PK', Icons.flash_on_rounded],
+    ['Room PK', Icons.flash_on],
+    ['Live Ended & Replay', Icons.history],
     ['Voice', Icons.mic_none],
     ['Live Room', Icons.live_tv_outlined],
     ['VIP', Icons.emoji_events_outlined],
@@ -130,12 +129,13 @@ class HomeContent extends StatelessWidget {
   ];
 
   void open(BuildContext context, String name) {
-    final Map<String, Widget> pages = {
+    final pages = <String, Widget>{
       'Free Inbox': const InboxScreen(),
       'Private Chat': const PrivateChatScreen(),
       'Family Room': const FamilyRoomScreen(),
       'Room Mode & Games': const RoomModeGamesScreen(),
-      'Room PK': const RoomPkScreen(),
+      'Room PK': const RoomPKScreen(),
+      'Live Ended & Replay': const LiveEndedReplayScreen(),
       'Voice': const FeatureScreen(
         title: 'Voice',
         icon: Icons.mic,
@@ -150,9 +150,7 @@ class HomeContent extends StatelessWidget {
 
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => pages[name]!,
-      ),
+      MaterialPageRoute(builder: (_) => pages[name]!),
     );
   }
 
@@ -241,7 +239,7 @@ class HomeContent extends StatelessWidget {
                         service[0] as String,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          fontSize: 17,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -269,9 +267,7 @@ class HomeContent extends StatelessWidget {
                 ),
               ),
               trailing: FilledButton(
-                onPressed: () {
-                  open(context, 'Coins');
-                },
+                onPressed: () => open(context, 'Coins'),
                 child: const Text('Recharge'),
               ),
             ),
@@ -299,7 +295,6 @@ class _InboxState extends State<InboxScreen> {
 
   void send() {
     final text = controller.text.trim();
-
     if (text.isEmpty) return;
 
     setState(() {
@@ -317,9 +312,7 @@ class _InboxState extends State<InboxScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Free Inbox'),
-      ),
+      appBar: AppBar(title: const Text('Free Inbox')),
       body: Column(
         children: [
           Expanded(
@@ -333,17 +326,15 @@ class _InboxState extends State<InboxScreen> {
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: messages.length,
-                    itemBuilder: (_, i) {
-                      return Align(
-                        alignment: Alignment.centerRight,
-                        child: Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Text(messages[i]),
-                          ),
+                    itemBuilder: (_, i) => Align(
+                      alignment: Alignment.centerRight,
+                      child: Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Text(messages[i]),
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   ),
           ),
           SafeArea(
@@ -388,17 +379,15 @@ class PrivateChatScreen extends StatefulWidget {
       _PrivateChatScreenState();
 }
 
-class _PrivateChatScreenState
-    extends State<PrivateChatScreen> {
+class _PrivateChatScreenState extends State<PrivateChatScreen> {
   final controller = TextEditingController();
-  final List<String> messages = [];
+  final messages = <String>[];
 
   bool muted = false;
   bool blocked = false;
 
   void sendMessage() {
     final text = controller.text.trim();
-
     if (text.isEmpty || blocked) return;
 
     setState(() {
@@ -417,62 +406,45 @@ class _PrivateChatScreenState
   }
 
   void blockUser() {
-    setState(() {
-      blocked = true;
-    });
-
+    setState(() => blocked = true);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('User blocked for this chat.'),
-      ),
+      const SnackBar(content: Text('User blocked for this chat.')),
     );
   }
 
   void unblockUser() {
-    setState(() {
-      blocked = false;
-    });
-
+    setState(() => blocked = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('User unblocked.'),
-      ),
+      const SnackBar(content: Text('User unblocked.')),
     );
   }
 
   void reportUser() {
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Report User'),
-          content: const Text(
-            'Choose a reason to report this user.',
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Report User'),
+        content: const Text(
+          'Choose a reason to report this user.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(this.context)
-                    .showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Report submitted for review.',
-                    ),
-                  ),
-                );
-              },
-              child: const Text('Report'),
-            ),
-          ],
-        );
-      },
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Report submitted for review.'),
+                ),
+              );
+            },
+            child: const Text('Report'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -495,8 +467,7 @@ class _PrivateChatScreenState
             ),
             SizedBox(width: 10),
             Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Mchat User',
@@ -522,17 +493,11 @@ class _PrivateChatScreenState
               if (value == 'rules') showRules();
 
               if (value == 'mute') {
-                setState(() {
-                  muted = !muted;
-                });
+                setState(() => muted = !muted);
               }
 
               if (value == 'block') {
-                if (blocked) {
-                  unblockUser();
-                } else {
-                  blockUser();
-                }
+                blocked ? unblockUser() : blockUser();
               }
 
               if (value == 'report') reportUser();
@@ -602,12 +567,7 @@ class _PrivateChatScreenState
         children: [
           Container(
             width: double.infinity,
-            margin: const EdgeInsets.fromLTRB(
-              12,
-              12,
-              12,
-              4,
-            ),
+            margin: const EdgeInsets.fromLTRB(12, 12, 12, 4),
             padding: const EdgeInsets.all(13),
             decoration: BoxDecoration(
               color: Theme.of(context)
@@ -632,14 +592,9 @@ class _PrivateChatScreenState
             child: blocked
                 ? const Center(
                     child: Column(
-                      mainAxisAlignment:
-                          MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.block,
-                          size: 70,
-                          color: Colors.grey,
-                        ),
+                        Icon(Icons.block, size: 70),
                         SizedBox(height: 15),
                         Text(
                           'This user is blocked.',
@@ -647,10 +602,6 @@ class _PrivateChatScreenState
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
-                        ),
-                        SizedBox(height: 6),
-                        Text(
-                          'Unblock the user to continue chatting.',
                         ),
                       ],
                     ),
@@ -661,10 +612,7 @@ class _PrivateChatScreenState
                           mainAxisAlignment:
                               MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.lock_outline,
-                              size: 65,
-                            ),
+                            Icon(Icons.lock_outline, size: 65),
                             SizedBox(height: 15),
                             Text(
                               'Private Conversation',
@@ -674,41 +622,29 @@ class _PrivateChatScreenState
                               ),
                             ),
                             SizedBox(height: 8),
-                            Text(
-                              'Send a message to start.',
-                            ),
+                            Text('Send a message to start.'),
                           ],
                         ),
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.all(16),
                         itemCount: messages.length,
-                        itemBuilder: (_, index) {
-                          return Align(
-                            alignment:
-                                Alignment.centerRight,
-                            child: Container(
-                              margin:
-                                  const EdgeInsets.only(
-                                bottom: 10,
-                              ),
-                              padding:
-                                  const EdgeInsets.all(13),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primaryContainer,
-                                borderRadius:
-                                    BorderRadius.circular(
-                                  18,
-                                ),
-                              ),
-                              child: Text(
-                                messages[index],
-                              ),
+                        itemBuilder: (_, i) => Align(
+                          alignment: Alignment.centerRight,
+                          child: Container(
+                            margin:
+                                const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(13),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer,
+                              borderRadius:
+                                  BorderRadius.circular(18),
                             ),
-                          );
-                        },
+                            child: Text(messages[i]),
+                          ),
+                        ),
                       ),
           ),
           if (!blocked)
@@ -719,9 +655,7 @@ class _PrivateChatScreenState
                   children: [
                     IconButton(
                       onPressed: showRules,
-                      icon: const Icon(
-                        Icons.shield_outlined,
-                      ),
+                      icon: const Icon(Icons.shield_outlined),
                     ),
                     Expanded(
                       child: TextField(
@@ -733,8 +667,7 @@ class _PrivateChatScreenState
                                 BorderRadius.circular(24),
                           ),
                         ),
-                        onSubmitted: (_) =>
-                            sendMessage(),
+                        onSubmitted: (_) => sendMessage(),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -780,47 +713,11 @@ class _PrivateChatRulesScreenState
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
-          Container(
-            padding: const EdgeInsets.all(22),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF6D28D9),
-                  Color(0xFF4F46E5),
-                ],
-              ),
-              borderRadius: BorderRadius.all(
-                Radius.circular(24),
-              ),
-            ),
-            child: const Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.security,
-                  color: Colors.white,
-                  size: 52,
-                ),
-                SizedBox(height: 12),
-                Text(
-                  'Stay Safe in Private Chat',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 23,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Protect your privacy and follow Mchat community rules.',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 15,
-                  ),
-                ),
-              ],
-            ),
+          const FeatureBanner(
+            icon: Icons.security,
+            title: 'Stay Safe in Private Chat',
+            subtitle:
+                'Protect your privacy and follow Mchat community rules.',
           ),
           const SizedBox(height: 24),
           const Text(
@@ -833,56 +730,39 @@ class _PrivateChatRulesScreenState
           Card(
             child: SwitchListTile(
               value: allowMessages,
-              onChanged: (v) {
-                setState(() => allowMessages = v);
-              },
-              secondary:
-                  const Icon(Icons.chat_outlined),
+              onChanged: (v) =>
+                  setState(() => allowMessages = v),
+              secondary: const Icon(Icons.chat_outlined),
               title: const Text('Allow Private Messages'),
-              subtitle: const Text(
-                'Allow other users to send you private messages.',
-              ),
             ),
           ),
           Card(
             child: SwitchListTile(
               value: allowRequests,
-              onChanged: (v) {
-                setState(() => allowRequests = v);
-              },
+              onChanged: (v) =>
+                  setState(() => allowRequests = v),
               secondary:
                   const Icon(Icons.person_add_outlined),
               title: const Text('Message Requests'),
-              subtitle: const Text(
-                'Allow private chat requests from other users.',
-              ),
             ),
           ),
           Card(
             child: SwitchListTile(
               value: readReceipts,
-              onChanged: (v) {
-                setState(() => readReceipts = v);
-              },
+              onChanged: (v) =>
+                  setState(() => readReceipts = v),
               secondary: const Icon(Icons.done_all),
               title: const Text('Read Receipts'),
-              subtitle: const Text(
-                'Show when messages have been read.',
-              ),
             ),
           ),
           Card(
             child: SwitchListTile(
               value: onlineStatus,
-              onChanged: (v) {
-                setState(() => onlineStatus = v);
-              },
+              onChanged: (v) =>
+                  setState(() => onlineStatus = v),
               secondary:
                   const Icon(Icons.visibility_outlined),
               title: const Text('Online Status'),
-              subtitle: const Text(
-                'Show your online status to other users.',
-              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -893,35 +773,29 @@ class _PrivateChatRulesScreenState
               fontWeight: FontWeight.bold,
             ),
           ),
-          const _RuleTile(
+          const RuleTile(
             icon: Icons.privacy_tip_outlined,
             title: 'Respect Privacy',
             text:
                 'Do not share another person’s private information without permission.',
           ),
-          const _RuleTile(
+          const RuleTile(
             icon: Icons.no_adult_content,
             title: 'No Harassment',
             text:
                 'Do not threaten, bully, harass or repeatedly disturb other users.',
           ),
-          const _RuleTile(
+          const RuleTile(
             icon: Icons.link_off,
             title: 'Avoid Suspicious Links',
             text:
                 'Do not send harmful, suspicious or misleading links.',
           ),
-          const _RuleTile(
+          const RuleTile(
             icon: Icons.password_outlined,
             title: 'Never Share Passwords',
             text:
                 'Mchat support will never ask for your password or verification code.',
-          ),
-          const _RuleTile(
-            icon: Icons.report_outlined,
-            title: 'Report Problems',
-            text:
-                'Use Report User when you see abuse, scams or rule violations.',
           ),
         ],
       ),
@@ -929,39 +803,8 @@ class _PrivateChatRulesScreenState
   }
 }
 
-class _RuleTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String text;
-
-  const _RuleTile({
-    required this.icon,
-    required this.title,
-    required this.text,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: ListTile(
-        leading: CircleAvatar(
-          child: Icon(icon),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        subtitle: Text(text),
-      ),
-    );
-  }
-}
-
 /* =========================================================
-   LIVE
+   LIVE + LIVE ENDED
    ========================================================= */
 
 class LiveScreen extends StatelessWidget {
@@ -969,50 +812,1272 @@ class LiveScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const FeatureScreen(
-      title: 'Live Room',
-      icon: Icons.live_tv,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Live Room'),
+        actions: [
+          IconButton(
+            tooltip: 'Replay',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const LiveEndedReplayScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.history),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(18),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(25),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF8E35FF),
+                  Color(0xFF4F46E5),
+                ],
+              ),
+              borderRadius:
+                  BorderRadius.all(Radius.circular(28)),
+            ),
+            child: const Column(
+              children: [
+                Icon(
+                  Icons.live_tv,
+                  size: 75,
+                  color: Colors.white,
+                ),
+                SizedBox(height: 15),
+                Text(
+                  'Mchat Live Room',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 27,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Voice • Video • Gifts • Chat',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 25),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const LiveEndedScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.stop_circle_outlined),
+            label: const Text('End Live & View Summary'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const LiveEndedReplayScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.history),
+            label: const Text('View Replays'),
+          ),
+        ],
+      ),
     );
   }
 }
 
-/* =========================================================
-   GENERIC FEATURE
-   ========================================================= */
+class LiveEndedScreen extends StatelessWidget {
+  const LiveEndedScreen({super.key});
 
-class FeatureScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Live Ended'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const FeatureBanner(
+            icon: Icons.check_circle_outline,
+            title: 'Your Live Has Ended',
+            subtitle:
+                'Your live session summary is ready.',
+          ),
+          const SizedBox(height: 20),
+          const SummaryCard(
+            icon: Icons.people_outline,
+            title: 'Viewers',
+            value: '128',
+          ),
+          const SummaryCard(
+            icon: Icons.timer_outlined,
+            title: 'Duration',
+            value: '01:24:36',
+          ),
+          const SummaryCard(
+            icon: Icons.favorite_outline,
+            title: 'Likes',
+            value: '2,450',
+          ),
+          const SummaryCard(
+            icon: Icons.card_giftcard,
+            title: 'Gifts',
+            value: '86',
+          ),
+          const SizedBox(height: 20),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const ReplayPlayerScreen(
+                    title: 'My Live Replay',
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.play_circle),
+            label: const Text('Watch Replay'),
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Replay share UI is ready.'),
+                ),
+              );
+            },
+            icon: const Icon(Icons.share),
+            label: const Text('Share Replay'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class LiveEndedReplayScreen extends StatelessWidget {
+  const LiveEndedReplayScreen({super.key});
+
+  static const replays = [
+    {
+      'title': 'Evening Family Live',
+      'date': 'Today • 7:30 PM',
+      'duration': '01:24:36',
+      'viewers': '128',
+      'likes': '2.4K',
+    },
+    {
+      'title': 'Music & Friends',
+      'date': 'Yesterday • 9:10 PM',
+      'duration': '00:58:21',
+      'viewers': '94',
+      'likes': '1.8K',
+    },
+    {
+      'title': 'Mchat Party Room',
+      'date': '28 Aug • 8:00 PM',
+      'duration': '01:12:45',
+      'viewers': '156',
+      'likes': '3.1K',
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Live Ended & Replay'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const FeatureBanner(
+            icon: Icons.history,
+            title: 'Live Replays',
+            subtitle:
+                'Watch, share and manage your completed live sessions.',
+          ),
+          const SizedBox(height: 22),
+          const Text(
+            'Your Replays',
+            style: TextStyle(
+              fontSize: 23,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...replays.map(
+            (replay) => Card(
+              margin: const EdgeInsets.only(bottom: 14),
+              child: ListTile(
+                contentPadding:
+                    const EdgeInsets.all(14),
+                leading: Container(
+                  width: 65,
+                  height: 65,
+                  decoration: BoxDecoration(
+                    borderRadius:
+                        BorderRadius.circular(15),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primaryContainer,
+                  ),
+                  child: const Icon(
+                    Icons.play_circle_fill,
+                    size: 38,
+                  ),
+                ),
+                title: Text(
+                  replay['title']!,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 17,
+                  ),
+                ),
+                subtitle: Padding(
+                  padding:
+                      const EdgeInsets.only(top: 6),
+                  child: Text(
+                    '${replay['date']}\n'
+                    'Duration: ${replay['duration']} • '
+                    'Viewers: ${replay['viewers']} • '
+                    'Likes: ${replay['likes']}',
+                  ),
+                ),
+                isThreeLine: true,
+                trailing: PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'delete') {
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(
+                        const SnackBar(
+                          content:
+                              Text('Delete UI is ready.'),
+                        ),
+                      );
+                    }
+
+                    if (value == 'share') {
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(
+                        const SnackBar(
+                          content:
+                              Text('Share UI is ready.'),
+                        ),
+                      );
+                    }
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      value: 'share',
+                      child: Text('Share'),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Text('Delete'),
+                    ),
+                  ],
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ReplayPlayerScreen(
+                        title: replay['title']!,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ReplayPlayerScreen extends StatelessWidget {
   final String title;
-  final IconData icon;
 
-  const FeatureScreen({
+  const ReplayPlayerScreen({
     super.key,
     required this.title,
-    required this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 90,
-              color: const Color(0xFF6D4C8F),
+      appBar: AppBar(
+        title: const Text('Replay'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Replay shared.'),
+                ),
+              );
+            },
+            icon: const Icon(Icons.share),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(18),
+        children: [
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFF6D28D9),
+                    Color(0xFF4F46E5),
+                  ],
+                ),
+                borderRadius:
+                    BorderRadius.circular(22),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.play_circle_fill,
+                  size: 85,
+                  color: Colors.white,
+                ),
+              ),
             ),
-            const SizedBox(height: 20),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 25,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 15),
+          const Row(
+            children: [
+              Expanded(
+                child: SummaryCard(
+                  icon: Icons.people_outline,
+                  title: 'Viewers',
+                  value: '128',
+                ),
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: SummaryCard(
+                  icon: Icons.favorite_outline,
+                  title: 'Likes',
+                  value: '2.4K',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(18),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Replay player UI is ready. Real video storage and streaming playback will be connected in the backend phase.',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   FAMILY ROOM
+   ========================================================= */
+
+class FamilyRoomScreen extends StatefulWidget {
+  const FamilyRoomScreen({super.key});
+
+  @override
+  State<FamilyRoomScreen> createState() =>
+      _FamilyRoomScreenState();
+}
+
+class _FamilyRoomScreenState
+    extends State<FamilyRoomScreen> {
+  late final List<FamilySeat> seats =
+      List.generate(
+    30,
+    (i) => FamilySeat(
+      number: i + 1,
+      name: i == 0 ? 'Host' : '',
+      occupied: i == 0,
+      isHost: i == 0,
+      micOn: i == 0,
+    ),
+  );
+
+  bool joined = false;
+  bool micOn = true;
+  bool roomLocked = false;
+
+  int get occupiedCount =>
+      seats.where((s) => s.occupied).length;
+
+  void joinRoom() {
+    if (roomLocked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This family room is locked.'),
+        ),
+      );
+      return;
+    }
+
+    final seat =
+        seats.indexWhere((s) => !s.occupied);
+
+    if (seat == -1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('All 30 seats are occupied.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      seats[seat].occupied = true;
+      seats[seat].name = 'You';
+      seats[seat].micOn = micOn;
+      joined = true;
+    });
+  }
+
+  void leaveRoom() {
+    final seat =
+        seats.indexWhere((s) => s.name == 'You');
+
+    if (seat != -1) {
+      setState(() {
+        seats[seat].occupied = false;
+        seats[seat].name = '';
+        seats[seat].micOn = false;
+        joined = false;
+      });
+    }
+  }
+
+  void toggleMic() {
+    setState(() => micOn = !micOn);
+
+    final seat =
+        seats.indexWhere((s) => s.name == 'You');
+
+    if (seat != -1) {
+      setState(() {
+        seats[seat].micOn = micOn;
+      });
+    }
+  }
+
+  void showRules() {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => const Padding(
+        padding: EdgeInsets.fromLTRB(20, 10, 20, 30),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
             Text(
-              title,
-              style: const TextStyle(
-                fontSize: 30,
+              'Family Room Rules',
+              style: TextStyle(
+                fontSize: 23,
                 fontWeight: FontWeight.bold,
               ),
             ),
+            SizedBox(height: 16),
+            RuleTile(
+              icon: Icons.favorite_outline,
+              title: 'Respect',
+              text: 'Respect every family member.',
+            ),
+            RuleTile(
+              icon: Icons.block,
+              title: 'No Abuse',
+              text: 'No harassment, abuse or spam.',
+            ),
+            RuleTile(
+              icon: Icons.security,
+              title: 'Privacy',
+              text: 'Do not share private information.',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void showGifts() {
+    const gifts = [
+      '🌹 Rose',
+      '❤️ Heart',
+      '🎁 Gift',
+      '☕ Coffee',
+      '🧸 Teddy',
+      '💎 Diamond',
+      '🦁 Lion',
+      '🏰 Castle',
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Room Gifts',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 15),
+            GridView.builder(
+              shrinkWrap: true,
+              itemCount: gifts.length,
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemBuilder: (_, i) => Card(
+                child: InkWell(
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(
+                      SnackBar(
+                        content:
+                            Text('${gifts[i]} sent to room.'),
+                      ),
+                    );
+                  },
+                  child: Center(
+                    child: Text(
+                      gifts[i],
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void showChat() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          16,
+          10,
+          16,
+          MediaQuery.of(sheetContext)
+                  .viewInsets
+                  .bottom +
+              16,
+        ),
+        child: SizedBox(
+          height: 400,
+          child: Column(
+            children: [
+              const Text(
+                'Room Chat',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Expanded(
+                child: Center(
+                  child: Text(
+                    'Welcome to Family Room 👋\n\n'
+                    'Room chat UI is ready.',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+              const Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Type in room...',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Icon(Icons.send),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Family Room'),
+        actions: [
+          IconButton(
+            onPressed: showRules,
+            icon: const Icon(Icons.info_outline),
+          ),
+          IconButton(
+            onPressed: () {
+              setState(() => roomLocked = !roomLocked);
+            },
+            icon: Icon(
+              roomLocked
+                  ? Icons.lock
+                  : Icons.lock_open,
+            ),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            margin:
+                const EdgeInsets.fromLTRB(12, 12, 12, 8),
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF8E35FF),
+                  Color(0xFF4F46E5),
+                ],
+              ),
+              borderRadius:
+                  BorderRadius.all(Radius.circular(24)),
+            ),
+            child: Row(
+              children: [
+                const CircleAvatar(
+                  radius: 29,
+                  child: Icon(
+                    Icons.groups_rounded,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Mchat Family Room',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '30 Seats • Voice • Chat • Gifts',
+                        style: TextStyle(
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  '$occupiedCount/30',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Text(
+                  '$occupiedCount members',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                if (roomLocked)
+                  const Chip(
+                    label: Text('Locked'),
+                    avatar: Icon(Icons.lock, size: 16),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: GridView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: 30,
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 5,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 10,
+                childAspectRatio: .78,
+              ),
+              itemBuilder: (_, i) {
+                return FamilySeatWidget(
+                  seat: seats[i],
+                  onTap: () {},
+                );
+              },
+            ),
+          ),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                children: [
+                  IconButton.filledTonal(
+                    onPressed: toggleMic,
+                    icon: Icon(
+                      micOn ? Icons.mic : Icons.mic_off,
+                    ),
+                  ),
+                  IconButton.filledTonal(
+                    onPressed: showChat,
+                    icon:
+                        const Icon(Icons.chat_bubble_outline),
+                  ),
+                  IconButton.filledTonal(
+                    onPressed: showGifts,
+                    icon:
+                        const Icon(Icons.card_giftcard),
+                  ),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed:
+                          joined ? leaveRoom : joinRoom,
+                      icon: Icon(
+                        joined
+                            ? Icons.logout
+                            : Icons.login,
+                      ),
+                      label: Text(
+                        joined
+                            ? 'Leave Room'
+                            : 'Join Room',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class FamilySeat {
+  final int number;
+  String name;
+  bool occupied;
+  bool isHost;
+  bool micOn;
+
+  FamilySeat({
+    required this.number,
+    required this.name,
+    required this.occupied,
+    required this.isHost,
+    required this.micOn,
+  });
+}
+
+class FamilySeatWidget extends StatelessWidget {
+  final FamilySeat seat;
+  final VoidCallback onTap;
+
+  const FamilySeatWidget({
+    super.key,
+    required this.seat,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Column(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .surfaceContainerHighest,
+                borderRadius:
+                    BorderRadius.circular(18),
+              ),
+              child: Center(
+                child: CircleAvatar(
+                  radius: 24,
+                  child: Icon(
+                    seat.occupied
+                        ? Icons.person
+                        : Icons.add,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            seat.occupied
+                ? seat.name
+                : 'Seat ${seat.number}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   ROOM MODE + GAMES
+   ========================================================= */
+
+class RoomModeGamesScreen extends StatefulWidget {
+  const RoomModeGamesScreen({super.key});
+
+  @override
+  State<RoomModeGamesScreen> createState() =>
+      _RoomModeGamesScreenState();
+}
+
+class _RoomModeGamesScreenState
+    extends State<RoomModeGamesScreen> {
+  String selectedMode = 'Normal';
+
+  final modes = const [
+    ['Normal', Icons.groups_rounded],
+    ['Music', Icons.music_note],
+    ['Party', Icons.celebration],
+    ['Game', Icons.sports_esports],
+    ['Study', Icons.menu_book],
+  ];
+
+  final games = const [
+    [
+      'Lucky Wheel',
+      'Spin and win a random reward',
+      Icons.casino,
+    ],
+    [
+      'Dice',
+      'Roll the dice with room members',
+      Icons.casino_outlined,
+    ],
+    [
+      'Quick Quiz',
+      'Answer questions with friends',
+      Icons.quiz_outlined,
+    ],
+    [
+      'Truth or Dare',
+      'Fun group challenge',
+      Icons.question_mark,
+    ],
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Room Mode & Games'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const FeatureBanner(
+            icon: Icons.sports_esports,
+            title: 'Room Mode + Games',
+            subtitle:
+                'Choose a room style and enjoy games with your family.',
+          ),
+          const SizedBox(height: 22),
+          const Text(
+            'Room Mode',
+            style: TextStyle(
+              fontSize: 23,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ...modes.map(
+            (mode) {
+              final name = mode[0] as String;
+              final selected = selectedMode == name;
+
+              return Card(
+                child: ListTile(
+                  leading: CircleAvatar(
+                    child: Icon(mode[1] as IconData),
+                  ),
+                  title: Text(
+                    name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  trailing: selected
+                      ? const Icon(Icons.check_circle)
+                      : const Icon(Icons.chevron_right),
+                  onTap: () {
+                    setState(() => selectedMode = name);
+                  },
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 22),
+          const Text(
+            'Mini Games',
+            style: TextStyle(
+              fontSize: 23,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ...games.map(
+            (game) => Card(
+              child: ListTile(
+                leading: CircleAvatar(
+                  child: Icon(game[2] as IconData),
+                ),
+                title: Text(
+                  game[0] as String,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(game[1] as String),
+                trailing:
+                    const Icon(Icons.play_arrow),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => GameDetailScreen(
+                        gameName: game[0] as String,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class GameDetailScreen extends StatefulWidget {
+  final String gameName;
+
+  const GameDetailScreen({
+    super.key,
+    required this.gameName,
+  });
+
+  @override
+  State<GameDetailScreen> createState() =>
+      _GameDetailScreenState();
+}
+
+class _GameDetailScreenState
+    extends State<GameDetailScreen> {
+  int result = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.gameName)),
+      body: Center(
+        child: Card(
+          margin: const EdgeInsets.all(20),
+          child: Padding(
+            padding: const EdgeInsets.all(30),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.sports_esports,
+                  size: 80,
+                ),
+                const SizedBox(height: 15),
+                Text(
+                  widget.gameName,
+                  style: const TextStyle(
+                    fontSize: 27,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                CircleAvatar(
+                  radius: 40,
+                  child: Text(
+                    result == 0 ? '?' : '$result',
+                    style:
+                        const TextStyle(fontSize: 30),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      result =
+                          DateTime.now().millisecond % 6 + 1;
+                    });
+                  },
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('Play Game'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   ROOM PK
+   ========================================================= */
+
+class RoomPKScreen extends StatefulWidget {
+  const RoomPKScreen({super.key});
+
+  @override
+  State<RoomPKScreen> createState() => _RoomPKScreenState();
+}
+
+class _RoomPKScreenState extends State<RoomPKScreen> {
+  int leftScore = 72;
+  int rightScore = 64;
+  bool pkStarted = false;
+
+  void startPK() {
+    setState(() {
+      pkStarted = !pkStarted;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          pkStarted
+              ? 'Room PK started.'
+              : 'Room PK ended.',
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Room PK'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const FeatureBanner(
+            icon: Icons.flash_on,
+            title: 'Room PK Battle',
+            subtitle:
+                'Two rooms compete with points, gifts and support.',
+          ),
+          const SizedBox(height: 25),
+          Row(
+            children: [
+              Expanded(
+                child: PKTeamCard(
+                  title: 'Room A',
+                  score: leftScore,
+                  icon: Icons.groups,
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.all(10),
+                child: Text(
+                  'VS',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: PKTeamCard(
+                  title: 'Room B',
+                  score: rightScore,
+                  icon: Icons.groups_rounded,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 25),
+          LinearProgressIndicator(
+            value:
+                leftScore / (leftScore + rightScore),
+            minHeight: 14,
+          ),
+          const SizedBox(height: 20),
+          FilledButton.icon(
+            onPressed: startPK,
+            icon: Icon(
+              pkStarted
+                  ? Icons.stop
+                  : Icons.play_arrow,
+            ),
+            label: Text(
+              pkStarted
+                  ? 'End PK'
+                  : 'Start PK',
+            ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('PK gift panel is ready.'),
+                ),
+              );
+            },
+            icon: const Icon(Icons.card_giftcard),
+            label: const Text('Send PK Gift'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class PKTeamCard extends StatelessWidget {
+  final String title;
+  final int score;
+  final IconData icon;
+
+  const PKTeamCard({
+    super.key,
+    required this.title,
+    required this.score,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          children: [
+            CircleAvatar(
+              radius: 32,
+              child: Icon(icon, size: 32),
+            ),
             const SizedBox(height: 10),
-            Text('$title screen is ready.'),
+            Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '$score',
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const Text('Points'),
           ],
         ),
       ),
@@ -1047,17 +2112,15 @@ class VipScreen extends StatelessWidget {
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: 10,
-        itemBuilder: (_, i) {
-          return Card(
-            child: ListTile(
-              leading: const Icon(Icons.emoji_events),
-              title: Text('VIP ${i + 1}'),
-              subtitle: Text('${coins[i]} Coins'),
-              trailing:
-                  const Icon(Icons.chevron_right),
-            ),
-          );
-        },
+        itemBuilder: (_, i) => Card(
+          child: ListTile(
+            leading: const Icon(Icons.emoji_events),
+            title: Text('VIP ${i + 1}'),
+            subtitle: Text('${coins[i]} Coins'),
+            trailing:
+                const Icon(Icons.chevron_right),
+          ),
+        ),
       ),
     );
   }
@@ -1154,34 +2217,31 @@ class GiftsScreen extends StatelessWidget {
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
         ),
-        itemBuilder: (_, i) {
-          return Card(
-            child: InkWell(
-              onTap: () {
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      '${gifts[i]} selected',
-                    ),
-                  ),
-                );
-              },
-              child: Column(
-                mainAxisAlignment:
-                    MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.card_giftcard,
-                    size: 38,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(gifts[i]),
-                ],
-              ),
+        itemBuilder: (_, i) => Card(
+          child: InkWell(
+            onTap: () {
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(
+                SnackBar(
+                  content:
+                      Text('${gifts[i]} selected'),
+                ),
+              );
+            },
+            child: Column(
+              mainAxisAlignment:
+                  MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.card_giftcard,
+                  size: 38,
+                ),
+                const SizedBox(height: 8),
+                Text(gifts[i]),
+              ],
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
@@ -1201,44 +2261,11 @@ class ReferEarnScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF8E35FF),
-                  Color(0xFF4F46E5),
-                ],
-              ),
-              borderRadius:
-                  BorderRadius.all(Radius.circular(26)),
-            ),
-            child: const Column(
-              children: [
-                Icon(
-                  Icons.card_giftcard,
-                  size: 70,
-                  color: Colors.white,
-                ),
-                SizedBox(height: 14),
-                Text(
-                  'Invite Your Friends',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 25,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Earn 100 Coins for each friend',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
+          const FeatureBanner(
+            icon: Icons.card_giftcard,
+            title: 'Invite Your Friends',
+            subtitle:
+                'Earn 100 Coins for each friend',
           ),
           const SizedBox(height: 22),
           Card(
@@ -1303,61 +2330,23 @@ class ReferEarnScreen extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 22),
-          const Text(
-            'How it works?',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const _StepTile(
+          const SizedBox(height: 20),
+          const StepTile(
             number: '1',
             text: 'Share your code',
             icon: Icons.share,
           ),
-          const _StepTile(
+          const StepTile(
             number: '2',
             text: 'Friend joins Mchat',
             icon: Icons.person_add,
           ),
-          const _StepTile(
+          const StepTile(
             number: '3',
             text: 'You both earn coins',
             icon: Icons.monetization_on,
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _StepTile extends StatelessWidget {
-  final String number;
-  final String text;
-  final IconData icon;
-
-  const _StepTile({
-    required this.number,
-    required this.text,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          child: Text(number),
-        ),
-        title: Text(
-          text,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        trailing: Icon(icon),
       ),
     );
   }
@@ -1384,19 +2373,11 @@ class SettingsScreen extends StatelessWidget {
                 const Icon(Icons.notifications),
           ),
           ListTile(
-            leading: const Icon(Icons.language),
-            title: const Text('Language'),
-            trailing:
-                const Icon(Icons.chevron_right),
-          ),
-          ListTile(
-            leading:
-                const Icon(Icons.lock_outline),
+            leading: const Icon(Icons.lock_outline),
             title:
                 const Text('Private Chat Security'),
-            subtitle: const Text(
-              'Privacy controls and chat rules',
-            ),
+            subtitle:
+                const Text('Privacy controls and chat rules'),
             trailing:
                 const Icon(Icons.chevron_right),
             onTap: () {
@@ -1413,9 +2394,8 @@ class SettingsScreen extends StatelessWidget {
             leading:
                 const Icon(Icons.groups_rounded),
             title: const Text('Family Room'),
-            subtitle: const Text(
-              '30 seats • Voice • Chat • Gifts',
-            ),
+            subtitle:
+                const Text('30 seats • Voice • Chat • Gifts'),
             trailing:
                 const Icon(Icons.chevron_right),
             onTap: () {
@@ -1429,14 +2409,12 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(
-              Icons.sports_esports_outlined,
-            ),
+            leading:
+                const Icon(Icons.sports_esports_outlined),
             title:
                 const Text('Room Mode & Games'),
-            subtitle: const Text(
-              'Room modes and mini games',
-            ),
+            subtitle:
+                const Text('Room modes and mini games'),
             trailing:
                 const Icon(Icons.chevron_right),
             onTap: () {
@@ -1450,13 +2428,10 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(
-              Icons.flash_on_rounded,
-            ),
+            leading: const Icon(Icons.flash_on),
             title: const Text('Room PK'),
-            subtitle: const Text(
-              'PK battle between room hosts',
-            ),
+            subtitle:
+                const Text('PK battle between rooms'),
             trailing:
                 const Icon(Icons.chevron_right),
             onTap: () {
@@ -1464,17 +2439,32 @@ class SettingsScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) =>
-                      const RoomPkScreen(),
+                      const RoomPKScreen(),
                 ),
               );
             },
           ),
           ListTile(
-            leading:
-                const Icon(Icons.info_outline),
-            title: const Text('About Mchat'),
+            leading: const Icon(Icons.history),
+            title:
+                const Text('Live Ended & Replay'),
+            subtitle:
+                const Text('Watch and manage live replays'),
             trailing:
                 const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const LiveEndedReplayScreen(),
+                ),
+              );
+            },
+          ),
+          const ListTile(
+            leading: Icon(Icons.info_outline),
+            title: Text('About Mchat'),
           ),
         ],
       ),
@@ -1488,15 +2478,6 @@ class SettingsScreen extends StatelessWidget {
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
-
-  void showMessage(
-    BuildContext context,
-    String message,
-  ) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1517,19 +2498,13 @@ class ProfileScreen extends StatelessWidget {
                 ),
               );
             },
-            icon: const Icon(
-              Icons.settings_outlined,
-            ),
+            icon:
+                const Icon(Icons.settings_outlined),
           ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          20,
-          10,
-          20,
-          30,
-        ),
+        padding: const EdgeInsets.all(20),
         children: [
           Container(
             padding: const EdgeInsets.all(24),
@@ -1543,19 +2518,18 @@ class ProfileScreen extends StatelessWidget {
               borderRadius:
                   BorderRadius.all(Radius.circular(28)),
             ),
-            child: Column(
+            child: const Column(
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 52,
                   backgroundColor: Colors.white,
                   child: Icon(
                     Icons.person,
                     size: 62,
-                    color: Color(0xFF6D4C8F),
                   ),
                 ),
-                const SizedBox(height: 14),
-                const Text(
+                SizedBox(height: 14),
+                Text(
                   'Mchat User',
                   style: TextStyle(
                     color: Colors.white,
@@ -1563,89 +2537,56 @@ class ProfileScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 5),
-                const Text(
+                SizedBox(height: 5),
+                Text(
                   'ID: MCHAT001',
                   style: TextStyle(
                     color: Colors.white70,
-                    fontSize: 15,
                   ),
-                ),
-                const SizedBox(height: 18),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    showMessage(
-                      context,
-                      'Edit Profile UI is ready.',
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(
-                      color: Colors.white,
-                    ),
-                  ),
-                  icon: const Icon(Icons.edit),
-                  label: const Text('Edit Profile'),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 20),
-          Card(
+          const Card(
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: 18,
-                horizontal: 8,
-              ),
-              child: const Row(
+              padding: EdgeInsets.all(20),
+              child: Row(
+                mainAxisAlignment:
+                    MainAxisAlignment.spaceAround,
                 children: [
-                  Expanded(
-                    child: _ProfileStat(
-                      value: '120',
-                      label: 'Following',
-                    ),
+                  ProfileStat(
+                    value: '120',
+                    label: 'Following',
                   ),
-                  Expanded(
-                    child: _ProfileStat(
-                      value: '2.5K',
-                      label: 'Followers',
-                    ),
+                  ProfileStat(
+                    value: '2.5K',
+                    label: 'Followers',
                   ),
-                  Expanded(
-                    child: _ProfileStat(
-                      value: '15.6K',
-                      label: 'Likes',
-                    ),
+                  ProfileStat(
+                    value: '15.6K',
+                    label: 'Likes',
                   ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'My Account',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 10),
-          _ProfileMenuTile(
-            icon:
-                Icons.account_balance_wallet_outlined,
+          ProfileMenu(
+            icon: Icons.account_balance_wallet_outlined,
             title: 'My Wallet',
             subtitle: 'Coins & balance',
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const CoinsScreen(),
+                  builder: (_) =>
+                      const CoinsScreen(),
                 ),
               );
             },
           ),
-          _ProfileMenuTile(
+          ProfileMenu(
             icon: Icons.emoji_events_outlined,
             title: 'My Level',
             subtitle: 'VIP 2',
@@ -1653,37 +2594,13 @@ class ProfileScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const VipScreen(),
-                ),
-              );
-            },
-          ),
-          _ProfileMenuTile(
-            icon: Icons.meeting_room_outlined,
-            title: 'My Rooms',
-            subtitle: 'Your live rooms',
-            onTap: () {
-              showMessage(
-                context,
-                'My Rooms UI is ready.',
-              );
-            },
-          ),
-          _ProfileMenuTile(
-            icon: Icons.lock_outline,
-            title: 'Private Chat Security',
-            subtitle: 'Privacy & chat rules',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
                   builder: (_) =>
-                      const PrivateChatRulesScreen(),
+                      const VipScreen(),
                 ),
               );
             },
           ),
-          _ProfileMenuTile(
+          ProfileMenu(
             icon: Icons.groups_rounded,
             title: 'Family Room',
             subtitle:
@@ -1698,24 +2615,8 @@ class ProfileScreen extends StatelessWidget {
               );
             },
           ),
-          _ProfileMenuTile(
-            icon:
-                Icons.sports_esports_outlined,
-            title: 'Room Mode & Games',
-            subtitle:
-                'Modes and mini games',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const RoomModeGamesScreen(),
-                ),
-              );
-            },
-          ),
-          _ProfileMenuTile(
-            icon: Icons.flash_on_rounded,
+          ProfileMenu(
+            icon: Icons.flash_on,
             title: 'Room PK',
             subtitle: 'PK battle',
             onTap: () {
@@ -1723,16 +2624,29 @@ class ProfileScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) =>
-                      const RoomPkScreen(),
+                      const RoomPKScreen(),
                 ),
               );
             },
           ),
-          _ProfileMenuTile(
+          ProfileMenu(
+            icon: Icons.history,
+            title: 'Live Replays',
+            subtitle: 'Watch completed lives',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const LiveEndedReplayScreen(),
+                ),
+              );
+            },
+          ),
+          ProfileMenu(
             icon: Icons.settings_outlined,
             title: 'Settings',
-            subtitle:
-                'Account & app settings',
+            subtitle: 'Account & app settings',
             onTap: () {
               Navigator.push(
                 context,
@@ -1744,14 +2658,6 @@ class ProfileScreen extends StatelessWidget {
             },
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Owner',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 10),
           Card(
             child: ListTile(
               leading: const CircleAvatar(
@@ -1786,75 +2692,6 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-class _ProfileStat extends StatelessWidget {
-  final String value;
-  final String label;
-
-  const _ProfileStat({
-    required this.value,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.grey,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ProfileMenuTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _ProfileMenuTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin:
-          const EdgeInsets.only(bottom: 9),
-      child: ListTile(
-        leading: CircleAvatar(
-          child: Icon(icon),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: Text(subtitle),
-        trailing:
-            const Icon(Icons.chevron_right),
-        onTap: onTap,
-      ),
-    );
-  }
-}
-
 /* =========================================================
    OWNER DASHBOARD
    ========================================================= */
@@ -1868,6 +2705,7 @@ class OwnerDashboardScreen extends StatelessWidget {
       ['Users', Icons.people],
       ['Live Rooms', Icons.live_tv],
       ['Room PK', Icons.flash_on],
+      ['Live Replays', Icons.history],
       ['Transactions', Icons.receipt_long],
       ['Recharges', Icons.account_balance_wallet],
       ['Withdraw Requests', Icons.payments],
@@ -1880,71 +2718,32 @@ class OwnerDashboardScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title:
-            const Text('Owner Dashboard'),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(
-              Icons.notifications_outlined,
-            ),
-          ),
-        ],
+        title: const Text('Owner Dashboard'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF6D28D9),
-                  Color(0xFF4F46E5),
-                ],
-              ),
-              borderRadius:
-                  BorderRadius.all(Radius.circular(22)),
-            ),
-            child: const Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Welcome, Owner 👑',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Mchat Administration',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
+          const FeatureBanner(
+            icon: Icons.admin_panel_settings,
+            title: 'Welcome, Owner 👑',
+            subtitle: 'Mchat Administration',
           ),
           const SizedBox(height: 18),
           const Row(
             children: [
               Expanded(
                 child: StatCard(
-                  'Users',
-                  '0',
-                  Icons.people,
+                  title: 'Users',
+                  value: '0',
+                  icon: Icons.people,
                 ),
               ),
               SizedBox(width: 10),
               Expanded(
                 child: StatCard(
-                  'Recharges',
-                  '₹0',
-                  Icons.currency_rupee,
+                  title: 'Recharges',
+                  value: '₹0',
+                  icon: Icons.currency_rupee,
                 ),
               ),
             ],
@@ -1954,22 +2753,22 @@ class OwnerDashboardScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: StatCard(
-                  'Income',
-                  '₹0',
-                  Icons.trending_up,
+                  title: 'Income',
+                  value: '₹0',
+                  icon: Icons.trending_up,
                 ),
               ),
               SizedBox(width: 10),
               Expanded(
                 child: StatCard(
-                  'Withdrawn',
-                  '₹0',
-                  Icons.payments,
+                  title: 'Withdrawn',
+                  value: '₹0',
+                  icon: Icons.payments,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
           const Text(
             'Management',
             style: TextStyle(
@@ -1982,8 +2781,7 @@ class OwnerDashboardScreen extends StatelessWidget {
               child: ListTile(
                 leading:
                     Icon(item[1] as IconData),
-                title:
-                    Text(item[0] as String),
+                title: Text(item[0] as String),
                 trailing:
                     const Icon(Icons.chevron_right),
                 onTap: () {
@@ -2005,16 +2803,244 @@ class OwnerDashboardScreen extends StatelessWidget {
   }
 }
 
+/* =========================================================
+   SHARED WIDGETS
+   ========================================================= */
+
+class FeatureBanner extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const FeatureBanner({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(23),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF8E35FF),
+            Color(0xFF4F46E5),
+          ],
+        ),
+        borderRadius:
+            BorderRadius.all(Radius.circular(25)),
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            color: Colors.white,
+            size: 52,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 25,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 15,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class SummaryCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+
+  const SummaryCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(17),
+        child: Row(
+          children: [
+            CircleAvatar(
+              child: Icon(icon),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Text(title),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class RuleTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String text;
+
+  const RuleTile({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: CircleAvatar(
+          child: Icon(icon),
+        ),
+        title: Text(
+          title,
+          style:
+              const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(text),
+      ),
+    );
+  }
+}
+
+class StepTile extends StatelessWidget {
+  final String number;
+  final String text;
+  final IconData icon;
+
+  const StepTile({
+    super.key,
+    required this.number,
+    required this.text,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: CircleAvatar(
+          child: Text(number),
+        ),
+        title: Text(text),
+        trailing: Icon(icon),
+      ),
+    );
+  }
+}
+
+class ProfileStat extends StatelessWidget {
+  final String value;
+  final String label;
+
+  const ProfileStat({
+    super.key,
+    required this.value,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(label),
+      ],
+    );
+  }
+}
+
+class ProfileMenu extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const ProfileMenu({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 9),
+      child: ListTile(
+        leading: CircleAvatar(
+          child: Icon(icon),
+        ),
+        title: Text(
+          title,
+          style:
+              const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(subtitle),
+        trailing:
+            const Icon(Icons.chevron_right),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
 class StatCard extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
 
-  const StatCard(
-    this.title,
-    this.value,
-    this.icon, {
+  const StatCard({
     super.key,
+    required this.title,
+    required this.value,
+    required this.icon,
   });
 
   @override
@@ -2041,1759 +3067,36 @@ class StatCard extends StatelessWidget {
   }
 }
 
-/* =========================================================
-   FAMILY ROOM - 30 SEATS
-   ========================================================= */
-
-class FamilyRoomScreen extends StatefulWidget {
-  const FamilyRoomScreen({super.key});
-
-  @override
-  State<FamilyRoomScreen> createState() =>
-      _FamilyRoomScreenState();
-}
-
-class _FamilyRoomScreenState
-    extends State<FamilyRoomScreen> {
-  late final List<FamilySeat> seats =
-      List.generate(
-    30,
-    (index) => FamilySeat(
-      number: index + 1,
-      name: index == 0 ? 'Host' : '',
-      occupied: index == 0,
-      isHost: index == 0,
-      micOn: index == 0,
-    ),
-  );
-
-  bool joined = false;
-  bool micOn = true;
-  bool roomLocked = false;
-
-  int get occupiedCount =>
-      seats.where((s) => s.occupied).length;
-
-  void joinRoom() {
-    if (roomLocked) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'This family room is locked.',
-          ),
-        ),
-      );
-      return;
-    }
-
-    final emptySeat =
-        seats.indexWhere((s) => !s.occupied);
-
-    if (emptySeat == -1) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'All 30 seats are occupied.',
-          ),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      seats[emptySeat].occupied = true;
-      seats[emptySeat].name = 'You';
-      seats[emptySeat].micOn = micOn;
-      joined = true;
-    });
-  }
-
-  void leaveRoom() {
-    final mySeat =
-        seats.indexWhere((s) => s.name == 'You');
-
-    if (mySeat != -1) {
-      setState(() {
-        seats[mySeat].occupied = false;
-        seats[mySeat].name = '';
-        seats[mySeat].micOn = false;
-        joined = false;
-      });
-    }
-  }
-
-  void toggleMic() {
-    setState(() {
-      micOn = !micOn;
-    });
-
-    final mySeat =
-        seats.indexWhere((s) => s.name == 'You');
-
-    if (mySeat != -1) {
-      seats[mySeat].micOn = micOn;
-    }
-  }
-
-  void toggleRoomLock() {
-    setState(() {
-      roomLocked = !roomLocked;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          roomLocked
-              ? 'Family Room locked.'
-              : 'Family Room unlocked.',
-        ),
-      ),
-    );
-  }
-
-  void showRules() {
-    showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      builder: (_) {
-        return const Padding(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            10,
-            20,
-            30,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Family Room Rules',
-                style: TextStyle(
-                  fontSize: 23,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 16),
-              FamilyRule(
-                icon: Icons.favorite_outline,
-                text:
-                    'Respect every family member.',
-              ),
-              FamilyRule(
-                icon: Icons.block,
-                text:
-                    'No harassment, abuse or spam.',
-              ),
-              FamilyRule(
-                icon: Icons.security,
-                text:
-                    'Do not share private information.',
-              ),
-              FamilyRule(
-                icon: Icons.mic_off_outlined,
-                text:
-                    'Use the microphone responsibly.',
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void showGifts() {
-    const gifts = [
-      '🌹 Rose',
-      '❤️ Heart',
-      '🎁 Gift',
-      '☕ Coffee',
-      '🧸 Teddy',
-      '💎 Diamond',
-      '🦁 Lion',
-      '🏰 Castle',
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Room Gifts',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              GridView.builder(
-                shrinkWrap: true,
-                itemCount: gifts.length,
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                ),
-                itemBuilder: (_, i) {
-                  return Card(
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.pop(sheetContext);
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              '${gifts[i]} sent to the room.',
-                            ),
-                          ),
-                        );
-                      },
-                      child: Center(
-                        child: Text(
-                          gifts[i],
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void showSeatOptions(FamilySeat seat) {
-    if (!seat.occupied) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              Text('Seat ${seat.number} is available.'),
-        ),
-      );
-      return;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const CircleAvatar(
-                  child: Icon(Icons.person),
-                ),
-                title: Text(
-                  seat.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle:
-                    Text('Seat ${seat.number}'),
-              ),
-              ListTile(
-                leading:
-                    const Icon(Icons.card_giftcard),
-                title: const Text('Send Gift'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  showGifts();
-                },
-              ),
-              ListTile(
-                leading:
-                    const Icon(Icons.flag_outlined),
-                title:
-                    const Text('Report User'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(
-                    const SnackBar(
-                      content:
-                          Text('Report submitted for review.'),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void showRoomChat() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            bottom:
-                MediaQuery.of(sheetContext)
-                        .viewInsets
-                        .bottom +
-                    16,
-          ),
-          child: SizedBox(
-            height: 420,
-            child: Column(
-              children: [
-                const Text(
-                  'Room Chat',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Expanded(
-                  child: Center(
-                    child: Text(
-                      'Welcome to the Family Room 👋\n\n'
-                      'Room chat UI is ready.',
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    const Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Type in room...',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton.filled(
-                      onPressed: () {
-                        Navigator.pop(sheetContext);
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(
-                          const SnackBar(
-                            content:
-                                Text('Room message sent.'),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.send),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Family Room',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const RoomModeGamesScreen(),
-                ),
-              );
-            },
-            icon: const Icon(
-              Icons.sports_esports_outlined,
-            ),
-          ),
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const RoomPkScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.flash_on),
-          ),
-          IconButton(
-            onPressed: showRules,
-            icon:
-                const Icon(Icons.info_outline),
-          ),
-          IconButton(
-            onPressed: toggleRoomLock,
-            icon: Icon(
-              roomLocked
-                  ? Icons.lock
-                  : Icons.lock_open,
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.fromLTRB(
-              12,
-              12,
-              12,
-              8,
-            ),
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF8E35FF),
-                  Color(0xFF4F46E5),
-                ],
-              ),
-              borderRadius:
-                  BorderRadius.all(Radius.circular(24)),
-            ),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.white,
-                  child: Icon(
-                    Icons.groups_rounded,
-                    size: 34,
-                    color: Color(0xFF6D4C8F),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Mchat Family Room',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 21,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 5),
-                      Text(
-                        '30 Seats • Voice • Chat • Gifts',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  '$occupiedCount/30',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 6,
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.people_outline),
-                const SizedBox(width: 8),
-                Text(
-                  '$occupiedCount members in room',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const Spacer(),
-                if (roomLocked)
-                  const Chip(
-                    avatar: Icon(
-                      Icons.lock,
-                      size: 16,
-                    ),
-                    label: Text('Locked'),
-                  ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.fromLTRB(
-                12,
-                8,
-                12,
-                12,
-              ),
-              itemCount: 30,
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 5,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 10,
-                childAspectRatio: 0.78,
-              ),
-              itemBuilder: (_, index) {
-                return FamilySeatWidget(
-                  seat: seats[index],
-                  onTap: () {
-                    showSeatOptions(seats[index]);
-                  },
-                );
-              },
-            ),
-          ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding:
-                  const EdgeInsets.fromLTRB(
-                10,
-                6,
-                10,
-                10,
-              ),
-              child: Row(
-                children: [
-                  IconButton.filledTonal(
-                    onPressed: toggleMic,
-                    icon: Icon(
-                      micOn
-                          ? Icons.mic
-                          : Icons.mic_off,
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  IconButton.filledTonal(
-                    onPressed: showRoomChat,
-                    icon: const Icon(
-                      Icons.chat_bubble_outline,
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  IconButton.filledTonal(
-                    onPressed: showGifts,
-                    icon: const Icon(
-                      Icons.card_giftcard,
-                    ),
-                  ),
-                  const SizedBox(width: 7),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: joined
-                          ? leaveRoom
-                          : joinRoom,
-                      icon: Icon(
-                        joined
-                            ? Icons.logout
-                            : Icons.login,
-                      ),
-                      label: Text(
-                        joined
-                            ? 'Leave Room'
-                            : 'Join Room',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class FamilySeat {
-  final int number;
-  String name;
-  bool occupied;
-  bool isHost;
-  bool micOn;
-
-  FamilySeat({
-    required this.number,
-    required this.name,
-    required this.occupied,
-    required this.isHost,
-    required this.micOn,
-  });
-}
-
-class FamilySeatWidget extends StatelessWidget {
-  final FamilySeat seat;
-  final VoidCallback onTap;
-
-  const FamilySeatWidget({
-    super.key,
-    required this.seat,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: onTap,
-      child: Column(
-        children: [
-          Expanded(
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest,
-                    borderRadius:
-                        BorderRadius.circular(18),
-                  ),
-                  child: Center(
-                    child: CircleAvatar(
-                      radius: 25,
-                      child: Icon(
-                        seat.occupied
-                            ? Icons.person
-                            : Icons.add,
-                        size: 27,
-                      ),
-                    ),
-                  ),
-                ),
-                if (seat.isHost)
-                  Positioned(
-                    top: 5,
-                    left: 5,
-                    child: Container(
-                      padding:
-                          const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary,
-                        borderRadius:
-                            BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'HOST',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                if (seat.occupied)
-                  Positioned(
-                    bottom: 5,
-                    right: 5,
-                    child: Icon(
-                      seat.micOn
-                          ? Icons.mic
-                          : Icons.mic_off,
-                      size: 15,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            seat.occupied
-                ? seat.name
-                : 'Seat ${seat.number}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class FamilyRule extends StatelessWidget {
-  final IconData icon;
-  final String text;
-
-  const FamilyRule({
-    super.key,
-    required this.icon,
-    required this.text,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding:
-          const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            radius: 18,
-            child: Icon(icon, size: 19),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                fontSize: 15,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/* =========================================================
-   ROOM MODE + GAMES
-   ========================================================= */
-
-class RoomModeGamesScreen extends StatefulWidget {
-  const RoomModeGamesScreen({super.key});
-
-  @override
-  State<RoomModeGamesScreen> createState() =>
-      _RoomModeGamesScreenState();
-}
-
-class _RoomModeGamesScreenState
-    extends State<RoomModeGamesScreen> {
-  String selectedMode = 'Normal';
-
-  final modes = const [
-    ['Normal', Icons.groups_rounded],
-    ['Music', Icons.music_note],
-    ['Party', Icons.celebration],
-    ['Game', Icons.sports_esports],
-    ['Study', Icons.menu_book],
-  ];
-
-  final games = const [
-    [
-      'Lucky Wheel',
-      'Spin and win a random reward',
-      Icons.casino,
-    ],
-    [
-      'Dice',
-      'Roll the dice with room members',
-      Icons.casino_outlined,
-    ],
-    [
-      'Quick Quiz',
-      'Answer questions with friends',
-      Icons.quiz_outlined,
-    ],
-    [
-      'Truth or Dare',
-      'Fun group challenge',
-      Icons.question_mark,
-    ],
-  ];
-
-  void selectMode(String mode) {
-    setState(() {
-      selectedMode = mode;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '$mode Room Mode selected.',
-        ),
-      ),
-    );
-  }
-
-  void openGame(
-    BuildContext context,
-    String game,
-  ) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => GameDetailScreen(
-          gameName: game,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Room Mode & Games',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const RoomPkScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.flash_on),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(22),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF8E35FF),
-                  Color(0xFF4F46E5),
-                ],
-              ),
-              borderRadius:
-                  BorderRadius.all(Radius.circular(24)),
-            ),
-            child: const Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.sports_esports,
-                  color: Colors.white,
-                  size: 52,
-                ),
-                SizedBox(height: 12),
-                Text(
-                  'Room Mode + Games',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 25,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 7),
-                Text(
-                  'Choose a room style and enjoy games with your family.',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 15,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Room Mode',
-            style: TextStyle(
-              fontSize: 23,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...modes.map(
-            (mode) {
-              final name = mode[0] as String;
-              final icon = mode[1] as IconData;
-              final selected =
-                  selectedMode == name;
-
-              return Card(
-                child: ListTile(
-                  leading: CircleAvatar(
-                    child: Icon(icon),
-                  ),
-                  title: Text(
-                    name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  subtitle: Text(
-                    '$name room mode',
-                  ),
-                  trailing: selected
-                      ? const Icon(
-                          Icons.check_circle,
-                        )
-                      : const Icon(
-                          Icons.chevron_right,
-                        ),
-                  onTap: () {
-                    selectMode(name);
-                  },
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 20),
-          Card(
-            child: ListTile(
-              leading: const Icon(
-                Icons.check_circle,
-              ),
-              title: const Text(
-                'Selected Room Mode',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              subtitle: Text(
-                selectedMode,
-                style: const TextStyle(
-                  fontSize: 17,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Mini Games',
-            style: TextStyle(
-              fontSize: 23,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...games.map(
-            (game) {
-              final name = game[0] as String;
-              final description =
-                  game[1] as String;
-              final icon = game[2] as IconData;
-
-              return Card(
-                margin:
-                    const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.all(14),
-                  leading: CircleAvatar(
-                    radius: 27,
-                    child: Icon(icon, size: 28),
-                  ),
-                  title: Text(
-                    name,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  subtitle: Padding(
-                    padding:
-                        const EdgeInsets.only(top: 5),
-                    child: Text(description),
-                  ),
-                  trailing: const Icon(
-                    Icons.play_arrow_rounded,
-                  ),
-                  onTap: () {
-                    openGame(context, name);
-                  },
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 10),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.info_outline),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Room modes and games are currently UI-ready. '
-                      'Real-time multiplayer game logic, room synchronization '
-                      'and server validation will be connected in the backend phase.',
-                      style: TextStyle(
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/* =========================================================
-   GAME DETAIL
-   ========================================================= */
-
-class GameDetailScreen extends StatefulWidget {
-  final String gameName;
-
-  const GameDetailScreen({
-    super.key,
-    required this.gameName,
-  });
-
-  @override
-  State<GameDetailScreen> createState() =>
-      _GameDetailScreenState();
-}
-
-class _GameDetailScreenState
-    extends State<GameDetailScreen> {
-  int result = 0;
-
-  void playGame() {
-    setState(() {
-      result =
-          DateTime.now().millisecond % 6 + 1;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${widget.gameName} played.',
-        ),
-      ),
-    );
-  }
-
-  IconData get gameIcon {
-    switch (widget.gameName) {
-      case 'Lucky Wheel':
-        return Icons.casino;
-      case 'Dice':
-        return Icons.casino_outlined;
-      case 'Quick Quiz':
-        return Icons.quiz_outlined;
-      default:
-        return Icons.question_mark;
-    }
-  }
-
-  String get description {
-    switch (widget.gameName) {
-      case 'Lucky Wheel':
-        return 'Spin the wheel and see your lucky result.';
-      case 'Dice':
-        return 'Roll a virtual dice with your room members.';
-      case 'Quick Quiz':
-        return 'Answer quick questions and challenge your friends.';
-      default:
-        return 'Choose truth or dare and have fun with the room.';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.gameName),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(28),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF8E35FF),
-                  Color(0xFF4F46E5),
-                ],
-              ),
-              borderRadius:
-                  BorderRadius.all(Radius.circular(28)),
-            ),
-            child: Column(
-              children: [
-                Icon(
-                  gameIcon,
-                  size: 80,
-                  color: Colors.white,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  widget.gameName,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  description,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 15,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 25),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  const Text(
-                    'Game Result',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  CircleAvatar(
-                    radius: 45,
-                    child: Text(
-                      result == 0
-                          ? '?'
-                          : '$result',
-                      style: const TextStyle(
-                        fontSize: 34,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: playGame,
-                      icon: const Icon(
-                        Icons.play_arrow,
-                      ),
-                      label: const Text(
-                        'Play Game',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 18),
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(18),
-              child: Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.groups_outlined),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Multiplayer room synchronization will be connected during the real-time backend phase.',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/* =========================================================
-   BUILD #124
-   ROOM PK
-   ========================================================= */
-
-class RoomPkScreen extends StatelessWidget {
-  const RoomPkScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Room PK',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF8E35FF),
-                  Color(0xFF4F46E5),
-                ],
-              ),
-              borderRadius:
-                  BorderRadius.all(
-                Radius.circular(26),
-              ),
-            ),
-            child: const Column(
-              children: [
-                Icon(
-                  Icons.flash_on_rounded,
-                  color: Colors.white,
-                  size: 65,
-                ),
-                SizedBox(height: 12),
-                Text(
-                  'ROOM PK BATTLE',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Challenge another room and compete together.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 15,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 22),
-          const Text(
-            'Choose PK Mode',
-            style: TextStyle(
-              fontSize: 23,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          _PkModeTile(
-            icon: Icons.person,
-            title: '1 vs 1 PK',
-            subtitle:
-                'Two hosts compete in a direct PK battle.',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const PkBattleScreen(
-                    mode: '1 vs 1 PK',
-                  ),
-                ),
-              );
-            },
-          ),
-          _PkModeTile(
-            icon: Icons.groups,
-            title: 'Team PK',
-            subtitle:
-                'Family members support their room host.',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const PkBattleScreen(
-                    mode: 'Team PK',
-                  ),
-                ),
-              );
-            },
-          ),
-          _PkModeTile(
-            icon: Icons.flash_on,
-            title: 'Quick PK',
-            subtitle:
-                'Start a short competitive room battle.',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const PkBattleScreen(
-                    mode: 'Quick PK',
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 20),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.security),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'PK UI is ready. Real-time room matching, '
-                      'live scores, gifts, timers and server-side '
-                      'validation will be connected in the backend phase.',
-                      style: TextStyle(
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PkModeTile extends StatelessWidget {
-  final IconData icon;
+class FeatureScreen extends StatelessWidget {
   final String title;
-  final String subtitle;
-  final VoidCallback onTap;
+  final IconData icon;
 
-  const _PkModeTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin:
-          const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        contentPadding:
-            const EdgeInsets.all(14),
-        leading: CircleAvatar(
-          radius: 27,
-          child: Icon(icon, size: 28),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        subtitle: Padding(
-          padding:
-              const EdgeInsets.only(top: 5),
-          child: Text(subtitle),
-        ),
-        trailing:
-            const Icon(Icons.chevron_right),
-        onTap: onTap,
-      ),
-    );
-  }
-}
-
-/* =========================================================
-   PK BATTLE
-   ========================================================= */
-
-class PkBattleScreen extends StatefulWidget {
-  final String mode;
-
-  const PkBattleScreen({
+  const FeatureScreen({
     super.key,
-    required this.mode,
+    required this.title,
+    required this.icon,
   });
-
-  @override
-  State<PkBattleScreen> createState() =>
-      _PkBattleScreenState();
-}
-
-class _PkBattleScreenState
-    extends State<PkBattleScreen> {
-  int leftScore = 0;
-  int rightScore = 0;
-  int seconds = 60;
-  bool started = false;
-
-  void startPk() {
-    setState(() {
-      started = true;
-      seconds = 60;
-      leftScore = 0;
-      rightScore = 0;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'PK Battle started.',
-        ),
-      ),
-    );
-  }
-
-  void sendGiftToLeft() {
-    if (!started) return;
-
-    setState(() {
-      leftScore += 100;
-    });
-  }
-
-  void sendGiftToRight() {
-    if (!started) return;
-
-    setState(() {
-      rightScore += 100;
-    });
-  }
-
-  void endPk() {
-    setState(() {
-      started = false;
-    });
-
-    final winner = leftScore == rightScore
-        ? 'Draw'
-        : leftScore > rightScore
-            ? 'Room A Wins'
-            : 'Room B Wins';
-
-    showDialog(
-      context: context,
-      builder: (_) {
-        return AlertDialog(
-          title: const Text(
-            'PK Result',
-          ),
-          content: Text(
-            '$winner\n\n'
-            'Room A: $leftScore points\n'
-            'Room B: $rightScore points',
-          ),
-          actions: [
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.mode,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          if (started)
-            IconButton(
-              onPressed: endPk,
-              icon: const Icon(
-                Icons.stop_circle_outlined,
-              ),
-            ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Theme.of(context)
-                  .colorScheme
-                  .surfaceContainerHighest,
-              borderRadius:
-                  BorderRadius.circular(22),
-            ),
-            child: Column(
-              children: [
-                const Text(
-                  'PK BATTLE',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  started
-                      ? 'Battle in progress'
-                      : 'Ready to start',
-                  style: const TextStyle(
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _PkScoreCard(
-                        roomName: 'ROOM A',
-                        score: leftScore,
-                        icon: Icons.groups,
-                      ),
-                    ),
-                    const Padding(
-                      padding:
-                          EdgeInsets.symmetric(
-                        horizontal: 10,
-                      ),
-                      child: Text(
-                        'VS',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight:
-                              FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: _PkScoreCard(
-                        roomName: 'ROOM B',
-                        score: rightScore,
-                        icon: Icons.groups,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                LinearProgressIndicator(
-                  value: (leftScore +
-                              rightScore) ==
-                          0
-                      ? 0
-                      : leftScore /
-                          (leftScore +
-                              rightScore),
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  started
-                      ? 'Time: $seconds sec'
-                      : 'Time: 60 sec',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 22),
-          const Text(
-            'PK Actions',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed:
-                      started
-                          ? sendGiftToLeft
-                          : null,
-                  icon: const Icon(
-                    Icons.card_giftcard,
-                  ),
-                  label: const Text(
-                    'Gift Room A',
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed:
-                      started
-                          ? sendGiftToRight
-                          : null,
-                  icon: const Icon(
-                    Icons.card_giftcard,
-                  ),
-                  label: const Text(
-                    'Gift Room B',
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed:
-                  started ? endPk : startPk,
-              icon: Icon(
-                started
-                    ? Icons.stop
-                    : Icons.play_arrow,
-              ),
-              label: Text(
-                started
-                    ? 'End PK Battle'
-                    : 'Start PK Battle',
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(18),
-              child: Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.info_outline),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'This is the PK UI foundation. '
-                      'Live multiplayer synchronization, '
-                      'real gifts, coin deduction, timers '
-                      'and anti-cheat validation require backend integration.',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PkScoreCard extends StatelessWidget {
-  final String roomName;
-  final int score;
-  final IconData icon;
-
-  const _PkScoreCard({
-    required this.roomName,
-    required this.score,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding:
-            const EdgeInsets.symmetric(
-          vertical: 18,
-          horizontal: 8,
-        ),
+      appBar: AppBar(title: Text(title)),
+      body: Center(
         child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.center,
           children: [
-            CircleAvatar(
-              radius: 28,
-              child: Icon(icon),
-            ),
-            const SizedBox(height: 8),
+            Icon(icon, size: 90),
+            const SizedBox(height: 20),
             Text(
-              roomName,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '$score',
+              title,
               style: const TextStyle(
                 fontSize: 30,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const Text(
-              'Points',
-              style: TextStyle(
-                color: Colors.grey,
-              ),
-            ),
+            const SizedBox(height: 10),
+            Text('$title screen is ready.'),
           ],
         ),
       ),
