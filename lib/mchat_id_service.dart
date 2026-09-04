@@ -4,30 +4,34 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class MchatIdService {
+  MchatIdService._();
+
   static const String ownerMchatId = '11111111';
 
   static final FirebaseFirestore _db =
       FirebaseFirestore.instance;
 
-  // ===============================================================
+  // ============================================================
   // VALIDATE MCHAT ID
-  // ===============================================================
+  // ============================================================
 
   static bool isValidMchatId(String id) {
-    if (id.length != 8) {
+    final value = id.trim();
+
+    if (value.length != 8) {
       return false;
     }
 
-    if (id == ownerMchatId) {
+    if (value == ownerMchatId) {
       return false;
     }
 
-    return RegExp(r'^[0-9]{8}$').hasMatch(id);
+    return RegExp(r'^[0-9]{8}$').hasMatch(value);
   }
 
-  // ===============================================================
+  // ============================================================
   // ENSURE USER HAS MCHAT ID
-  // ===============================================================
+  // ============================================================
 
   static Future<String> ensureMchatId({
     required User user,
@@ -35,35 +39,32 @@ class MchatIdService {
     required String email,
     String photoUrl = '',
   }) async {
-    final userRef =
-        _db.collection('users').doc(user.uid);
+    final userRef = _db.collection('users').doc(user.uid);
 
-    final userSnapshot =
-        await userRef.get();
+    final userSnapshot = await userRef.get();
 
     final data =
-        userSnapshot.data() ??
-            <String, dynamic>{};
+        userSnapshot.data() ?? <String, dynamic>{};
 
-    // -------------------------------------------------------------
+    final String cleanName =
+        name.trim().isEmpty ? 'Mchat User' : name.trim();
+
+    final String cleanEmail = email.trim();
+
+    // ==========================================================
     // OWNER
-    // -------------------------------------------------------------
+    // ==========================================================
 
     final bool isOwner =
         data['isOwner'] == true ||
-        data['role']
-                ?.toString()
-                .toLowerCase() ==
-            'owner';
+        data['role']?.toString().toLowerCase() == 'owner';
 
     if (isOwner) {
       await _saveMchatIndex(
         mchatId: ownerMchatId,
         uid: user.uid,
-        name: name.isNotEmpty
-            ? name
-            : 'Mchat Owner',
-        email: email,
+        name: cleanName.isEmpty ? 'Mchat Owner' : cleanName,
+        email: cleanEmail,
         photoUrl: photoUrl,
         isOwner: true,
       );
@@ -71,10 +72,8 @@ class MchatIdService {
       await userRef.set(
         {
           'uid': user.uid,
-          'name': name.isNotEmpty
-              ? name
-              : 'Mchat Owner',
-          'email': email,
+          'name': cleanName.isEmpty ? 'Mchat Owner' : cleanName,
+          'email': cleanEmail,
           'mchatId': ownerMchatId,
           'isOwner': true,
           'isOnline': true,
@@ -85,45 +84,33 @@ class MchatIdService {
       return ownerMchatId;
     }
 
-    // -------------------------------------------------------------
-    // CHECK EXISTING ID
-    // -------------------------------------------------------------
+    // ==========================================================
+    // CHECK EXISTING USER ID
+    // ==========================================================
 
-    final existingValue =
-        data['mchatId'];
-
-    final existingId =
-        existingValue
-                ?.toString()
-                .trim() ??
-            '';
+    final String existingId =
+        data['mchatId']?.toString().trim() ?? '';
 
     if (isValidMchatId(existingId)) {
       final indexRef =
-          _db
-              .collection('mchatIds')
-              .doc(existingId);
+          _db.collection('mchatIds').doc(existingId);
 
-      final indexSnapshot =
-          await indexRef.get();
+      final indexSnapshot = await indexRef.get();
 
-      // Existing index belongs to this user.
       if (indexSnapshot.exists) {
         final indexData =
-            indexSnapshot.data() ??
-                <String, dynamic>{};
+            indexSnapshot.data() ?? <String, dynamic>{};
 
-        final indexUid =
-            indexData['uid']
-                    ?.toString() ??
-                '';
+        final String indexUid =
+            indexData['uid']?.toString() ?? '';
 
+        // Existing ID belongs to this user.
         if (indexUid == user.uid) {
           await _saveMchatIndex(
             mchatId: existingId,
             uid: user.uid,
-            name: name,
-            email: email,
+            name: cleanName,
+            email: cleanEmail,
             photoUrl: photoUrl,
             isOwner: false,
           );
@@ -139,14 +126,13 @@ class MchatIdService {
         }
       }
 
-      // If the ID is missing from index,
-      // create the index for this user.
+      // ID is not indexed yet.
       if (!indexSnapshot.exists) {
         await _saveMchatIndex(
           mchatId: existingId,
           uid: user.uid,
-          name: name,
-          email: email,
+          name: cleanName,
+          email: cleanEmail,
           photoUrl: photoUrl,
           isOwner: false,
         );
@@ -161,43 +147,40 @@ class MchatIdService {
         return existingId;
       }
 
-      // If another user owns this ID,
-      // generate a fresh ID.
+      // Another user owns this ID.
+      // A new ID will be generated below.
     }
 
-    // -------------------------------------------------------------
-    // GENERATE NEW ID
-    // -------------------------------------------------------------
+    // ==========================================================
+    // GENERATE NEW UNIQUE ID
+    // ==========================================================
 
     final String newMchatId =
         await _reserveNewMchatId(
       uid: user.uid,
-      name: name,
-      email: email,
+      name: cleanName,
+      email: cleanEmail,
       photoUrl: photoUrl,
     );
 
-    // -------------------------------------------------------------
+    // ==========================================================
     // SAVE USER PROFILE
-    // -------------------------------------------------------------
+    // ==========================================================
 
     await userRef.set(
       {
         'uid': user.uid,
-        'name': name.isNotEmpty
-            ? name
-            : 'Mchat User',
-        'email': email,
+        'name': cleanName,
+        'email': cleanEmail,
         'mchatId': newMchatId,
         'coins': data['coins'] ?? 0,
         'vipLevel': data['vipLevel'] ?? 0,
         'isOwner': false,
-        'isVolunteer':
-            data['isVolunteer'] ?? false,
+        'isVolunteer': data['isVolunteer'] ?? false,
         'isOnline': true,
         'createdAt':
             data['createdAt'] ??
-                FieldValue.serverTimestamp(),
+            FieldValue.serverTimestamp(),
       },
       SetOptions(merge: true),
     );
@@ -205,9 +188,9 @@ class MchatIdService {
     return newMchatId;
   }
 
-  // ===============================================================
-  // RESERVE NEW UNIQUE ID
-  // ===============================================================
+  // ============================================================
+  // RESERVE UNIQUE 8-DIGIT ID
+  // ============================================================
 
   static Future<String> _reserveNewMchatId({
     required String uid,
@@ -219,31 +202,25 @@ class MchatIdService {
 
     while (true) {
       final int number =
-          10000000 +
-              random.nextInt(90000000);
+          10000000 + random.nextInt(90000000);
 
-      final String id =
-          number.toString();
+      final String id = number.toString();
 
-      // Never assign owner ID.
+      // Never assign Owner ID.
       if (id == ownerMchatId) {
         continue;
       }
 
-      final DocumentReference<Map<String, dynamic>>
-          indexRef =
-          _db
-              .collection('mchatIds')
-              .doc(id);
+      final indexRef =
+          _db.collection('mchatIds').doc(id);
 
       try {
         await _db.runTransaction(
           (transaction) async {
             final snapshot =
-                await transaction.get(
-              indexRef,
-            );
+                await transaction.get(indexRef);
 
+            // Someone already has this ID.
             if (snapshot.exists) {
               throw const _MchatIdTaken();
             }
@@ -253,9 +230,7 @@ class MchatIdService {
               {
                 'uid': uid,
                 'mchatId': id,
-                'name': name.isNotEmpty
-                    ? name
-                    : 'Mchat User',
+                'name': name,
                 'email': email,
                 'photoUrl': photoUrl,
                 'isOwner': false,
@@ -274,9 +249,9 @@ class MchatIdService {
     }
   }
 
-  // ===============================================================
+  // ============================================================
   // SAVE / UPDATE MCHAT INDEX
-  // ===============================================================
+  // ============================================================
 
   static Future<void> _saveMchatIndex({
     required String mchatId,
@@ -293,9 +268,7 @@ class MchatIdService {
       {
         'uid': uid,
         'mchatId': mchatId,
-        'name': name.isNotEmpty
-            ? name
-            : 'Mchat User',
+        'name': name.isEmpty ? 'Mchat User' : name,
         'email': email,
         'photoUrl': photoUrl,
         'isOwner': isOwner,
@@ -304,6 +277,29 @@ class MchatIdService {
       },
       SetOptions(merge: true),
     );
+  }
+
+  // ============================================================
+  // FIND USER BY MCHAT ID
+  // ============================================================
+
+  static Future<Map<String, dynamic>?> findByMchatId(
+    String mchatId,
+  ) async {
+    final id = mchatId.trim();
+
+    if (!RegExp(r'^[0-9]{8}$').hasMatch(id)) {
+      return null;
+    }
+
+    final snapshot =
+        await _db.collection('mchatIds').doc(id).get();
+
+    if (!snapshot.exists) {
+      return null;
+    }
+
+    return snapshot.data();
   }
 }
 
