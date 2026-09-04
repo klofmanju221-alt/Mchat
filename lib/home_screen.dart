@@ -4,7 +4,7 @@ import 'inbox_screen.dart';
 import 'live_screen.dart';
 import 'profile_screen.dart';
 import 'payment_screen.dart';
-import 'vip_levels_screen.dart';
+import 'vip_levels_screen.dart' as vip;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -548,7 +548,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   break;
                 case 1:
                   _openScreen(
-                    const VipLevelsScreen(),
+                    const vip.VipLevelsScreen()
                   );
                   break;
                 case 2:
