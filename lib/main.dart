@@ -1,32 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 
-import 'firebase_options.dart';
-import 'home_screen.dart';
-import 'inbox_screen.dart';
-import 'login_screen.dart';
-import 'profile_screen.dart';
-import 'live_screen.dart';
-
-
-// ============================================================================
-// MAIN
-// ============================================================================
-
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
+void main() {
   runApp(const MchatApp());
 }
-
-
-// ============================================================================
-// MCHAT APP
-// ============================================================================
 
 class MchatApp extends StatelessWidget {
   const MchatApp({super.key});
@@ -35,136 +11,2127 @@ class MchatApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-
       title: 'Mchat',
-
       theme: ThemeData(
         useMaterial3: true,
-
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF7B3FE4),
+          seedColor: const Color(0xFF8E35FF),
         ),
-
-        scaffoldBackgroundColor:
-            const Color(0xFFFFF9FF),
       ),
-
-      home: const LoginScreen(),
+      home: const MchatHomePage(),
     );
   }
 }
 
-
-// ============================================================================
-// MCHAT HOME PAGE
-// ============================================================================
+/* =========================================================
+   MAIN HOME
+   ========================================================= */
 
 class MchatHomePage extends StatefulWidget {
   const MchatHomePage({super.key});
 
   @override
-  State<MchatHomePage> createState() =>
-      _MchatHomePageState();
+  State<MchatHomePage> createState() => _MchatHomePageState();
 }
 
+class _MchatHomePageState extends State<MchatHomePage> {
+  int index = 0;
 
-class _MchatHomePageState
-    extends State<MchatHomePage> {
-
-  int selectedIndex = 0;
-
-
-  // ==========================================================================
-  // APP PAGES
-  // ==========================================================================
-
-  final List<Widget> pages = const [
-
-    // HOME
-    HomeScreen(),
-
-    // INBOX
+  final pages = const [
+    HomeContent(),
     InboxScreen(),
-
-    // LIVE
     LiveScreen(),
-
-    // PROFILE
     ProfileScreen(),
   ];
 
-
-  // ==========================================================================
-  // BUILD
-  // ==========================================================================
-
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-
-      body: pages[selectedIndex],
-
-
-      // ======================================================================
-      // BOTTOM NAVIGATION
-      // ======================================================================
-
+      appBar: AppBar(
+        title: const Text(
+          'Mchat',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Notifications UI ready.'),
+                ),
+              );
+            },
+            icon: const Icon(Icons.notifications_none),
+          ),
+          IconButton(
+            onPressed: () {
+              setState(() => index = 3);
+            },
+            icon: const Icon(Icons.account_circle_outlined),
+          ),
+        ],
+      ),
+      body: IndexedStack(
+        index: index,
+        children: pages,
+      ),
       bottomNavigationBar: NavigationBar(
-
-        selectedIndex: selectedIndex,
-
-        onDestinationSelected: (index) {
-
-          setState(() {
-
-            selectedIndex = index;
-
-          });
+        selectedIndex: index,
+        onDestinationSelected: (i) {
+          setState(() => index = i);
         },
-
         destinations: const [
-
           NavigationDestination(
-            icon: Icon(
-              Icons.home_outlined,
-            ),
-            selectedIcon: Icon(
-              Icons.home,
-            ),
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
             label: 'Home',
           ),
-
           NavigationDestination(
-            icon: Icon(
-              Icons.chat_outlined,
-            ),
-            selectedIcon: Icon(
-              Icons.chat,
-            ),
+            icon: Icon(Icons.chat_bubble_outline),
+            selectedIcon: Icon(Icons.chat_bubble),
             label: 'Inbox',
           ),
-
           NavigationDestination(
-            icon: Icon(
-              Icons.live_tv_outlined,
-            ),
-            selectedIcon: Icon(
-              Icons.live_tv,
-            ),
+            icon: Icon(Icons.live_tv_outlined),
+            selectedIcon: Icon(Icons.live_tv),
             label: 'Live',
           ),
-
           NavigationDestination(
-            icon: Icon(
-              Icons.person_outline,
-            ),
-            selectedIcon: Icon(
-              Icons.person,
-            ),
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
             label: 'Profile',
           ),
         ],
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   HOME
+   ========================================================= */
+
+class HomeContent extends StatelessWidget {
+  const HomeContent({super.key});
+
+  static const services = [
+    ['Free Inbox', Icons.chat_bubble_outline],
+    ['Private Chat', Icons.lock_outline],
+    ['Voice', Icons.mic_none],
+    ['Live Room', Icons.live_tv_outlined],
+    ['VIP', Icons.emoji_events_outlined],
+    ['Coins', Icons.monetization_on_outlined],
+    ['Gifts', Icons.card_giftcard_outlined],
+    ['Refer & Earn', Icons.people_outline],
+    ['Settings', Icons.settings_outlined],
+  ];
+
+  void open(BuildContext context, String name) {
+    final Map<String, Widget> pages = {
+      'Free Inbox': const InboxScreen(),
+      'Private Chat': const PrivateChatScreen(),
+      'Voice': const FeatureScreen(
+        title: 'Voice',
+        icon: Icons.mic,
+      ),
+      'Live Room': const LiveScreen(),
+      'VIP': const VipScreen(),
+      'Coins': const CoinsScreen(),
+      'Gifts': const GiftsScreen(),
+      'Refer & Earn': const ReferEarnScreen(),
+      'Settings': const SettingsScreen(),
+    };
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => pages[name]!,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(26),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF8E35FF),
+                  Color(0xFF4F46E5),
+                ],
+              ),
+              borderRadius: BorderRadius.all(
+                Radius.circular(28),
+              ),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Welcome to Mchat 👋',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Connect • Chat • Share • Enjoy',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 17,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 28),
+
+          const Text(
+            'Mchat Services',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: services.length,
+            gridDelegate:
+                const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 14,
+              mainAxisSpacing: 14,
+              childAspectRatio: 1.08,
+            ),
+            itemBuilder: (context, i) {
+              final service = services[i];
+
+              return Card(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () {
+                    open(context, service[0] as String);
+                  },
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        service[1] as IconData,
+                        size: 48,
+                        color: const Color(0xFF6D4C8F),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        service[0] as String,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+
+          const SizedBox(height: 22),
+
+          Card(
+            child: ListTile(
+              leading: const CircleAvatar(
+                child: Icon(Icons.monetization_on),
+              ),
+              title: const Text(
+                'My Coins',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: const Text(
+                '0 Coins',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              trailing: FilledButton(
+                onPressed: () {
+                  open(context, 'Coins');
+                },
+                child: const Text('Recharge'),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   FREE INBOX
+   ========================================================= */
+
+class InboxScreen extends StatefulWidget {
+  const InboxScreen({super.key});
+
+  @override
+  State<InboxScreen> createState() => _InboxState();
+}
+
+class _InboxState extends State<InboxScreen> {
+  final controller = TextEditingController();
+  final messages = <String>[];
+
+  void send() {
+    final text = controller.text.trim();
+
+    if (text.isEmpty) return;
+
+    setState(() {
+      messages.add(text);
+      controller.clear();
+    });
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Free Inbox'),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: messages.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No messages yet.\nType a message below.',
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: messages.length,
+                    itemBuilder: (_, i) {
+                      return Align(
+                        alignment: Alignment.centerRight,
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Text(messages[i]),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      decoration: const InputDecoration(
+                        hintText: 'Type a message...',
+                        border: OutlineInputBorder(),
+                      ),
+                      onSubmitted: (_) => send(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    onPressed: send,
+                    icon: const Icon(Icons.send),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   PRIVATE CHAT
+   ========================================================= */
+
+class PrivateChatScreen extends StatefulWidget {
+  const PrivateChatScreen({super.key});
+
+  @override
+  State<PrivateChatScreen> createState() =>
+      _PrivateChatScreenState();
+}
+
+class _PrivateChatScreenState
+    extends State<PrivateChatScreen> {
+  final controller = TextEditingController();
+
+  final List<String> messages = [];
+
+  bool muted = false;
+  bool blocked = false;
+
+  void sendMessage() {
+    final text = controller.text.trim();
+
+    if (text.isEmpty || blocked) return;
+
+    setState(() {
+      messages.add(text);
+      controller.clear();
+    });
+  }
+
+  void showRules() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PrivateChatRulesScreen(),
+      ),
+    );
+  }
+
+  void blockUser() {
+    setState(() {
+      blocked = true;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('User blocked for this chat.'),
+      ),
+    );
+  }
+
+  void unblockUser() {
+    setState(() {
+      blocked = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('User unblocked.'),
+      ),
+    );
+  }
+
+  void reportUser() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Report User'),
+          content: const Text(
+            'Choose a reason to report this user.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(context);
+
+                ScaffoldMessenger.of(this.context)
+                    .showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Report submitted for review.',
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Report'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        titleSpacing: 0,
+        title: const Row(
+          children: [
+            CircleAvatar(
+              radius: 19,
+              child: Icon(Icons.person),
+            ),
+            SizedBox(width: 10),
+            Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Mchat User',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Private Chat',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'rules') {
+                showRules();
+              }
+
+              if (value == 'mute') {
+                setState(() {
+                  muted = !muted;
+                });
+              }
+
+              if (value == 'block') {
+                if (blocked) {
+                  unblockUser();
+                } else {
+                  blockUser();
+                }
+              }
+
+              if (value == 'report') {
+                reportUser();
+              }
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'rules',
+                child: Row(
+                  children: [
+                    Icon(Icons.security),
+                    SizedBox(width: 10),
+                    Text('Security & Rules'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'mute',
+                child: Row(
+                  children: [
+                    Icon(
+                      muted
+                          ? Icons.notifications
+                          : Icons.notifications_off,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      muted
+                          ? 'Unmute Notifications'
+                          : 'Mute Notifications',
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'block',
+                child: Row(
+                  children: [
+                    Icon(
+                      blocked
+                          ? Icons.lock_open
+                          : Icons.block,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      blocked
+                          ? 'Unblock User'
+                          : 'Block User',
+                    ),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'report',
+                child: Row(
+                  children: [
+                    Icon(Icons.flag_outlined),
+                    SizedBox(width: 10),
+                    Text('Report User'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          /* SECURITY BANNER */
+
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.fromLTRB(
+              12,
+              12,
+              12,
+              4,
+            ),
+            padding: const EdgeInsets.all(13),
+            decoration: BoxDecoration(
+              color: Theme.of(context)
+                  .colorScheme
+                  .surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.lock_outline),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Private chat • Respect privacy and community rules.',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          /* CHAT */
+
+          Expanded(
+            child: blocked
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment:
+                          MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.block,
+                          size: 70,
+                          color: Colors.grey,
+                        ),
+                        SizedBox(height: 15),
+                        Text(
+                          'This user is blocked.',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          'Unblock the user to continue chatting.',
+                        ),
+                      ],
+                    ),
+                  )
+                : messages.isEmpty
+                    ? const Center(
+                        child: Column(
+                          mainAxisAlignment:
+                              MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.lock_outline,
+                              size: 65,
+                            ),
+                            SizedBox(height: 15),
+                            Text(
+                              'Private Conversation',
+                              style: TextStyle(
+                                fontSize: 21,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Send a message to start.',
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: messages.length,
+                        itemBuilder: (_, index) {
+                          return Align(
+                            alignment:
+                                Alignment.centerRight,
+                            child: Container(
+                              margin:
+                                  const EdgeInsets.only(
+                                bottom: 10,
+                              ),
+                              padding:
+                                  const EdgeInsets.all(13),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer,
+                                borderRadius:
+                                    BorderRadius.circular(
+                                  18,
+                                ),
+                              ),
+                              child: Text(
+                                messages[index],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+          ),
+
+          /* INPUT */
+
+          if (!blocked)
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        showRules();
+                      },
+                      icon: const Icon(
+                        Icons.shield_outlined,
+                      ),
+                      tooltip: 'Security Rules',
+                    ),
+                    Expanded(
+                      child: TextField(
+                        controller: controller,
+                        decoration: InputDecoration(
+                          hintText: 'Private message...',
+                          border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(24),
+                          ),
+                          contentPadding:
+                              const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 12,
+                          ),
+                        ),
+                        onSubmitted: (_) =>
+                            sendMessage(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      onPressed: sendMessage,
+                      icon: const Icon(Icons.send),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   PRIVATE CHAT RULES
+   ========================================================= */
+
+class PrivateChatRulesScreen extends StatefulWidget {
+  const PrivateChatRulesScreen({super.key});
+
+  @override
+  State<PrivateChatRulesScreen> createState() =>
+      _PrivateChatRulesScreenState();
+}
+
+class _PrivateChatRulesScreenState
+    extends State<PrivateChatRulesScreen> {
+  bool allowMessages = true;
+  bool allowRequests = true;
+  bool readReceipts = true;
+  bool onlineStatus = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Private Chat Security'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(18),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(22),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF6D28D9),
+                  Color(0xFF4F46E5),
+                ],
+              ),
+              borderRadius: BorderRadius.all(
+                Radius.circular(24),
+              ),
+            ),
+            child: const Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.security,
+                  color: Colors.white,
+                  size: 52,
+                ),
+                SizedBox(height: 12),
+                Text(
+                  'Stay Safe in Private Chat',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 23,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Protect your privacy and follow Mchat community rules.',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          const Text(
+            'Privacy Controls',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          Card(
+            child: SwitchListTile(
+              value: allowMessages,
+              onChanged: (value) {
+                setState(() {
+                  allowMessages = value;
+                });
+              },
+              secondary: const Icon(
+                Icons.chat_outlined,
+              ),
+              title: const Text(
+                'Allow Private Messages',
+              ),
+              subtitle: const Text(
+                'Allow other users to send you private messages.',
+              ),
+            ),
+          ),
+
+          Card(
+            child: SwitchListTile(
+              value: allowRequests,
+              onChanged: (value) {
+                setState(() {
+                  allowRequests = value;
+                });
+              },
+              secondary: const Icon(
+                Icons.person_add_outlined,
+              ),
+              title: const Text(
+                'Message Requests',
+              ),
+              subtitle: const Text(
+                'Allow private chat requests from other users.',
+              ),
+            ),
+          ),
+
+          Card(
+            child: SwitchListTile(
+              value: readReceipts,
+              onChanged: (value) {
+                setState(() {
+                  readReceipts = value;
+                });
+              },
+              secondary: const Icon(
+                Icons.done_all,
+              ),
+              title: const Text(
+                'Read Receipts',
+              ),
+              subtitle: const Text(
+                'Show when messages have been read.',
+              ),
+            ),
+          ),
+
+          Card(
+            child: SwitchListTile(
+              value: onlineStatus,
+              onChanged: (value) {
+                setState(() {
+                  onlineStatus = value;
+                });
+              },
+              secondary: const Icon(
+                Icons.visibility_outlined,
+              ),
+              title: const Text(
+                'Online Status',
+              ),
+              subtitle: const Text(
+                'Show your online status to other users.',
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 22),
+
+          const Text(
+            'Chat Safety Rules',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          const _RuleTile(
+            icon: Icons.privacy_tip_outlined,
+            title: 'Respect Privacy',
+            text:
+                'Do not share another person’s private information without permission.',
+          ),
+
+          const _RuleTile(
+            icon: Icons.no_adult_content,
+            title: 'No Harassment',
+            text:
+                'Do not threaten, bully, harass or repeatedly disturb other users.',
+          ),
+
+          const _RuleTile(
+            icon: Icons.link_off,
+            title: 'Avoid Suspicious Links',
+            text:
+                'Do not send harmful, suspicious or misleading links.',
+          ),
+
+          const _RuleTile(
+            icon: Icons.password_outlined,
+            title: 'Never Share Passwords',
+            text:
+                'Mchat support will never ask for your password or verification code.',
+          ),
+
+          const _RuleTile(
+            icon: Icons.report_outlined,
+            title: 'Report Problems',
+            text:
+                'Use Report User when you see abuse, scams or rule violations.',
+          ),
+
+          const SizedBox(height: 20),
+
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.info_outline,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'These controls are currently UI settings. '
+                      'Server-side security and enforcement will be connected '
+                      'during the backend security phase.',
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RuleTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String text;
+
+  const _RuleTile({
+    required this.icon,
+    required this.title,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: ListTile(
+        leading: CircleAvatar(
+          child: Icon(icon),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 5),
+          child: Text(text),
+        ),
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   LIVE
+   ========================================================= */
+
+class LiveScreen extends StatelessWidget {
+  const LiveScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const FeatureScreen(
+      title: 'Live Room',
+      icon: Icons.live_tv,
+    );
+  }
+}
+
+/* =========================================================
+   GENERIC FEATURE
+   ========================================================= */
+
+class FeatureScreen extends StatelessWidget {
+  final String title;
+  final IconData icon;
+
+  const FeatureScreen({
+    super.key,
+    required this.title,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 90,
+              color: const Color(0xFF6D4C8F),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '$title screen is ready.',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   VIP
+   ========================================================= */
+
+class VipScreen extends StatelessWidget {
+  const VipScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    const coins = [
+      1000,
+      3000,
+      6000,
+      10000,
+      20000,
+      30000,
+      50000,
+      80000,
+      120000,
+      200000,
+    ];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('VIP Center'),
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: 10,
+        itemBuilder: (_, i) {
+          return Card(
+            child: ListTile(
+              leading: const Icon(
+                Icons.emoji_events,
+              ),
+              title: Text(
+                'VIP ${i + 1}',
+              ),
+              subtitle: Text(
+                '${coins[i]} Coins',
+              ),
+              trailing: const Icon(
+                Icons.chevron_right,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   COINS
+   ========================================================= */
+
+class CoinsScreen extends StatelessWidget {
+  const CoinsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Coins'),
+      ),
+      body: Center(
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.monetization_on,
+                  size: 70,
+                ),
+                const Text(
+                  'My Coins',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Text(
+                  '0',
+                  style: TextStyle(
+                    fontSize: 38,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                FilledButton.icon(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Recharge backend will be connected next.',
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Recharge'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   GIFTS
+   ========================================================= */
+
+class GiftsScreen extends StatelessWidget {
+  const GiftsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    const gifts = [
+      'Rose',
+      'Heart',
+      'Lollipop',
+      'Coffee',
+      'Teddy',
+      'Diamond',
+      'Car',
+      'Castle',
+      'Lion',
+    ];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Gifts'),
+      ),
+      body: GridView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: gifts.length,
+        gridDelegate:
+            const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+        ),
+        itemBuilder: (_, i) {
+          return Card(
+            child: InkWell(
+              onTap: () {
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      '${gifts[i]} selected',
+                    ),
+                  ),
+                );
+              },
+              child: Column(
+                mainAxisAlignment:
+                    MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.card_giftcard,
+                    size: 38,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(gifts[i]),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   REFER & EARN
+   ========================================================= */
+
+class ReferEarnScreen extends StatelessWidget {
+  const ReferEarnScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Refer & Earn'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF8E35FF),
+                  Color(0xFF4F46E5),
+                ],
+              ),
+              borderRadius: BorderRadius.all(
+                Radius.circular(26),
+              ),
+            ),
+            child: const Column(
+              children: [
+                Icon(
+                  Icons.card_giftcard,
+                  size: 70,
+                  color: Colors.white,
+                ),
+                SizedBox(height: 14),
+                Text(
+                  'Invite Your Friends',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Earn 100 Coins for each friend',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 22),
+
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Your Referral Code',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'MCHAT123',
+                          style: TextStyle(
+                            fontSize: 25,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                      ),
+                      OutlinedButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Referral code copied.',
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text('Copy'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Share feature UI is ready.',
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.share),
+                      label: const Text('Share Now'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 22),
+
+          const Text(
+            'How it works?',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          const _StepTile(
+            number: '1',
+            text: 'Share your code',
+            icon: Icons.share,
+          ),
+          const _StepTile(
+            number: '2',
+            text: 'Friend joins Mchat',
+            icon: Icons.person_add,
+          ),
+          const _StepTile(
+            number: '3',
+            text: 'You both earn coins',
+            icon: Icons.monetization_on,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepTile extends StatelessWidget {
+  final String number;
+  final String text;
+  final IconData icon;
+
+  const _StepTile({
+    required this.number,
+    required this.text,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: CircleAvatar(
+          child: Text(number),
+        ),
+        title: Text(
+          text,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        trailing: Icon(icon),
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   SETTINGS
+   ========================================================= */
+
+class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Settings'),
+      ),
+      body: ListView(
+        children: [
+          SwitchListTile(
+            value: true,
+            onChanged: (_) {},
+            title: const Text('Notifications'),
+            secondary: const Icon(
+              Icons.notifications,
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.language),
+            title: const Text('Language'),
+            trailing: const Icon(
+              Icons.chevron_right,
+            ),
+          ),
+          ListTile(
+            leading: const Icon(
+              Icons.lock_outline,
+            ),
+            title: const Text(
+              'Private Chat Security',
+            ),
+            subtitle: const Text(
+              'Privacy controls and chat rules',
+            ),
+            trailing: const Icon(
+              Icons.chevron_right,
+            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const PrivateChatRulesScreen(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(
+              Icons.info_outline,
+            ),
+            title: const Text('About Mchat'),
+            trailing: const Icon(
+              Icons.chevron_right,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   PROFILE
+   ========================================================= */
+
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
+
+  void showMessage(
+    BuildContext context,
+    String message,
+  ) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Profile',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const SettingsScreen(),
+                ),
+              );
+            },
+            icon: const Icon(
+              Icons.settings_outlined,
+            ),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          20,
+          10,
+          20,
+          30,
+        ),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF8E35FF),
+                  Color(0xFF4F46E5),
+                ],
+              ),
+              borderRadius: BorderRadius.all(
+                Radius.circular(28),
+              ),
+            ),
+            child: Column(
+              children: [
+                Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    const CircleAvatar(
+                      radius: 52,
+                      backgroundColor: Colors.white,
+                      child: Icon(
+                        Icons.person,
+                        size: 62,
+                        color: Color(0xFF6D4C8F),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        size: 20,
+                        color: Color(0xFF6D4C8F),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'Mchat User',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                const Text(
+                  'ID: MCHAT001',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    showMessage(
+                      context,
+                      'Edit Profile UI is ready.',
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(
+                      color: Colors.white,
+                    ),
+                  ),
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Edit Profile'),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: 18,
+                horizontal: 8,
+              ),
+              child: const Row(
+                children: [
+                  Expanded(
+                    child: _ProfileStat(
+                      value: '120',
+                      label: 'Following',
+                    ),
+                  ),
+                  Expanded(
+                    child: _ProfileStat(
+                      value: '2.5K',
+                      label: 'Followers',
+                    ),
+                  ),
+                  Expanded(
+                    child: _ProfileStat(
+                      value: '15.6K',
+                      label: 'Likes',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          const Text(
+            'My Account',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          _ProfileMenuTile(
+            icon: Icons.account_balance_wallet_outlined,
+            title: 'My Wallet',
+            subtitle: 'Coins & balance',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const CoinsScreen(),
+                ),
+              );
+            },
+          ),
+
+          _ProfileMenuTile(
+            icon: Icons.emoji_events_outlined,
+            title: 'My Level',
+            subtitle: 'VIP 2',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const VipScreen(),
+                ),
+              );
+            },
+          ),
+
+          _ProfileMenuTile(
+            icon: Icons.grid_view_outlined,
+            title: 'My Posts',
+            subtitle: 'Your posts and media',
+            onTap: () {
+              showMessage(
+                context,
+                'My Posts UI is ready.',
+              );
+            },
+          ),
+
+          _ProfileMenuTile(
+            icon: Icons.meeting_room_outlined,
+            title: 'My Rooms',
+            subtitle: 'Your live rooms',
+            onTap: () {
+              showMessage(
+                context,
+                'My Rooms UI is ready.',
+              );
+            },
+          ),
+
+          _ProfileMenuTile(
+            icon: Icons.history,
+            title: 'History',
+            subtitle: 'Activity history',
+            onTap: () {
+              showMessage(
+                context,
+                'History UI is ready.',
+              );
+            },
+          ),
+
+          _ProfileMenuTile(
+            icon: Icons.lock_outline,
+            title: 'Private Chat Security',
+            subtitle: 'Privacy & chat rules',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const PrivateChatRulesScreen(),
+                ),
+              );
+            },
+          ),
+
+          _ProfileMenuTile(
+            icon: Icons.settings_outlined,
+            title: 'Settings',
+            subtitle: 'Account & app settings',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const SettingsScreen(),
+                ),
+              );
+            },
+          ),
+
+          const SizedBox(height: 20),
+
+          const Text(
+            'Owner',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          Card(
+            child: ListTile(
+              leading: const CircleAvatar(
+                child: Icon(
+                  Icons.admin_panel_settings,
+                ),
+              ),
+              title: const Text(
+                'Owner Dashboard',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: const Text(
+                'Development access',
+              ),
+              trailing: const Icon(
+                Icons.chevron_right,
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        const OwnerDashboardScreen(),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileStat extends StatelessWidget {
+  final String value;
+  final String label;
+
+  const _ProfileStat({
+    required this.value,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 5),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.grey,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProfileMenuTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ProfileMenuTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 9),
+      child: ListTile(
+        leading: CircleAvatar(
+          child: Icon(icon),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(subtitle),
+        trailing: const Icon(
+          Icons.chevron_right,
+        ),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+/* =========================================================
+   OWNER DASHBOARD
+   ========================================================= */
+
+class OwnerDashboardScreen extends StatelessWidget {
+  const OwnerDashboardScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    const items = [
+      ['Users', Icons.people],
+      ['Live Rooms', Icons.live_tv],
+      ['Transactions', Icons.receipt_long],
+      ['Recharges', Icons.account_balance_wallet],
+      ['Withdraw Requests', Icons.payments],
+      ['VIP Management', Icons.emoji_events],
+      ['Gifts', Icons.card_giftcard],
+      ['Reports', Icons.bar_chart],
+      ['Content Management', Icons.article],
+      ['Settings', Icons.settings],
+    ];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Owner Dashboard',
+        ),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(
+              Icons.notifications_outlined,
+            ),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF6D28D9),
+                  Color(0xFF4F46E5),
+                ],
+              ),
+              borderRadius: BorderRadius.all(
+                Radius.circular(22),
+              ),
+            ),
+            child: const Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Welcome, Owner 👑',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Mchat Administration',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          const Row(
+            children: [
+              Expanded(
+                child: StatCard(
+                  'Users',
+                  '0',
+                  Icons.people,
+                ),
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: StatCard(
+                  'Recharges',
+                  '₹0',
+                  Icons.currency_rupee,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          const Row(
+            children: [
+              Expanded(
+                child: StatCard(
+                  'Income',
+                  '₹0',
+                  Icons.trending_up,
+                ),
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: StatCard(
+                  'Withdrawn',
+                  '₹0',
+                  Icons.payments,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 18),
+
+          const Text(
+            'Management',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          ...items.map(
+            (item) => Card(
+              child: ListTile(
+                leading: Icon(
+                  item[1] as IconData,
+                ),
+                title: Text(
+                  item[0] as String,
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                ),
+                onTap: () {
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '${item[0]} section selected',
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class StatCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+
+  const StatCard(
+    this.title,
+    this.value,
+    this.icon, {
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 30,
+            ),
+            const SizedBox(height: 6),
+            Text(title),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
