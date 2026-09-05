@@ -405,14 +405,24 @@ class HomeContent extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 22),
-                          const Text(
-                            '0',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 52,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
+
+                          StreamBuilder<int>(
+  stream: WalletService.instance.coinBalanceStream(),
+  initialData: 0,
+  builder: (context, snapshot) {
+    final coins = snapshot.data ?? 0;
+
+    return Text(
+      coins.toString(),
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 52,
+        fontWeight: FontWeight.w800,
+      ),
+    );
+  },
+),
+                         
                           const Text(
                             'Available Coins',
                             style: TextStyle(
@@ -2886,15 +2896,33 @@ class ProfileScreen
             ),
           ),
           const SizedBox(height: 20),
-          const Row(
-            children: [
-              Expanded(
-                child: _PStat(
-                  'Coins',
-                  '0',
-                  Icons.monetization_on,
-                ),
-              ),
+          Row(
+  children: [
+    Expanded(
+      child: StreamBuilder<int>(
+        stream: WalletService.instance.coinBalanceStream(),
+        initialData: 0,
+        builder: (context, snapshot) {
+          final coins = snapshot.data ?? 0;
+
+          return _PStat(
+            'Coins',
+            coins.toString(),
+            Icons.monetization_on,
+          );
+        },
+      ),
+    ),
+    const SizedBox(width: 14),
+    const Expanded(
+      child: _PStat(
+        'VIP Level',
+        'VIP 1',
+        Icons.star,
+      ),
+    ),
+  ],
+),
               SizedBox(width: 14),
               Expanded(
                 child: _PStat(
