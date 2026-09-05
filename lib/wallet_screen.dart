@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'wallet_service.dart';
+import 'payment_screen.dart';
 
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
@@ -144,15 +145,13 @@ class WalletScreen extends StatelessWidget {
               // RECHARGE
               FilledButton.icon(
                 onPressed: () {
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Secure recharge will be connected in Build #134.',
-                      ),
-                    ),
-                  );
-                },
+             Navigator.push(
+            context,
+            MaterialPageRoute(
+            builder: (_) => const PaymentScreen(),
+           ),
+         );      
+      },
                 icon: const Icon(Icons.add),
                 label: const Text(
                   'Recharge Coins',
