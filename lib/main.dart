@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'firebase_options.dart';
+import 'king_theme.dart';
 import 'login_screen.dart';
 import 'inbox_screen.dart' as real_inbox;
 import 'wallet_screen.dart';
@@ -26,11 +27,7 @@ class MchatApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Mchat',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: const Color(0xFF7B2CBF),
-        scaffoldBackgroundColor: const Color(0xFFF8F5FC),
-      ),
+      theme: KingTheme.theme(),
       home: const AuthGate(),
     );
   }
