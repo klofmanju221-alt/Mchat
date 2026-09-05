@@ -394,8 +394,7 @@ class HomeContent extends StatelessWidget {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) =>
-                                          const CoinsScreen(),
+                                      builder: (_) => const WalletScreen(),
                                     ),
                                   );
                                 },
