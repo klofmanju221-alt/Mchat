@@ -2923,16 +2923,6 @@ class ProfileScreen
     ),
   ],
 ),
-              SizedBox(width: 14),
-              Expanded(
-                child: _PStat(
-                  'VIP Level',
-                  'VIP 1',
-                  Icons.star,
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: 22),
           Container(
             decoration: BoxDecoration(
