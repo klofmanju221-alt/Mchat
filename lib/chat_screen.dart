@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import 'gift_screen.dart';
+
 class ChatScreen extends StatefulWidget {
   final String chatId;
   final String title;
@@ -219,6 +221,31 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   // ============================================================
+  // OPEN GIFT SCREEN
+  // ============================================================
+
+  void _openGiftScreen() {
+    final receiverUid = _otherUserId;
+
+    if (receiverUid.isEmpty) {
+      _showError(
+        'Receiver unavailable.',
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GiftScreen(
+          receiverUid: receiverUid,
+          receiverName: widget.title,
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
   // SCROLL
   // ============================================================
 
@@ -407,6 +434,20 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ],
         ),
+
+        // ======================================================
+        // GIFT BUTTON
+        // ======================================================
+
+        actions: [
+          IconButton(
+            tooltip: 'Send Gift',
+            icon: const Icon(
+              Icons.card_giftcard_rounded,
+            ),
+            onPressed: _openGiftScreen,
+          ),
+        ],
       ),
 
       body: Column(
