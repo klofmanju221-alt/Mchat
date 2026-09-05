@@ -5,6 +5,7 @@ import 'live_screen.dart';
 import 'profile_screen.dart';
 import 'payment_screen.dart';
 import 'vip_levels_screen.dart' as vip;
+import 'premium_theme.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,11 +15,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static const Color purple = Color(0xFF7B2CBF);
-  static const Color deepPurple = Color(0xFF32104F);
-  static const Color pink = Color(0xFFE83E8C);
-  static const Color gold = Color(0xFFFFC107);
-  static const Color background = Color(0xFFF7F3FA);
+  static const Color gold = PremiumTheme.gold;
+  static const Color brightGold = PremiumTheme.brightGold;
+  static const Color lightGold = PremiumTheme.lightGold;
+  static const Color purple = PremiumTheme.purple;
+  static const Color deepPurple = PremiumTheme.deepPurple;
+  static const Color darkPurple = PremiumTheme.darkPurple;
+  static const Color background = PremiumTheme.background;
+  static const Color surface = PremiumTheme.surface;
 
   final TextEditingController _searchController =
       TextEditingController();
@@ -53,10 +57,19 @@ class _HomeScreenState extends State<HomeScreen> {
       SnackBar(
         content: Text(
           '$title UI is ready for connection.',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+          ),
         ),
+        backgroundColor: surface,
         behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color: gold.withValues(alpha: 0.35),
+          ),
         ),
       ),
     );
@@ -66,56 +79,62 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: background,
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: _buildTopHeader(),
-            ),
-            SliverToBoxAdapter(
-              child: _buildSearchBar(),
-            ),
-            SliverToBoxAdapter(
-              child: _buildCoinsCard(),
-            ),
-            SliverToBoxAdapter(
-              child: _buildCategories(),
-            ),
-            SliverToBoxAdapter(
-              child: _buildQuickActions(),
-            ),
-            SliverToBoxAdapter(
-              child: _buildSectionHeader(
-                'Live Rooms',
-                'See who is live now',
-                () => _openScreen(
-                  const LiveScreen(),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: PremiumTheme.premiumBackground,
+        ),
+        child: SafeArea(
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: _buildTopHeader(),
+              ),
+              SliverToBoxAdapter(
+                child: _buildSearchBar(),
+              ),
+              SliverToBoxAdapter(
+                child: _buildCoinsCard(),
+              ),
+              SliverToBoxAdapter(
+                child: _buildCategories(),
+              ),
+              SliverToBoxAdapter(
+                child: _buildQuickActions(),
+              ),
+              SliverToBoxAdapter(
+                child: _buildSectionHeader(
+                  'Live Rooms',
+                  'See who is live now',
+                  () => _openScreen(
+                    const LiveScreen(),
+                  ),
                 ),
               ),
-            ),
-            SliverToBoxAdapter(
-              child: _buildLivePreview(),
-            ),
-            SliverToBoxAdapter(
-              child: _buildSectionHeader(
-                'Mchat Features',
-                'Explore everything in Mchat',
-                null,
+              SliverToBoxAdapter(
+                child: _buildLivePreview(),
               ),
-            ),
-            SliverToBoxAdapter(
-              child: _buildFeatureGrid(),
-            ),
-            SliverToBoxAdapter(
-              child: _buildVipBanner(),
-            ),
-            SliverToBoxAdapter(
-              child: _buildReferBanner(),
-            ),
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 35),
-            ),
-          ],
+              SliverToBoxAdapter(
+                child: _buildSectionHeader(
+                  'Mchat Features',
+                  'Explore everything in Mchat',
+                  null,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: _buildFeatureGrid(),
+              ),
+              SliverToBoxAdapter(
+                child: _buildVipBanner(),
+              ),
+              SliverToBoxAdapter(
+                child: _buildReferBanner(),
+              ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 35),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -132,25 +151,20 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  deepPurple,
-                  purple,
-                  pink,
-                ],
+              gradient: PremiumTheme.goldGradient,
+              borderRadius: BorderRadius.circular(17),
+              border: Border.all(
+                color: lightGold.withValues(alpha: 0.75),
+                width: 1,
               ),
-              borderRadius:
-                  BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: purple.withValues(
-                    alpha: 0.25,
-                  ),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
+                  color: gold.withValues(alpha: 0.22),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
@@ -158,8 +172,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Text(
                 'M',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 27,
+                  color: Colors.black,
+                  fontSize: 29,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -168,23 +182,23 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 12),
           const Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Mchat',
                   style: TextStyle(
+                    color: Colors.white,
                     fontSize: 22,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 2),
+                SizedBox(height: 3),
                 Text(
                   'M Karnataka Voice Club',
                   style: TextStyle(
-                    color: purple,
+                    color: lightGold,
                     fontSize: 11,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -196,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
               'Notifications',
             ),
           ),
-          const SizedBox(width: 7),
+          const SizedBox(width: 8),
           _headerButton(
             Icons.person_outline_rounded,
             () => _openScreen(
@@ -213,24 +227,32 @@ class _HomeScreenState extends State<HomeScreen> {
     VoidCallback onTap,
   ) {
     return Material(
-      color: Colors.white,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Container(
-          width: 43,
-          height: 43,
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                darkPurple,
+                purple,
+              ],
+            ),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: Colors.grey.shade200,
+              color: gold.withValues(alpha: 0.45),
             ),
           ),
           child: Icon(
             icon,
-            color: Colors.black87,
-            size: 22,
+            color: gold,
+            size: 23,
           ),
         ),
       ),
@@ -243,17 +265,27 @@ class _HomeScreenState extends State<HomeScreen> {
         horizontal: 18,
       ),
       child: Container(
-        height: 50,
+        height: 52,
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius:
-              BorderRadius.circular(17),
+          color: surface,
+          borderRadius: BorderRadius.circular(17),
           border: Border.all(
-            color: Colors.grey.shade200,
+            color: gold.withValues(alpha: 0.32),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.20),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: TextField(
           controller: _searchController,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+          ),
           onSubmitted: (value) {
             if (value.trim().isNotEmpty) {
               _showComingSoon(
@@ -264,18 +296,18 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: InputDecoration(
             prefixIcon: const Icon(
               Icons.search_rounded,
-              color: purple,
+              color: gold,
             ),
             hintText:
                 'Search people, rooms or Mchat ID',
-            hintStyle: TextStyle(
-              color: Colors.grey.shade500,
+            hintStyle: const TextStyle(
+              color: Colors.white54,
               fontSize: 13,
             ),
             suffixIcon: IconButton(
               icon: const Icon(
                 Icons.tune_rounded,
-                color: purple,
+                color: lightGold,
               ),
               onPressed: () {
                 _showComingSoon(
@@ -286,7 +318,7 @@ class _HomeScreenState extends State<HomeScreen> {
             border: InputBorder.none,
             contentPadding:
                 const EdgeInsets.symmetric(
-              vertical: 14,
+              vertical: 15,
             ),
           ),
         ),
@@ -300,43 +332,55 @@ class _HomeScreenState extends State<HomeScreen> {
         18,
         18,
         18,
-        5,
+        6,
       ),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(19),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [
-              deepPurple,
-              purple,
-              pink,
-            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF21002F),
+              Color(0xFF4A148C),
+              Color(0xFF7B1FA2),
+            ],
           ),
-          borderRadius:
-              BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: gold.withValues(alpha: 0.50),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: purple.withValues(
-                alpha: 0.28,
-              ),
-              blurRadius: 16,
-              offset: const Offset(0, 7),
+              color: purple.withValues(alpha: 0.30),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Stack(
           children: [
             Positioned(
-              right: -25,
-              top: -25,
+              right: -22,
+              top: -24,
               child: Icon(
-                Icons.monetization_on_rounded,
-                size: 125,
+                Icons.account_balance_wallet_rounded,
+                size: 130,
                 color: Colors.white.withValues(
-                  alpha: 0.07,
+                  alpha: 0.06,
+                ),
+              ),
+            ),
+            Positioned(
+              right: 35,
+              bottom: -20,
+              child: Icon(
+                Icons.auto_awesome_rounded,
+                size: 70,
+                color: gold.withValues(
+                  alpha: 0.08,
                 ),
               ),
             ),
@@ -346,56 +390,84 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(
-                      Icons.monetization_on_rounded,
-                      color: gold,
-                      size: 25,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'My Coins',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        gradient:
+                            PremiumTheme.goldGradient,
+                        shape: BoxShape.circle,
                       ),
+                      child: const Icon(
+                        Icons.monetization_on_rounded,
+                        color: Colors.black,
+                        size: 23,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'My Coins',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Premium Wallet',
+                          style: TextStyle(
+                            color: Colors.white60,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
                     ),
                     const Spacer(),
                     GestureDetector(
                       onTap: () {
-                   _openScreen(
-                  const PaymentScreen(),
+                        _openScreen(
+                          const PaymentScreen(),
                         );
                       },
                       child: Container(
                         padding:
                             const EdgeInsets.symmetric(
                           horizontal: 13,
-                          vertical: 8,
+                          vertical: 9,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white
-                              .withValues(
-                            alpha: 0.14,
-                          ),
+                          gradient:
+                              PremiumTheme.goldGradient,
                           borderRadius:
-                              BorderRadius.circular(
-                            20,
-                          ),
+                              BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: gold.withValues(
+                                alpha: 0.20,
+                              ),
+                              blurRadius: 8,
+                            ),
+                          ],
                         ),
                         child: const Row(
                           children: [
                             Icon(
-                              Icons.add,
-                              color: Colors.white,
+                              Icons.add_rounded,
+                              color: Colors.black,
                               size: 17,
                             ),
                             SizedBox(width: 4),
                             Text(
                               'Recharge',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: Colors.black,
                                 fontWeight:
-                                    FontWeight.w800,
+                                    FontWeight.bold,
                                 fontSize: 12,
                               ),
                             ),
@@ -405,19 +477,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 7),
+                const SizedBox(height: 14),
                 const Text(
                   '0',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w900,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
+                const SizedBox(height: 2),
                 const Text(
                   'Available Coins',
                   style: TextStyle(
-                    color: Colors.white60,
+                    color: Colors.white70,
                     fontSize: 11,
                   ),
                 ),
@@ -431,11 +504,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCategories() {
     return SizedBox(
-      height: 61,
+      height: 65,
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(
           18,
-          12,
+          13,
           18,
           8,
         ),
@@ -461,26 +534,39 @@ class _HomeScreenState extends State<HomeScreen> {
                 horizontal: 18,
               ),
               decoration: BoxDecoration(
+                gradient: selected
+                    ? PremiumTheme.goldGradient
+                    : null,
                 color: selected
-                    ? purple
-                    : Colors.white,
+                    ? null
+                    : surface,
                 borderRadius:
-                    BorderRadius.circular(20),
+                    BorderRadius.circular(21),
                 border: Border.all(
                   color: selected
-                      ? purple
-                      : Colors.grey.shade200,
+                      ? gold
+                      : gold.withValues(alpha: 0.25),
                 ),
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: gold.withValues(
+                            alpha: 0.20,
+                          ),
+                          blurRadius: 9,
+                        ),
+                      ]
+                    : null,
               ),
               child: Center(
                 child: Text(
                   categories[index],
                   style: TextStyle(
                     color: selected
-                        ? Colors.white
-                        : Colors.black87,
-                    fontWeight: FontWeight.w800,
+                        ? Colors.black
+                        : Colors.white,
                     fontSize: 12,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -496,32 +582,27 @@ class _HomeScreenState extends State<HomeScreen> {
       {
         'icon': Icons.video_call_rounded,
         'title': 'Go Live',
-        'color': pink,
       },
       {
         'icon': Icons.workspace_premium_rounded,
         'title': 'VIP',
-        'color': gold,
       },
       {
         'icon': Icons.chat_rounded,
         'title': 'Inbox',
-        'color': purple,
       },
       {
         'icon': Icons.sports_esports_rounded,
         'title': 'Games',
-        'color': Colors.orange,
       },
       {
         'icon': Icons.people_alt_rounded,
         'title': 'Family',
-        'color': Colors.teal,
       },
     ];
 
     return SizedBox(
-      height: 108,
+      height: 116,
       child: ListView.separated(
         padding:
             const EdgeInsets.symmetric(
@@ -530,7 +611,7 @@ class _HomeScreenState extends State<HomeScreen> {
         scrollDirection: Axis.horizontal,
         itemCount: actions.length,
         separatorBuilder: (_, __) =>
-            const SizedBox(width: 12),
+            const SizedBox(width: 11),
         itemBuilder: (context, index) {
           final item = actions[index];
 
@@ -544,7 +625,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   break;
                 case 1:
                   _openScreen(
-                    const vip.VipLevelsScreen()
+                    const vip.VipLevelsScreen(),
                   );
                   break;
                 case 2:
@@ -559,23 +640,32 @@ class _HomeScreenState extends State<HomeScreen> {
               }
             },
             child: Container(
-              width: 82,
+              width: 84,
               padding:
                   const EdgeInsets.symmetric(
                 vertical: 11,
               ),
               decoration: BoxDecoration(
-                color: Colors.white,
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF21102F),
+                    Color(0xFF160C22),
+                  ],
+                ),
                 borderRadius:
                     BorderRadius.circular(18),
                 border: Border.all(
-                  color: Colors.grey.shade200,
+                  color: gold.withValues(alpha: 0.28),
                 ),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 5,
-                    offset: Offset(0, 2),
+                    color: Colors.black.withValues(
+                      alpha: 0.20,
+                    ),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -584,29 +674,30 @@ class _HomeScreenState extends State<HomeScreen> {
                     MainAxisAlignment.center,
                 children: [
                   Container(
-                    width: 43,
-                    height: 43,
+                    width: 47,
+                    height: 47,
                     decoration: BoxDecoration(
-                      color: (item['color']
-                              as Color)
-                          .withValues(
-                        alpha: 0.12,
-                      ),
+                      gradient:
+                          PremiumTheme.purpleGradient,
                       shape: BoxShape.circle,
+                      border: Border.all(
+                        color:
+                            gold.withValues(alpha: 0.45),
+                      ),
                     ),
                     child: Icon(
                       item['icon'] as IconData,
-                      color:
-                          item['color'] as Color,
-                      size: 23,
+                      color: gold,
+                      size: 24,
                     ),
                   ),
-                  const SizedBox(height: 7),
+                  const SizedBox(height: 8),
                   Text(
                     item['title'] as String,
                     style: const TextStyle(
+                      color: Colors.white,
                       fontSize: 11,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
@@ -626,12 +717,22 @@ class _HomeScreenState extends State<HomeScreen> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         18,
-        17,
+        18,
         18,
         11,
       ),
       child: Row(
         children: [
+          Container(
+            width: 4,
+            height: 34,
+            decoration: BoxDecoration(
+              gradient: PremiumTheme.goldGradient,
+              borderRadius:
+                  BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment:
@@ -640,15 +741,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   title,
                   style: const TextStyle(
+                    color: Colors.white,
                     fontSize: 19,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
+                  style: const TextStyle(
+                    color: Colors.white60,
                     fontSize: 11.5,
                   ),
                 ),
@@ -661,8 +763,9 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Text(
                 'See All',
                 style: TextStyle(
-                  color: purple,
-                  fontWeight: FontWeight.w800,
+                  color: gold,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -694,7 +797,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return SizedBox(
-      height: 190,
+      height: 195,
       child: ListView.separated(
         padding:
             const EdgeInsets.symmetric(
@@ -714,32 +817,69 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             child: Container(
-              width: 165,
+              width: 168,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                   colors: index == 0
-                      ? [
-                          deepPurple,
-                          purple,
+                      ? const [
+                          Color(0xFF21002F),
+                          Color(0xFF7B1FA2),
                         ]
-                      : [
-                          const Color(0xFF49245E),
-                          pink,
+                      : const [
+                          Color(0xFF32104F),
+                          Color(0xFF6A1B9A),
                         ],
                 ),
                 borderRadius:
-                    BorderRadius.circular(21),
+                    BorderRadius.circular(22),
+                border: Border.all(
+                  color: gold.withValues(alpha: 0.38),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: purple.withValues(
+                      alpha: 0.25,
+                    ),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
               child: Stack(
                 children: [
                   Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Container(
+                      width: 39,
+                      height: 39,
+                      decoration: BoxDecoration(
+                        color: Colors.black
+                            .withValues(alpha: 0.18),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: gold.withValues(
+                            alpha: 0.30,
+                          ),
+                        ),
+                      ),
+                      child: Icon(
+                        room['icon'] as IconData,
+                        color: gold,
+                        size: 21,
+                      ),
+                    ),
+                  ),
+                  Positioned(
                     right: -10,
-                    bottom: -10,
+                    bottom: -12,
                     child: Icon(
                       room['icon'] as IconData,
-                      size: 95,
+                      size: 105,
                       color: Colors.white
-                          .withValues(alpha: 0.10),
+                          .withValues(alpha: 0.06),
                     ),
                   ),
                   Padding(
@@ -753,11 +893,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           padding:
                               const EdgeInsets
                                   .symmetric(
-                            horizontal: 8,
+                            horizontal: 9,
                             vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.red,
+                            gradient:
+                                PremiumTheme.goldGradient,
                             borderRadius:
                                 BorderRadius.circular(
                               10,
@@ -766,10 +907,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: const Text(
                             'LIVE',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: Colors.black,
                               fontSize: 9,
                               fontWeight:
-                                  FontWeight.w900,
+                                  FontWeight.bold,
                             ),
                           ),
                         ),
@@ -782,8 +923,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 15,
-                            fontWeight:
-                                FontWeight.w900,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 5),
@@ -798,21 +938,23 @@ class _HomeScreenState extends State<HomeScreen> {
                         Row(
                           children: [
                             const Icon(
-                              Icons
-                                  .visibility_rounded,
-                              color: Colors.white70,
+                              Icons.visibility_rounded,
+                              color: lightGold,
                               size: 14,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              room['viewers']
-                                  as String,
-                              style:
-                                  const TextStyle(
-                                color:
-                                    Colors.white70,
+                              room['viewers'] as String,
+                              style: const TextStyle(
+                                color: Colors.white70,
                                 fontSize: 10,
                               ),
+                            ),
+                            const Spacer(),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: gold,
+                              size: 17,
                             ),
                           ],
                         ),
@@ -885,9 +1027,9 @@ class _HomeScreenState extends State<HomeScreen> {
         gridDelegate:
             const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 4,
-          crossAxisSpacing: 10,
+          crossAxisSpacing: 9,
           mainAxisSpacing: 11,
-          childAspectRatio: 0.78,
+          childAspectRatio: 0.76,
         ),
         itemBuilder: (context, index) {
           final feature = features[index];
@@ -905,12 +1047,22 @@ class _HomeScreenState extends State<HomeScreen> {
                 vertical: 10,
               ),
               decoration: BoxDecoration(
-                color: Colors.white,
+                gradient:
+                    PremiumTheme.purpleGradient,
                 borderRadius:
                     BorderRadius.circular(17),
                 border: Border.all(
-                  color: Colors.grey.shade200,
+                  color: gold.withValues(alpha: 0.28),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(
+                      alpha: 0.18,
+                    ),
+                    blurRadius: 7,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 mainAxisAlignment:
@@ -921,17 +1073,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 44,
                     decoration: BoxDecoration(
                       gradient:
-                          const LinearGradient(
-                        colors: [
-                          Color(0xFFF2E8FA),
-                          Color(0xFFFFEAF3),
-                        ],
-                      ),
+                          PremiumTheme.goldGradient,
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: gold.withValues(
+                            alpha: 0.15,
+                          ),
+                          blurRadius: 7,
+                        ),
+                      ],
                     ),
                     child: Icon(
                       feature['icon'] as IconData,
-                      color: purple,
+                      color: Colors.black,
                       size: 22,
                     ),
                   ),
@@ -943,8 +1098,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     overflow:
                         TextOverflow.ellipsis,
                     style: const TextStyle(
+                      color: Colors.white,
                       fontSize: 10.5,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -954,8 +1110,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     maxLines: 1,
                     overflow:
                         TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
+                    style: const TextStyle(
+                      color: Colors.white60,
                       fontSize: 8.5,
                     ),
                   ),
@@ -979,37 +1135,43 @@ class _HomeScreenState extends State<HomeScreen> {
       child: GestureDetector(
         onTap: () {
           _openScreen(
-            const VipLevelsScreen(),
+            const vip.VipLevelsScreen(),
           );
         },
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xFF24102F),
-                Color(0xFF612A7E),
-              ],
-            ),
+            gradient:
+                PremiumTheme.purpleGradient,
             borderRadius:
                 BorderRadius.circular(22),
+            border: Border.all(
+              color: gold.withValues(alpha: 0.45),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: purple.withValues(
+                  alpha: 0.25,
+                ),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
           child: Row(
             children: [
               Container(
-                width: 53,
-                height: 53,
+                width: 55,
+                height: 55,
                 decoration: BoxDecoration(
-                  color: gold.withValues(
-                    alpha: 0.16,
-                  ),
+                  gradient:
+                      PremiumTheme.goldGradient,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons
-                      .workspace_premium_rounded,
-                  color: gold,
+                  Icons.workspace_premium_rounded,
+                  color: Colors.black,
                   size: 31,
                 ),
               ),
@@ -1024,8 +1186,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
-                        fontWeight:
-                            FontWeight.w900,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     SizedBox(height: 4),
@@ -1039,10 +1200,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: Colors.white,
-                size: 17,
+              Container(
+                width: 35,
+                height: 35,
+                decoration: BoxDecoration(
+                  color: gold.withValues(
+                    alpha: 0.14,
+                  ),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: gold.withValues(
+                      alpha: 0.35,
+                    ),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: gold,
+                  size: 15,
+                ),
               ),
             ],
           ),
@@ -1069,28 +1245,34 @@ class _HomeScreenState extends State<HomeScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(17),
           decoration: BoxDecoration(
-            color: Colors.white,
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF21102F),
+                Color(0xFF160C22),
+              ],
+            ),
             borderRadius:
                 BorderRadius.circular(21),
             border: Border.all(
-              color: purple.withValues(
-                alpha: 0.15,
-              ),
+              color: gold.withValues(alpha: 0.30),
             ),
           ),
           child: Row(
             children: [
               Container(
-                width: 49,
-                height: 49,
+                width: 50,
+                height: 50,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1E6F9),
+                  gradient:
+                      PremiumTheme.goldGradient,
                   borderRadius:
                       BorderRadius.circular(15),
                 ),
                 child: const Icon(
                   Icons.people_alt_rounded,
-                  color: purple,
+                  color: Colors.black,
                   size: 27,
                 ),
               ),
@@ -1103,26 +1285,41 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       'Refer & Earn',
                       style: TextStyle(
+                        color: Colors.white,
                         fontSize: 16,
-                        fontWeight:
-                            FontWeight.w900,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     SizedBox(height: 3),
                     Text(
                       'Invite friends to Mchat',
                       style: TextStyle(
-                        color: Colors.grey,
+                        color: Colors.white60,
                         fontSize: 11,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: purple,
-                size: 16,
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: purple.withValues(
+                    alpha: 0.50,
+                  ),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: gold.withValues(
+                      alpha: 0.30,
+                    ),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: gold,
+                  size: 14,
+                ),
               ),
             ],
           ),
