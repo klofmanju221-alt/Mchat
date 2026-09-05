@@ -1,6 +1,17 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
-void main() {
+import 'firebase_options.dart';
+import 'login_screen.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const MchatApp());
 }
 
@@ -17,11 +28,45 @@ class MchatApp extends StatelessWidget {
         colorSchemeSeed: Colors.deepPurple,
         scaffoldBackgroundColor: const Color(0xFFF7F7FB),
       ),
-      home: const MchatHomePage(),
+      home: const AuthGate(),
     );
   }
 }
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
 
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return const Scaffold(
+            body: Center(
+              child: Text('Authentication service unavailable'),
+            ),
+          );
+        }
+
+        final User? user = snapshot.data;
+
+        if (user == null) {
+          return const LoginScreen();
+        }
+
+        return const MchatHomePage();
+      },
+    );
+  }
+}
 // ============================================================
 // HOME
 // ============================================================
