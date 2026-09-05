@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
+import 'wallet_service.dart';
+
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
 
@@ -581,103 +583,112 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Widget _balanceCard() {
-    return Container(
-      width: double.infinity,
-      padding:
-          const EdgeInsets.all(21),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            deepPurple,
-            purple,
-            pink,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius:
-            BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color:
-                purple.withValues(alpha: 0.22),
-            blurRadius: 18,
-            offset:
-                const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              color: Colors.white
-                  .withValues(alpha: 0.16),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.monetization_on_rounded,
-              color: gold,
-              size: 37,
-            ),
-          ),
-          const SizedBox(width: 15),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'My Coins',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                    fontWeight:
-                        FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: 3),
-                Text(
-                  '0',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 31,
-                    fontWeight:
-                        FontWeight.w900,
-                  ),
-                ),
-                Text(
-                  'Available Coins',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
-                ),
+    return StreamBuilder<int>(
+      stream:
+          WalletService.instance
+              .coinBalanceStream(),
+      builder: (context, snapshot) {
+        final coins = snapshot.data ?? 0;
+
+        return Container(
+          width: double.infinity,
+          padding:
+              const EdgeInsets.all(21),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                deepPurple,
+                purple,
+                pink,
               ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
+            borderRadius:
+                BorderRadius.circular(26),
+            boxShadow: [
+              BoxShadow(
+                color:
+                    purple.withValues(alpha: 0.22),
+                blurRadius: 18,
+                offset:
+                    const Offset(0, 8),
+              ),
+            ],
           ),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(
-              horizontal: 13,
-              vertical: 9,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white
-                  .withValues(alpha: 0.15),
-              borderRadius:
-                  BorderRadius.circular(15),
-            ),
-            child: const Icon(
-              Icons
-                  .account_balance_wallet_rounded,
-              color: Colors.white,
-            ),
+          child: Row(
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: Colors.white
+                      .withValues(alpha: 0.16),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.monetization_on_rounded,
+                  color: gold,
+                  size: 37,
+                ),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'My Coins',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontWeight:
+                            FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      _formatCoins(coins),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 31,
+                        fontWeight:
+                            FontWeight.w900,
+                      ),
+                    ),
+                    const Text(
+                      'Available Coins',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(
+                  horizontal: 13,
+                  vertical: 9,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white
+                      .withValues(alpha: 0.15),
+                  borderRadius:
+                      BorderRadius.circular(15),
+                ),
+                child: const Icon(
+                  Icons
+                      .account_balance_wallet_rounded,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
