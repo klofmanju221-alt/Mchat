@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'firebase_options.dart';
 import 'login_screen.dart';
+import 'inbox_screen.dart' as real_inbox;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -87,7 +88,7 @@ class _MchatHomePageState extends State<MchatHomePage> {
 
   final pages = const [
     HomeContent(),
-    InboxScreen(),
+    real_inbox.InboxScreen(),
     LiveScreen(),
     ProfileScreen(),
   ];
