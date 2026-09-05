@@ -1821,7 +1821,11 @@ class OwnerDashboardScreen extends StatelessWidget {
   }
 }
 
-class OwnerFeatureScreen extends StatelessWidget {
+// ============================================================
+// BUILD #127 - LOCKED UI / FEATURES
+// ============================================================
+
+class OwnerFeatureScreen extends StatefulWidget {
   final String title;
   final IconData icon;
 
@@ -1832,34 +1836,276 @@ class OwnerFeatureScreen extends StatelessWidget {
   });
 
   @override
+  State<OwnerFeatureScreen> createState() =>
+      _OwnerFeatureScreenState();
+}
+
+class _OwnerFeatureScreenState
+    extends State<OwnerFeatureScreen> {
+  bool unlocked = false;
+
+  static const Set<String> lockedFeatures = {
+    'Transactions',
+    'Recharges',
+    'Withdraw Requests',
+    'VIP Management',
+    'Gifts',
+    'Reports',
+    'Content Management',
+    'Settings',
+  };
+
+  bool get isLocked =>
+      lockedFeatures.contains(widget.title);
+
+  void unlockFeature() {
+    setState(() {
+      unlocked = true;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Feature unlocked for this session',
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final locked = isLocked && !unlocked;
+
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(
+        title: Text(widget.title),
+        actions: [
+          if (locked)
+            const Padding(
+              padding: EdgeInsets.only(right: 12),
+              child: Icon(Icons.lock),
+            ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          FeatureBanner(
-            title: title,
-            subtitle: 'Owner management section',
-            icon: icon,
-          ),
-          const SizedBox(height: 20),
-          const Card(
-            child: ListTile(
-              leading: Icon(Icons.info_outline),
-              title: Text('Management UI'),
-              subtitle: Text(
-                'Backend connection can be added here.',
+          Card(
+            elevation: 0,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 32,
+                    child: Icon(
+                      locked
+                          ? Icons.lock
+                          : widget.icon,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.title,
+                          style: const TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          locked
+                              ? 'Owner permission required'
+                              : 'Owner access enabled',
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          const Card(
-            child: ListTile(
-              leading: Icon(Icons.security),
-              title: Text('Protected'),
-              subtitle: Text(
-                'Only Owner Dashboard session can access this page.',
+
+          const SizedBox(height: 20),
+
+          if (locked) ...[
+            Card(
+              elevation: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 90,
+                      height: 90,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .errorContainer,
+                      ),
+                      child: Icon(
+                        Icons.lock,
+                        size: 48,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .error,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Feature Locked',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'This Owner feature is protected.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Additional owner permission is required '
+                      'to access this section.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        onPressed: unlockFeature,
+                        icon: const Icon(
+                          Icons.lock_open,
+                        ),
+                        label: const Text(
+                          'Unlock Feature',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            const Card(
+              elevation: 0,
+              child: ListTile(
+                leading: Icon(
+                  Icons.shield_outlined,
+                ),
+                title: Text(
+                  'Protected Feature',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(
+                  'Only authorized Owner access '
+                  'should be allowed in production.',
+                ),
+              ),
+            ),
+          ] else ...[
+            Card(
+              elevation: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.verified_user,
+                      size: 70,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Access Granted',
+                      style: TextStyle(
+                        fontSize: 23,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Owner feature is unlocked for '
+                      'this session.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            Card(
+              elevation: 0,
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: CircleAvatar(
+                      child: Icon(widget.icon),
+                    ),
+                    title: Text(widget.title),
+                    subtitle: const Text(
+                      'Management UI ready',
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  const ListTile(
+                    leading: Icon(
+                      Icons.security,
+                    ),
+                    title: Text(
+                      'Security Status',
+                    ),
+                    subtitle: Text(
+                      'Owner access verified',
+                    ),
+                    trailing: Icon(
+                      Icons.check_circle,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            OutlinedButton.icon(
+              onPressed: () {
+                setState(() {
+                  unlocked = false;
+                });
+              },
+              icon: const Icon(Icons.lock),
+              label: const Text(
+                'Lock Feature',
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 24),
+
+          const Center(
+            child: Text(
+              'Build #127 • Locked UI / Features',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
               ),
             ),
           ),
