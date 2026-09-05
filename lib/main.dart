@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 import 'login_screen.dart';
 import 'inbox_screen.dart' as real_inbox;
 import 'wallet_screen.dart';
+import 'wallet_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
