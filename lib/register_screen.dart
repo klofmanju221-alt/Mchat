@@ -1,25 +1,28 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'mchat_id_service.dart';
+import 'premium_theme.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() =>
-      _RegisterScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState
-    extends State<RegisterScreen> {
-  final nameController =
+class _RegisterScreenState extends State<RegisterScreen> {
+  final TextEditingController nameController =
       TextEditingController();
 
-  final emailController =
+  final TextEditingController emailController =
       TextEditingController();
 
-  final passwordController =
+  final TextEditingController passwordController =
+      TextEditingController();
+
+  final TextEditingController referralController =
       TextEditingController();
 
   bool isLoading = false;
@@ -30,6 +33,7 @@ class _RegisterScreenState
     nameController.dispose();
     emailController.dispose();
     passwordController.dispose();
+    referralController.dispose();
     super.dispose();
   }
 
@@ -38,34 +42,55 @@ class _RegisterScreenState
   // ===============================================================
 
   Future<void> register() async {
-    final String name =
-        nameController.text.trim();
+    final String name = nameController.text.trim();
+    final String email = emailController.text.trim();
+    final String password = passwordController.text.trim();
 
-    final String email =
-        emailController.text.trim();
-
-    final String password =
-        passwordController.text.trim();
+    final String referralCode =
+        referralController.text.trim().toUpperCase();
 
     if (name.isEmpty ||
         email.isEmpty ||
         password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content:
-              Text('Please fill all fields'),
-        ),
+      _showMessage(
+        'Please fill all required fields.',
+        isError: true,
+      );
+      return;
+    }
+
+    if (name.length < 2) {
+      _showMessage(
+        'Name must contain at least 2 characters.',
+        isError: true,
+      );
+      return;
+    }
+
+    if (name.length > 50) {
+      _showMessage(
+        'Name cannot exceed 50 characters.',
+        isError: true,
       );
       return;
     }
 
     if (password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Password must be at least 6 characters',
-          ),
-        ),
+      _showMessage(
+        'Password must be at least 6 characters.',
+        isError: true,
+      );
+      return;
+    }
+
+    // Referral code is optional.
+    // If entered, it must follow the MCHAT-XXXXXXXX format.
+    if (referralCode.isNotEmpty &&
+        !RegExp(r'^MCHAT-[0-9]{8}$')
+            .hasMatch(referralCode)) {
+      _showMessage(
+        'Invalid referral code. Example: MCHAT-12345678',
+        isError: true,
       );
       return;
     }
@@ -75,9 +100,48 @@ class _RegisterScreenState
     });
 
     try {
-      // -----------------------------------------------------------
+      // ===========================================================
+      // VERIFY REFERRAL CODE BEFORE ACCOUNT CREATION
+      // ===========================================================
+
+      String? referredByUid;
+      String? referredByCode;
+
+      if (referralCode.isNotEmpty) {
+        final QuerySnapshot<Map<String, dynamic>> referralQuery =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .where(
+                  'referralCode',
+                  isEqualTo: referralCode,
+                )
+                .limit(1)
+                .get();
+
+        if (referralQuery.docs.isEmpty) {
+          if (!mounted) return;
+
+          setState(() {
+            isLoading = false;
+          });
+
+          _showMessage(
+            'Referral code not found. Please check the code.',
+            isError: true,
+          );
+          return;
+        }
+
+        final String foundUid =
+            referralQuery.docs.first.id;
+
+        referredByUid = foundUid;
+        referredByCode = referralCode;
+      }
+
+      // ===========================================================
       // CREATE FIREBASE ACCOUNT
-      // -----------------------------------------------------------
+      // ===========================================================
 
       final UserCredential credential =
           await FirebaseAuth.instance
@@ -86,30 +150,67 @@ class _RegisterScreenState
         password: password,
       );
 
-      final User? user =
-          credential.user;
+      final User? user = credential.user;
 
       if (user == null) {
         throw Exception(
-          'User account could not be created',
+          'User account could not be created.',
         );
       }
 
-      // -----------------------------------------------------------
+      // ===========================================================
       // SAVE DISPLAY NAME
-      // -----------------------------------------------------------
+      // ===========================================================
 
       await user.updateDisplayName(name);
 
-      // -----------------------------------------------------------
+      // ===========================================================
       // AUTOMATIC MCHAT ID
-      // -----------------------------------------------------------
+      // ===========================================================
 
       final String mchatId =
           await MchatIdService.ensureMchatId(
         user: user,
         name: name,
         email: email,
+      );
+
+      // ===========================================================
+      // SAVE REFERRAL INFORMATION
+      // ===========================================================
+
+      final DocumentReference<Map<String, dynamic>> userRef =
+          FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid);
+
+      final Map<String, dynamic> referralData =
+          <String, dynamic>{
+        'referralCode': 'MCHAT-$mchatId',
+        'successfulReferrals': 0,
+        'referralCoins': 0,
+        'referralUpdatedAt':
+            FieldValue.serverTimestamp(),
+      };
+
+      if (referredByUid != null &&
+          referredByCode != null) {
+        referralData['referredByUid'] =
+            referredByUid;
+
+        referralData['referredByCode'] =
+            referredByCode;
+
+        referralData['referralStatus'] =
+            'pending';
+
+        referralData['referredAt'] =
+            FieldValue.serverTimestamp();
+      }
+
+      await userRef.set(
+        referralData,
+        SetOptions(merge: true),
       );
 
       if (!mounted) {
@@ -120,29 +221,38 @@ class _RegisterScreenState
         isLoading = false;
       });
 
-      // -----------------------------------------------------------
-      // SHOW ID IMMEDIATELY
-      // -----------------------------------------------------------
+      // ===========================================================
+      // REGISTRATION SUCCESS DIALOG
+      // ===========================================================
 
-      await showDialog(
+      await showDialog<void>(
         context: context,
         barrierDismissible: false,
         builder: (dialogContext) {
           return AlertDialog(
-            title: const Text(
-              '🎉 Registration Successful',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+            title: const Row(
+              children: [
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: PremiumTheme.gold,
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Registration Successful',
+                  ),
+                ),
+              ],
             ),
             content: Column(
-              mainAxisSize:
-                  MainAxisSize.min,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
                   'Your unique Mchat ID is',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 16,
+                    color: Colors.white70,
+                    fontSize: 15,
                   ),
                 ),
 
@@ -150,35 +260,28 @@ class _RegisterScreenState
 
                 Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     vertical: 18,
                     horizontal: 12,
                   ),
-                  decoration:
-                      BoxDecoration(
-                    color: Colors
-                        .deepPurple
-                        .withValues(
-                      alpha: 0.10,
-                    ),
+                  decoration: BoxDecoration(
+                    gradient:
+                        PremiumTheme.purpleGradient,
                     borderRadius:
-                        BorderRadius.circular(
-                      14,
+                        BorderRadius.circular(16),
+                    border: Border.all(
+                      color: PremiumTheme.gold
+                          .withValues(alpha: 0.55),
                     ),
                   ),
                   child: Text(
                     mchatId,
-                    textAlign:
-                        TextAlign.center,
-                    style:
-                        const TextStyle(
-                      fontSize: 30,
-                      fontWeight:
-                          FontWeight.bold,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: PremiumTheme.gold,
+                      fontSize: 29,
+                      fontWeight: FontWeight.bold,
                       letterSpacing: 3,
-                      color:
-                          Colors.deepPurple,
                     ),
                   ),
                 ),
@@ -188,23 +291,61 @@ class _RegisterScreenState
                 const Text(
                   'Save this ID.\n'
                   'You can use it to find friends.',
-                  textAlign:
-                      TextAlign.center,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    height: 1.4,
+                  ),
                 ),
+
+                if (referredByCode != null) ...[
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding:
+                        const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: PremiumTheme.gold
+                          .withValues(alpha: 0.08),
+                      borderRadius:
+                          BorderRadius.circular(12),
+                      border: Border.all(
+                        color: PremiumTheme.gold
+                            .withValues(alpha: 0.25),
+                      ),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.card_giftcard_rounded,
+                          color: PremiumTheme.gold,
+                        ),
+                        SizedBox(width: 9),
+                        Expanded(
+                          child: Text(
+                            'Referral received and pending verification.',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
             actions: [
               SizedBox(
                 width: double.infinity,
-                child:
-                    ElevatedButton(
+                child: ElevatedButton(
+                  style:
+                      PremiumTheme.premiumButton(),
                   onPressed: () {
-                    Navigator.of(
-                      dialogContext,
-                    ).pop();
+                    Navigator.of(dialogContext).pop();
                   },
-                  child:
-                      const Text(
+                  child: const Text(
                     'CONTINUE',
                   ),
                 ),
@@ -229,29 +370,27 @@ class _RegisterScreenState
         isLoading = false;
       });
 
-      String message =
-          'Registration failed';
+      String message = 'Registration failed.';
 
-      if (e.code ==
-          'email-already-in-use') {
+      if (e.code == 'email-already-in-use') {
         message =
-            'This email is already registered';
-      } else if (e.code ==
-          'invalid-email') {
+            'This email is already registered.';
+      } else if (e.code == 'invalid-email') {
         message =
-            'Please enter a valid email address';
-      } else if (e.code ==
-          'weak-password') {
+            'Please enter a valid email address.';
+      } else if (e.code == 'weak-password') {
+        message = 'Password is too weak.';
+      } else if (e.code == 'operation-not-allowed') {
         message =
-            'Password is too weak';
+            'Email registration is not enabled.';
+      } else if (e.code == 'network-request-failed') {
+        message =
+            'Network error. Please try again.';
       }
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        SnackBar(
-          content:
-              Text(message),
-        ),
+      _showMessage(
+        message,
+        isError: true,
       );
     } catch (e) {
       if (!mounted) {
@@ -262,16 +401,38 @@ class _RegisterScreenState
         isLoading = false;
       });
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+      _showMessage(
+        'Registration failed. Please try again.',
+        isError: true,
+      );
+    }
+  }
+
+  // ===============================================================
+  // MESSAGE
+  // ===============================================================
+
+  void _showMessage(
+    String message, {
+    bool isError = false,
+  }) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
         SnackBar(
-          content:
-              Text(
-            'Registration failed: $e',
+          backgroundColor: isError
+              ? Colors.red.shade800
+              : PremiumTheme.surface2,
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            message,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+            ),
           ),
         ),
       );
-    }
   }
 
   // ===============================================================
@@ -281,143 +442,197 @@ class _RegisterScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-          const Color(0xFFFFF9FF),
+      backgroundColor: PremiumTheme.background,
 
       appBar: AppBar(
-        backgroundColor:
-            const Color(0xFFFFF9FF),
-        elevation: 0,
-        centerTitle: true,
         title: const Text(
           'Create Account',
-          style: TextStyle(
-            fontWeight:
-                FontWeight.bold,
-          ),
         ),
       ),
 
       body: SafeArea(
-        child:
-            SingleChildScrollView(
-          padding:
-              const EdgeInsets.all(24),
-
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            20,
+            18,
+            20,
+            35,
+          ),
           child: Column(
             crossAxisAlignment:
                 CrossAxisAlignment.stretch,
-
             children: [
-              const SizedBox(height: 20),
+              // =====================================================
+              // HEADER
+              // =====================================================
 
-              const Icon(
-                Icons.person_add_alt_1,
-                size: 70,
-                color:
-                    Colors.deepPurple,
+              Container(
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  gradient:
+                      PremiumTheme.purpleGradient,
+                  borderRadius:
+                      BorderRadius.circular(25),
+                  border: Border.all(
+                    color: PremiumTheme.gold
+                        .withValues(alpha: 0.55),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: PremiumTheme.purple
+                          .withValues(alpha: 0.25),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    PremiumTheme.iconBox(
+                      Icons.person_add_alt_1_rounded,
+                      size: 70,
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    const Text(
+                      'Join Mchat',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 27,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 7),
+
+                    const Text(
+                      'Create your account and get your unique Mchat ID',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 22),
+
+              // =====================================================
+              // NAME
+              // =====================================================
 
               const Text(
-                'Join Mchat',
-                textAlign:
-                    TextAlign.center,
+                'Name',
                 style: TextStyle(
-                  fontSize: 28,
-                  fontWeight:
-                      FontWeight.bold,
+                  color: PremiumTheme.gold,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
 
               const SizedBox(height: 8),
 
+              TextField(
+                controller: nameController,
+                textCapitalization:
+                    TextCapitalization.words,
+                textInputAction:
+                    TextInputAction.next,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
+                decoration:
+                    const InputDecoration(
+                  labelText: 'Your Name',
+                  hintText: 'Enter your name',
+                  prefixIcon: Icon(
+                    Icons.person_rounded,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 15),
+
+              // =====================================================
+              // EMAIL
+              // =====================================================
+
               const Text(
-                'Create your account and get your unique Mchat ID',
-                textAlign:
-                    TextAlign.center,
+                'Email',
                 style: TextStyle(
-                  color: Colors.grey,
+                  color: PremiumTheme.gold,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 8),
 
               TextField(
-                controller:
-                    nameController,
-                textInputAction:
-                    TextInputAction.next,
-                decoration:
-                    const InputDecoration(
-                  labelText: 'Name',
-                  prefixIcon:
-                      Icon(
-                    Icons.person_outline,
-                  ),
-                  border:
-                      OutlineInputBorder(),
-                  filled: true,
-                  fillColor:
-                      Colors.white,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              TextField(
-                controller:
-                    emailController,
+                controller: emailController,
                 keyboardType:
-                    TextInputType
-                        .emailAddress,
+                    TextInputType.emailAddress,
                 textInputAction:
                     TextInputAction.next,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
                 decoration:
                     const InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon:
-                      Icon(
-                    Icons.email_outlined,
+                  labelText: 'Email Address',
+                  hintText: 'Enter your email',
+                  prefixIcon: Icon(
+                    Icons.email_rounded,
                   ),
-                  border:
-                      OutlineInputBorder(),
-                  filled: true,
-                  fillColor:
-                      Colors.white,
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 15),
+
+              // =====================================================
+              // PASSWORD
+              // =====================================================
+
+              const Text(
+                'Password',
+                style: TextStyle(
+                  color: PremiumTheme.gold,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 8),
 
               TextField(
-                controller:
-                    passwordController,
-                obscureText:
-                    obscurePassword,
+                controller: passwordController,
+                obscureText: obscurePassword,
                 textInputAction:
-                    TextInputAction.done,
+                    TextInputAction.next,
                 onSubmitted: (_) {
                   if (!isLoading) {
                     register();
                   }
                 },
-                decoration:
-                    InputDecoration(
-                  labelText:
-                      'Password',
-                  prefixIcon:
-                      const Icon(
-                    Icons.lock_outline,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  hintText:
+                      'Minimum 6 characters',
+                  prefixIcon: const Icon(
+                    Icons.lock_rounded,
                   ),
-                  border:
-                      const OutlineInputBorder(),
-                  filled: true,
-                  fillColor:
-                      Colors.white,
-                  suffixIcon:
-                      IconButton(
+                  suffixIcon: IconButton(
                     onPressed: () {
                       setState(() {
                         obscurePassword =
@@ -427,110 +642,173 @@ class _RegisterScreenState
                     icon: Icon(
                       obscurePassword
                           ? Icons
-                              .visibility_outlined
+                              .visibility_rounded
                           : Icons
-                              .visibility_off_outlined,
+                              .visibility_off_rounded,
                     ),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 15),
+
+              // =====================================================
+              // REFERRAL CODE
+              // =====================================================
+
+              const Text(
+                'Referral Code (Optional)',
+                style: TextStyle(
+                  color: PremiumTheme.gold,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              TextField(
+                controller: referralController,
+                textCapitalization:
+                    TextCapitalization.characters,
+                textInputAction:
+                    TextInputAction.done,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+                decoration:
+                    const InputDecoration(
+                  labelText: 'Referral Code',
+                  hintText: 'MCHAT-12345678',
+                  prefixIcon: Icon(
+                    Icons.card_giftcard_rounded,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              const Text(
+                'If someone invited you, enter their referral code.',
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 12,
+                ),
+              ),
+
+              const SizedBox(height: 25),
+
+              // =====================================================
+              // REGISTER BUTTON
+              // =====================================================
 
               SizedBox(
-                height: 54,
-                child:
-                    ElevatedButton(
-                  onPressed:
-                      isLoading
-                          ? null
-                          : register,
+                height: 56,
+                child: ElevatedButton.icon(
                   style:
-                      ElevatedButton.styleFrom(
-                    backgroundColor:
-                        const Color(
-                      0xFF673AB7,
-                    ),
-                    foregroundColor:
-                        Colors.white,
-                    shape:
-                        RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(
-                        30,
-                      ),
+                      PremiumTheme.premiumButton(),
+                  onPressed:
+                      isLoading ? null : register,
+                  icon: Icon(
+                    isLoading
+                        ? Icons.hourglass_top_rounded
+                        : Icons.person_add_alt_1_rounded,
+                  ),
+                  label: Text(
+                    isLoading
+                        ? 'Creating Account...'
+                        : 'CREATE ACCOUNT',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 25,
-                          height: 25,
-                          child:
-                              CircularProgressIndicator(
-                            strokeWidth:
-                                2.5,
-                            color:
-                                Colors.white,
-                          ),
-                        )
-                      : const Text(
-                          'REGISTER',
-                          style:
-                              TextStyle(
-                            fontSize: 17,
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
+
+              // =====================================================
+              // MCHAT ID INFORMATION
+              // =====================================================
 
               Container(
-                padding:
-                    const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(18),
                 decoration:
-                    BoxDecoration(
-                  color:
-                      Colors.deepPurple
-                          .withValues(
-                    alpha: 0.06,
-                  ),
-                  borderRadius:
-                      BorderRadius.circular(
-                    16,
-                  ),
+                    PremiumTheme.premiumCard(
+                  radius: 20,
                 ),
-                child:
-                    const Column(
+                child: Column(
                   children: [
-                    Icon(
+                    PremiumTheme.iconBox(
                       Icons.badge_rounded,
-                      color:
-                          Colors.deepPurple,
-                      size: 32,
+                      size: 52,
                     ),
-                    SizedBox(height: 8),
-                    Text(
+
+                    const SizedBox(height: 10),
+
+                    const Text(
                       'Unique Mchat ID',
-                      style:
-                          TextStyle(
-                        fontSize: 16,
-                        fontWeight:
-                            FontWeight.bold,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 5),
-                    Text(
-                      'An 8-digit numeric ID will be created automatically.',
-                      textAlign:
-                          TextAlign.center,
-                      style:
-                          TextStyle(
+
+                    const SizedBox(height: 6),
+
+                    const Text(
+                      'An 8-digit Mchat ID will be created automatically after registration.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white60,
                         fontSize: 13,
-                        color:
-                            Colors.grey,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              // =====================================================
+              // REFERRAL INFORMATION
+              // =====================================================
+
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: PremiumTheme.surface,
+                  borderRadius:
+                      BorderRadius.circular(18),
+                  border: Border.all(
+                    color: PremiumTheme.gold
+                        .withValues(alpha: 0.25),
+                  ),
+                ),
+                child: const Row(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.security_rounded,
+                      color: PremiumTheme.gold,
+                      size: 23,
+                    ),
+                    SizedBox(width: 11),
+                    Expanded(
+                      child: Text(
+                        'Referral rewards are not created or credited by this screen. Referral information is saved for backend verification.',
+                        style: TextStyle(
+                          color: Colors.white60,
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
                       ),
                     ),
                   ],
