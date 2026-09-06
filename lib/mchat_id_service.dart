@@ -16,7 +16,7 @@ class MchatIdService {
   // ============================================================
 
   static bool isValidMchatId(String id) {
-    final value = id.trim();
+    final String value = id.trim();
 
     if (value.length != 8) {
       return false;
@@ -31,6 +31,9 @@ class MchatIdService {
 
   // ============================================================
   // ENSURE USER HAS MCHAT ID
+  //
+  // Referral information can be supplied during first creation.
+  // No coins are added here.
   // ============================================================
 
   static Future<String> ensureMchatId({
@@ -38,12 +41,16 @@ class MchatIdService {
     required String name,
     required String email,
     String photoUrl = '',
+    String? referredByUid,
+    String? referredByCode,
   }) async {
-    final userRef = _db.collection('users').doc(user.uid);
+    final DocumentReference<Map<String, dynamic>> userRef =
+        _db.collection('users').doc(user.uid);
 
-    final userSnapshot = await userRef.get();
+    final DocumentSnapshot<Map<String, dynamic>> userSnapshot =
+        await userRef.get();
 
-    final data =
+    final Map<String, dynamic> data =
         userSnapshot.data() ?? <String, dynamic>{};
 
     final String cleanName =
@@ -72,7 +79,9 @@ class MchatIdService {
       await userRef.set(
         {
           'uid': user.uid,
-          'name': cleanName.isEmpty ? 'Mchat Owner' : cleanName,
+          'name': cleanName.isEmpty
+              ? 'Mchat Owner'
+              : cleanName,
           'email': cleanEmail,
           'mchatId': ownerMchatId,
           'isOwner': true,
@@ -92,13 +101,14 @@ class MchatIdService {
         data['mchatId']?.toString().trim() ?? '';
 
     if (isValidMchatId(existingId)) {
-      final indexRef =
+      final DocumentReference<Map<String, dynamic>> indexRef =
           _db.collection('mchatIds').doc(existingId);
 
-      final indexSnapshot = await indexRef.get();
+      final DocumentSnapshot<Map<String, dynamic>> indexSnapshot =
+          await indexRef.get();
 
       if (indexSnapshot.exists) {
-        final indexData =
+        final Map<String, dynamic> indexData =
             indexSnapshot.data() ?? <String, dynamic>{};
 
         final String indexUid =
@@ -115,18 +125,18 @@ class MchatIdService {
             isOwner: false,
           );
 
-          await userRef.set(
-            {
-              'isOnline': true,
-            },
-            SetOptions(merge: true),
+          await _saveExistingUserUpdates(
+            userRef: userRef,
+            data: data,
+            name: cleanName,
+            email: cleanEmail,
           );
 
           return existingId;
         }
       }
 
-      // ID is not indexed yet.
+      // ID exists in user profile but index is missing.
       if (!indexSnapshot.exists) {
         await _saveMchatIndex(
           mchatId: existingId,
@@ -137,18 +147,18 @@ class MchatIdService {
           isOwner: false,
         );
 
-        await userRef.set(
-          {
-            'isOnline': true,
-          },
-          SetOptions(merge: true),
+        await _saveExistingUserUpdates(
+          userRef: userRef,
+          data: data,
+          name: cleanName,
+          email: cleanEmail,
         );
 
         return existingId;
       }
 
       // Another user owns this ID.
-      // A new ID will be generated below.
+      // Generate a new ID below.
     }
 
     // ==========================================================
@@ -164,28 +174,97 @@ class MchatIdService {
     );
 
     // ==========================================================
-    // SAVE USER PROFILE
+    // CREATE / SAVE USER PROFILE
+    //
+    // IMPORTANT:
+    // Referral fields are included during creation.
+    // This works with secure Firestore rules because the
+    // initial user document is being created by that user.
     // ==========================================================
 
+    final Map<String, dynamic> userData =
+        <String, dynamic>{
+      'uid': user.uid,
+      'name': cleanName,
+      'email': cleanEmail,
+      'mchatId': newMchatId,
+      'coins': data['coins'] ?? 0,
+      'vipLevel': data['vipLevel'] ?? 0,
+      'isOwner': false,
+      'isVolunteer': data['isVolunteer'] ?? false,
+      'isOnline': true,
+      'createdAt':
+          data['createdAt'] ??
+          FieldValue.serverTimestamp(),
+
+      // Referral code belongs permanently to this user.
+      'referralCode': 'MCHAT-$newMchatId',
+
+      'successfulReferrals':
+          data['successfulReferrals'] ?? 0,
+
+      'referralCoins':
+          data['referralCoins'] ?? 0,
+
+      'referralUpdatedAt':
+          FieldValue.serverTimestamp(),
+    };
+
+    // ==========================================================
+    // INITIAL REFERRAL INFORMATION
+    // ==========================================================
+
+    final String cleanReferredByUid =
+        referredByUid?.trim() ?? '';
+
+    final String cleanReferredByCode =
+        referredByCode?.trim().toUpperCase() ?? '';
+
+    if (cleanReferredByUid.isNotEmpty &&
+        cleanReferredByCode.isNotEmpty) {
+      userData['referredByUid'] =
+          cleanReferredByUid;
+
+      userData['referredByCode'] =
+          cleanReferredByCode;
+
+      userData['referralStatus'] =
+          'pending';
+
+      userData['referredAt'] =
+          FieldValue.serverTimestamp();
+    }
+
     await userRef.set(
-      {
-        'uid': user.uid,
-        'name': cleanName,
-        'email': cleanEmail,
-        'mchatId': newMchatId,
-        'coins': data['coins'] ?? 0,
-        'vipLevel': data['vipLevel'] ?? 0,
-        'isOwner': false,
-        'isVolunteer': data['isVolunteer'] ?? false,
-        'isOnline': true,
-        'createdAt':
-            data['createdAt'] ??
-            FieldValue.serverTimestamp(),
-      },
+      userData,
       SetOptions(merge: true),
     );
 
     return newMchatId;
+  }
+
+  // ============================================================
+  // SAVE EXISTING USER UPDATES
+  //
+  // Only safe profile/status fields are updated here.
+  // Protected referral fields are NOT changed.
+  // ============================================================
+
+  static Future<void> _saveExistingUserUpdates({
+    required DocumentReference<Map<String, dynamic>> userRef,
+    required Map<String, dynamic> data,
+    required String name,
+    required String email,
+  }) async {
+    await userRef.set(
+      {
+        'uid': userRef.id,
+        'name': name,
+        'email': email,
+        'isOnline': true,
+      },
+      SetOptions(merge: true),
+    );
   }
 
   // ============================================================
@@ -198,7 +277,7 @@ class MchatIdService {
     required String email,
     required String photoUrl,
   }) async {
-    final random = Random.secure();
+    final Random random = Random.secure();
 
     while (true) {
       final int number =
@@ -211,13 +290,14 @@ class MchatIdService {
         continue;
       }
 
-      final indexRef =
+      final DocumentReference<Map<String, dynamic>> indexRef =
           _db.collection('mchatIds').doc(id);
 
       try {
         await _db.runTransaction(
           (transaction) async {
-            final snapshot =
+            final DocumentSnapshot<Map<String, dynamic>>
+                snapshot =
                 await transaction.get(indexRef);
 
             // Someone already has this ID.
@@ -268,7 +348,8 @@ class MchatIdService {
       {
         'uid': uid,
         'mchatId': mchatId,
-        'name': name.isEmpty ? 'Mchat User' : name,
+        'name':
+            name.isEmpty ? 'Mchat User' : name,
         'email': email,
         'photoUrl': photoUrl,
         'isOwner': isOwner,
@@ -286,14 +367,17 @@ class MchatIdService {
   static Future<Map<String, dynamic>?> findByMchatId(
     String mchatId,
   ) async {
-    final id = mchatId.trim();
+    final String id = mchatId.trim();
 
     if (!RegExp(r'^[0-9]{8}$').hasMatch(id)) {
       return null;
     }
 
-    final snapshot =
-        await _db.collection('mchatIds').doc(id).get();
+    final DocumentSnapshot<Map<String, dynamic>> snapshot =
+        await _db
+            .collection('mchatIds')
+            .doc(id)
+            .get();
 
     if (!snapshot.exists) {
       return null;
@@ -302,6 +386,10 @@ class MchatIdService {
     return snapshot.data();
   }
 }
+
+// ============================================================
+// INTERNAL MCHAT ID COLLISION EXCEPTION
+// ============================================================
 
 class _MchatIdTaken implements Exception {
   const _MchatIdTaken();
