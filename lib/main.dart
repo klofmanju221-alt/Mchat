@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'firebase_options.dart';
-import 'king_theme.dart';
+import 'premium_theme.dart';
 import 'login_screen.dart';
 import 'inbox_screen.dart' as real_inbox;
 import 'wallet_screen.dart';
@@ -27,7 +27,7 @@ class MchatApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Mchat',
-      theme: KingTheme.theme(),
+      theme: PremiumTheme.theme(),
       home: const AuthGate(),
     );
   }
@@ -56,7 +56,9 @@ class AuthGate extends StatelessWidget {
         if (snapshot.hasError) {
           return const Scaffold(
             body: Center(
-              child: Text('Authentication service unavailable'),
+              child: Text(
+                'Authentication service unavailable',
+              ),
             ),
           );
         }
@@ -98,32 +100,30 @@ class _MchatHomePageState extends State<MchatHomePage> {
       body: pages[index],
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
-        backgroundColor: const Color(0xFFF8F5FC),
-        indicatorColor: const Color(0xFFEDE1FA),
-        onDestinationSelected: (v) {
+        onDestinationSelected: (value) {
           setState(() {
-            index = v;
+            index = value;
           });
         },
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
+            selectedIcon: Icon(Icons.home_rounded),
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            selectedIcon: Icon(Icons.chat_bubble),
+            icon: Icon(Icons.chat_bubble_outline_rounded),
+            selectedIcon: Icon(Icons.chat_bubble_rounded),
             label: 'Inbox',
           ),
           NavigationDestination(
             icon: Icon(Icons.live_tv_outlined),
-            selectedIcon: Icon(Icons.live_tv),
+            selectedIcon: Icon(Icons.live_tv_rounded),
             label: 'Live',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
+            icon: Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(Icons.person_rounded),
             label: 'Profile',
           ),
         ],
@@ -218,6 +218,9 @@ class HomeContent extends StatelessWidget {
     return SafeArea(
       child: CustomScrollView(
         slivers: [
+          // ==================================================
+          // HEADER
+          // ==================================================
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -233,18 +236,26 @@ class HomeContent extends StatelessWidget {
                     height: 70,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(22),
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFF55138A),
-                          Color(0xFFE52D8A),
-                        ],
+                      gradient: PremiumTheme.purpleGradient,
+                      border: Border.all(
+                        color: PremiumTheme.gold.withValues(
+                          alpha: 0.55,
+                        ),
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: PremiumTheme.gold.withValues(
+                            alpha: 0.18,
+                          ),
+                          blurRadius: 12,
+                        ),
+                      ],
                     ),
                     child: const Center(
                       child: Text(
                         'M',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: PremiumTheme.gold,
                           fontSize: 42,
                           fontWeight: FontWeight.w900,
                         ),
@@ -260,6 +271,7 @@ class HomeContent extends StatelessWidget {
                         Text(
                           'Mchat',
                           style: TextStyle(
+                            color: PremiumTheme.gold,
                             fontSize: 30,
                             fontWeight: FontWeight.w800,
                           ),
@@ -267,7 +279,7 @@ class HomeContent extends StatelessWidget {
                         Text(
                           'M Karnataka Voice Club',
                           style: TextStyle(
-                            color: Color(0xFF7434B5),
+                            color: PremiumTheme.lightGold,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -275,12 +287,12 @@ class HomeContent extends StatelessWidget {
                     ),
                   ),
                   _HB(
-                    icon: Icons.notifications_none,
+                    icon: Icons.notifications_none_rounded,
                     onTap: () {},
                   ),
                   const SizedBox(width: 8),
                   _HB(
-                    icon: Icons.person_outline,
+                    icon: Icons.person_outline_rounded,
                     onTap: () {},
                   ),
                 ],
@@ -288,7 +300,9 @@ class HomeContent extends StatelessWidget {
             ),
           ),
 
+          // ==================================================
           // SEARCH
+          // ==================================================
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -300,15 +314,20 @@ class HomeContent extends StatelessWidget {
               child: Container(
                 height: 58,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: PremiumTheme.surface,
                   borderRadius: BorderRadius.circular(30),
+                  border: Border.all(
+                    color: PremiumTheme.gold.withValues(
+                      alpha: 0.35,
+                    ),
+                  ),
                 ),
                 child: const Row(
                   children: [
                     SizedBox(width: 18),
                     Icon(
-                      Icons.search,
-                      color: Color(0xFF7B2CBF),
+                      Icons.search_rounded,
+                      color: PremiumTheme.gold,
                       size: 30,
                     ),
                     SizedBox(width: 14),
@@ -316,14 +335,14 @@ class HomeContent extends StatelessWidget {
                       child: Text(
                         'Search people, rooms or Mchat ID',
                         style: TextStyle(
-                          color: Colors.grey,
+                          color: Colors.white70,
                           fontSize: 16,
                         ),
                       ),
                     ),
                     Icon(
-                      Icons.tune,
-                      color: Color(0xFF7B2CBF),
+                      Icons.tune_rounded,
+                      color: PremiumTheme.gold,
                       size: 28,
                     ),
                     SizedBox(width: 18),
@@ -333,7 +352,9 @@ class HomeContent extends StatelessWidget {
             ),
           ),
 
+          // ==================================================
           // COINS
+          // ==================================================
           SliverToBoxAdapter(
             child: Padding(
               padding:
@@ -342,13 +363,20 @@ class HomeContent extends StatelessWidget {
                 height: 215,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(30),
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFF42106B),
-                      Color(0xFF852CC5),
-                      Color(0xFFE52D8A),
-                    ],
+                  gradient: PremiumTheme.purpleGradient,
+                  border: Border.all(
+                    color: PremiumTheme.gold.withValues(
+                      alpha: 0.45,
+                    ),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: PremiumTheme.gold.withValues(
+                        alpha: 0.12,
+                      ),
+                      blurRadius: 15,
+                    ),
+                  ],
                 ),
                 child: Stack(
                   children: [
@@ -356,9 +384,11 @@ class HomeContent extends StatelessWidget {
                       right: -20,
                       bottom: -30,
                       child: Icon(
-                        Icons.monetization_on,
+                        Icons.monetization_on_rounded,
                         size: 185,
-                        color: Colors.white.withOpacity(.08),
+                        color: Colors.white.withValues(
+                          alpha: 0.08,
+                        ),
                       ),
                     ),
                     Padding(
@@ -371,10 +401,11 @@ class HomeContent extends StatelessWidget {
                             children: [
                               const CircleAvatar(
                                 backgroundColor:
-                                    Colors.amber,
+                                    PremiumTheme.gold,
                                 child: Icon(
-                                  Icons.attach_money,
-                                  color: Colors.deepPurple,
+                                  Icons.monetization_on,
+                                  color:
+                                      PremiumTheme.deepPurple,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -383,6 +414,7 @@ class HomeContent extends StatelessWidget {
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 19,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                               const Spacer(),
@@ -391,34 +423,37 @@ class HomeContent extends StatelessWidget {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const WalletScreen(),
+                                      builder: (_) =>
+                                          const WalletScreen(),
                                     ),
                                   );
                                 },
                                 icon: const Icon(Icons.add),
-                                label: const Text('Recharge'),
+                                label:
+                                    const Text('Recharge'),
                               ),
                             ],
                           ),
                           const SizedBox(height: 22),
-
                           StreamBuilder<int>(
-  stream: WalletService.instance.coinBalanceStream(),
-  initialData: 0,
-  builder: (context, snapshot) {
-    final coins = snapshot.data ?? 0;
+                            stream: WalletService.instance
+                                .coinBalanceStream(),
+                            initialData: 0,
+                            builder:
+                                (context, snapshot) {
+                              final coins =
+                                  snapshot.data ?? 0;
 
-    return Text(
-      coins.toString(),
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 52,
-        fontWeight: FontWeight.w800,
-      ),
-    );
-  },
-),
-                         
+                              return Text(
+                                coins.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 52,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              );
+                            },
+                          ),
                           const Text(
                             'Available Coins',
                             style: TextStyle(
@@ -435,7 +470,9 @@ class HomeContent extends StatelessWidget {
             ),
           ),
 
+          // ==================================================
           // CATEGORIES
+          // ==================================================
           SliverToBoxAdapter(
             child: SizedBox(
               height: 76,
@@ -510,7 +547,9 @@ class HomeContent extends StatelessWidget {
             ),
           ),
 
+          // ==================================================
           // QUICK ACTIONS
+          // ==================================================
           SliverToBoxAdapter(
             child: SizedBox(
               height: 150,
@@ -525,8 +564,8 @@ class HomeContent extends StatelessWidget {
                 children: [
                   _QA(
                     'Go Live',
-                    Icons.videocam,
-                    Colors.pink,
+                    Icons.videocam_rounded,
+                    PremiumTheme.purple,
                     () {
                       Navigator.push(
                         context,
@@ -539,8 +578,8 @@ class HomeContent extends StatelessWidget {
                   ),
                   _QA(
                     'VIP',
-                    Icons.emoji_events,
-                    Colors.amber,
+                    Icons.emoji_events_rounded,
+                    PremiumTheme.gold,
                     () {
                       Navigator.push(
                         context,
@@ -553,8 +592,8 @@ class HomeContent extends StatelessWidget {
                   ),
                   _QA(
                     'Inbox',
-                    Icons.chat,
-                    Colors.deepPurple,
+                    Icons.chat_rounded,
+                    PremiumTheme.purple,
                     () {
                       Navigator.push(
                         context,
@@ -567,8 +606,8 @@ class HomeContent extends StatelessWidget {
                   ),
                   _QA(
                     'Games',
-                    Icons.sports_esports,
-                    Colors.orange,
+                    Icons.sports_esports_rounded,
+                    PremiumTheme.brightGold,
                     () {
                       Navigator.push(
                         context,
@@ -584,10 +623,12 @@ class HomeContent extends StatelessWidget {
             ),
           ),
 
+          // ==================================================
           // LIVE TITLE
-          const SliverToBoxAdapter(
+          // ==================================================
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(
+              padding: const EdgeInsets.fromLTRB(
                 20,
                 8,
                 20,
@@ -595,7 +636,7 @@ class HomeContent extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Expanded(
+                  const Expanded(
                     child: Column(
                       crossAxisAlignment:
                           CrossAxisAlignment.start,
@@ -603,6 +644,7 @@ class HomeContent extends StatelessWidget {
                         Text(
                           'Live Rooms',
                           style: TextStyle(
+                            color: Colors.white,
                             fontSize: 29,
                             fontWeight: FontWeight.w800,
                           ),
@@ -610,7 +652,7 @@ class HomeContent extends StatelessWidget {
                         Text(
                           'See who is live now',
                           style: TextStyle(
-                            color: Colors.grey,
+                            color: Colors.white60,
                             fontSize: 16,
                           ),
                         ),
@@ -620,7 +662,7 @@ class HomeContent extends StatelessWidget {
                   Text(
                     'See All',
                     style: TextStyle(
-                      color: Color(0xFF7B2CBF),
+                      color: PremiumTheme.gold,
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
                     ),
@@ -630,7 +672,9 @@ class HomeContent extends StatelessWidget {
             ),
           ),
 
+          // ==================================================
           // LIVE ROOMS
+          // ==================================================
           SliverToBoxAdapter(
             child: SizedBox(
               height: 250,
@@ -644,28 +688,30 @@ class HomeContent extends StatelessWidget {
                   _RoomCard(
                     'Mchat Live Room',
                     'Live Host',
-                    Icons.mic,
+                    Icons.mic_rounded,
                   ),
                   _RoomCard(
                     'Music Room',
                     'Singer Live',
-                    Icons.music_note,
+                    Icons.music_note_rounded,
                     true,
                   ),
                   _RoomCard(
                     'Talk Room',
                     'Mchat Host',
-                    Icons.forum,
+                    Icons.forum_rounded,
                   ),
                 ],
               ),
             ),
           ),
 
+          // ==================================================
           // FEATURES TITLE
-          const SliverToBoxAdapter(
+          // ==================================================
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(
+              padding: const EdgeInsets.fromLTRB(
                 20,
                 24,
                 20,
@@ -674,10 +720,11 @@ class HomeContent extends StatelessWidget {
               child: Column(
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
-                children: [
+                children: const [
                   Text(
                     'Mchat Features',
                     style: TextStyle(
+                      color: Colors.white,
                       fontSize: 29,
                       fontWeight: FontWeight.w800,
                     ),
@@ -685,7 +732,7 @@ class HomeContent extends StatelessWidget {
                   Text(
                     'Explore everything in Mchat',
                     style: TextStyle(
-                      color: Colors.grey,
+                      color: Colors.white60,
                       fontSize: 16,
                     ),
                   ),
@@ -694,7 +741,9 @@ class HomeContent extends StatelessWidget {
             ),
           ),
 
+          // ==================================================
           // FEATURE GRID
+          // ==================================================
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
               20,
@@ -706,15 +755,15 @@ class HomeContent extends StatelessWidget {
               delegate:
                   SliverChildBuilderDelegate(
                 (context, i) {
-                  final x = features[i];
+                  final item = features[i];
 
                   return _FT(
-                    x[0] as String,
-                    x[1] as String,
-                    x[2] as IconData,
+                    item[0] as String,
+                    item[1] as String,
+                    item[2] as IconData,
                     () => open(
                       context,
-                      x[0] as String,
+                      item[0] as String,
                     ),
                   );
                 },
@@ -730,7 +779,9 @@ class HomeContent extends StatelessWidget {
             ),
           ),
 
+          // ==================================================
           // VIP BANNER
+          // ==================================================
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -756,11 +807,12 @@ class HomeContent extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius:
                         BorderRadius.circular(30),
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFF321047),
-                        Color(0xFF7434A5),
-                      ],
+                    gradient:
+                        PremiumTheme.purpleGradient,
+                    border: Border.all(
+                      color: PremiumTheme.gold.withValues(
+                        alpha: 0.45,
+                      ),
                     ),
                   ),
                   child: const Padding(
@@ -770,10 +822,11 @@ class HomeContent extends StatelessWidget {
                         CircleAvatar(
                           radius: 35,
                           backgroundColor:
-                              Color(0x35FFB300),
+                              Color(0x35FFD54F),
                           child: Icon(
-                            Icons.emoji_events,
-                            color: Colors.amber,
+                            Icons.emoji_events_rounded,
+                            color:
+                                PremiumTheme.gold,
                             size: 40,
                           ),
                         ),
@@ -804,8 +857,8 @@ class HomeContent extends StatelessWidget {
                           ),
                         ),
                         Icon(
-                          Icons.chevron_right,
-                          color: Colors.white,
+                          Icons.chevron_right_rounded,
+                          color: PremiumTheme.gold,
                           size: 35,
                         ),
                       ],
@@ -837,15 +890,27 @@ class _HB extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: PremiumTheme.surface,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
-        child: SizedBox(
+        child: Container(
           width: 52,
           height: 52,
-          child: Icon(icon, size: 27),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: PremiumTheme.gold.withValues(
+                alpha: 0.35,
+              ),
+            ),
+          ),
+          child: const Icon(
+            Icons.notifications_none_rounded,
+            color: PremiumTheme.gold,
+            size: 27,
+          ),
         ),
       ),
     );
@@ -870,25 +935,34 @@ class _Chip extends StatelessWidget {
           const EdgeInsets.only(right: 10),
       child: Material(
         color: selected
-            ? const Color(0xFF7B2CBF)
-            : Colors.white,
+            ? PremiumTheme.purple
+            : PremiumTheme.surface,
         borderRadius: BorderRadius.circular(28),
         child: InkWell(
           onTap: onTap,
           borderRadius:
               BorderRadius.circular(28),
-          child: Padding(
+          child: Container(
             padding:
                 const EdgeInsets.symmetric(
               horizontal: 25,
               vertical: 14,
             ),
+            decoration: BoxDecoration(
+              borderRadius:
+                  BorderRadius.circular(28),
+              border: Border.all(
+                color: PremiumTheme.gold.withValues(
+                  alpha: selected ? 0.7 : 0.25,
+                ),
+              ),
+            ),
             child: Text(
               title,
               style: TextStyle(
                 color: selected
-                    ? Colors.white
-                    : Colors.black87,
+                    ? PremiumTheme.gold
+                    : Colors.white,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -931,7 +1005,7 @@ class _QA extends StatelessWidget {
               CircleAvatar(
                 radius: 31,
                 backgroundColor:
-                    color.withOpacity(.10),
+                    color.withValues(alpha: 0.12),
                 child: Icon(
                   icon,
                   color: color,
@@ -942,6 +1016,7 @@ class _QA extends StatelessWidget {
               Text(
                 title,
                 style: const TextStyle(
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
@@ -979,13 +1054,18 @@ class _RoomCard extends StatelessWidget {
         gradient: LinearGradient(
           colors: pink
               ? const [
-                  Color(0xFFC02778),
-                  Color(0xFFE43C91),
+                  Color(0xFF6B174F),
+                  Color(0xFF9C276E),
                 ]
               : const [
-                  Color(0xFF36115B),
-                  Color(0xFF8129C7),
+                  Color(0xFF241035),
+                  Color(0xFF6A1B9A),
                 ],
+        ),
+        border: Border.all(
+          color: PremiumTheme.gold.withValues(
+            alpha: 0.45,
+          ),
         ),
       ),
       child: Stack(
@@ -996,7 +1076,9 @@ class _RoomCard extends StatelessWidget {
             child: Icon(
               icon,
               size: 100,
-              color: Colors.white.withOpacity(.10),
+              color: Colors.white.withValues(
+                alpha: 0.10,
+              ),
             ),
           ),
           Positioned(
@@ -1080,11 +1162,12 @@ class _FT extends StatelessWidget {
             CircleAvatar(
               radius: 29,
               backgroundColor:
-                  const Color(0xFF9B4DCA)
-                      .withOpacity(.10),
+                  PremiumTheme.purple.withValues(
+                alpha: 0.18,
+              ),
               child: Icon(
                 icon,
-                color: const Color(0xFF792CB5),
+                color: PremiumTheme.gold,
               ),
             ),
             const SizedBox(height: 8),
@@ -1095,6 +1178,7 @@ class _FT extends StatelessWidget {
               overflow:
                   TextOverflow.ellipsis,
               style: const TextStyle(
+                color: Colors.white,
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
               ),
@@ -1106,7 +1190,7 @@ class _FT extends StatelessWidget {
               overflow:
                   TextOverflow.ellipsis,
               style: const TextStyle(
-                color: Colors.grey,
+                color: Colors.white60,
                 fontSize: 11,
               ),
             ),
@@ -1138,24 +1222,26 @@ class FeatureBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF8E35FF),
-            Color(0xFF4F46E5),
-          ],
-        ),
+        gradient: PremiumTheme.purpleGradient,
         borderRadius:
             BorderRadius.circular(25),
+        border: Border.all(
+          color: PremiumTheme.gold.withValues(
+            alpha: 0.45,
+          ),
+        ),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 30,
             backgroundColor:
-                Colors.white24,
+                PremiumTheme.gold.withValues(
+              alpha: 0.18,
+            ),
             child: Icon(
               icon,
-              color: Colors.white,
+              color: PremiumTheme.gold,
               size: 30,
             ),
           ),
@@ -1210,7 +1296,12 @@ class SummaryCard extends StatelessWidget {
         child: Row(
           children: [
             CircleAvatar(
-              child: Icon(icon),
+              backgroundColor:
+                  PremiumTheme.purple,
+              child: Icon(
+                icon,
+                color: PremiumTheme.gold,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -1218,11 +1309,17 @@ class SummaryCard extends StatelessWidget {
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
                 children: [
-                  Text(title),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     value,
                     style: const TextStyle(
+                      color: PremiumTheme.gold,
                       fontSize: 20,
                       fontWeight:
                           FontWeight.bold,
@@ -1258,14 +1355,19 @@ class InboxScreen extends StatelessWidget {
             title: 'Free Inbox',
             subtitle:
                 'Real-time chat space',
-            icon: Icons.chat_bubble,
+            icon: Icons.chat_bubble_rounded,
           ),
           const SizedBox(height: 16),
           Card(
             child: ListTile(
               leading:
                   const CircleAvatar(
-                child: Icon(Icons.person),
+                backgroundColor:
+                    PremiumTheme.purple,
+                child: Icon(
+                  Icons.person,
+                  color: PremiumTheme.gold,
+                ),
               ),
               title:
                   const Text('Mchat User'),
@@ -1383,17 +1485,28 @@ class _PrivateChatScreenState
                           ),
                           decoration:
                               BoxDecoration(
-                            color:
-                                const Color(
-                              0xFFE9D8FA,
-                            ),
+                            gradient:
+                                PremiumTheme.purpleGradient,
                             borderRadius:
                                 BorderRadius.circular(
                               18,
                             ),
+                            border: Border.all(
+                              color:
+                                  PremiumTheme.gold
+                                      .withValues(
+                                alpha: 0.3,
+                              ),
+                            ),
                           ),
                           child:
-                              Text(messages[i]),
+                              Text(
+                            messages[i],
+                            style:
+                                const TextStyle(
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       );
                     },
@@ -1413,8 +1526,6 @@ class _PrivateChatScreenState
                           const InputDecoration(
                         hintText:
                             'Type message...',
-                        border:
-                            OutlineInputBorder(),
                       ),
                       onSubmitted:
                           (_) => send(),
@@ -1442,8 +1553,9 @@ class _PrivateChatScreenState
 
 class PrivateChatRulesScreen
     extends StatelessWidget {
-  const PrivateChatRulesScreen(
-      {super.key});
+  const PrivateChatRulesScreen({
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1496,7 +1608,12 @@ class RuleTile extends StatelessWidget {
       child: ListTile(
         leading:
             CircleAvatar(
-          child: Icon(icon),
+          backgroundColor:
+              PremiumTheme.purple,
+          child: Icon(
+            icon,
+            color: PremiumTheme.gold,
+          ),
         ),
         title: Text(title),
         subtitle:
@@ -1527,7 +1644,7 @@ class LiveScreen
             title: 'Mchat Live Room',
             subtitle:
                 'Go live and connect with people',
-            icon: Icons.live_tv,
+            icon: Icons.live_tv_rounded,
           ),
           const SizedBox(height: 25),
           FilledButton.icon(
@@ -1601,16 +1718,19 @@ class LiveEndedScreen
 
 class LiveEndedReplayScreen
     extends StatelessWidget {
-  const LiveEndedReplayScreen(
-      {super.key});
+  const LiveEndedReplayScreen({
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar:
-          AppBar(title: const Text(
-        'Live Ended & Replay',
-      )),
+          AppBar(
+        title: const Text(
+          'Live Ended & Replay',
+        ),
+      ),
       body: ListView(
         padding:
             const EdgeInsets.all(16),
@@ -1661,9 +1781,11 @@ class ReplayPlayerScreen
   Widget build(BuildContext context) {
     return Scaffold(
       appBar:
-          AppBar(title: const Text(
-        'Replay Player',
-      )),
+          AppBar(
+        title: const Text(
+          'Replay Player',
+        ),
+      ),
       body: const Center(
         child: Column(
           mainAxisAlignment:
@@ -1743,7 +1865,7 @@ class _FamilyRoomScreenState
 
   int get occupiedCount =>
       seats.where(
-        (s) => s.occupied,
+        (seat) => seat.occupied,
       ).length;
 
   void joinRoom() {
@@ -1751,7 +1873,7 @@ class _FamilyRoomScreenState
 
     final empty =
         seats.indexWhere(
-      (s) => !s.occupied,
+      (seat) => !seat.occupied,
     );
 
     if (empty == -1) return;
@@ -1771,7 +1893,7 @@ class _FamilyRoomScreenState
   void leaveRoom() {
     final me =
         seats.indexWhere(
-      (s) => s.name == 'You',
+      (seat) => seat.name == 'You',
     );
 
     if (me == -1) return;
@@ -1992,10 +2114,14 @@ class FamilySeatWidget
               children: [
                 CircleAvatar(
                   radius: 25,
+                  backgroundColor:
+                      PremiumTheme.purple,
                   child: Icon(
                     seat.occupied
                         ? Icons.person
                         : Icons.add,
+                    color:
+                        PremiumTheme.gold,
                   ),
                 ),
                 if (seat.occupied &&
@@ -2005,8 +2131,11 @@ class FamilySeatWidget
                     bottom: 0,
                     child: CircleAvatar(
                       radius: 9,
+                      backgroundColor:
+                          PremiumTheme.gold,
                       child: Icon(
                         Icons.mic,
+                        color: Colors.black,
                         size: 12,
                       ),
                     ),
@@ -2058,9 +2187,11 @@ class _RoomModeGamesScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar:
-          AppBar(title: const Text(
-        'Room Mode & Games',
-      )),
+          AppBar(
+        title: const Text(
+          'Room Mode & Games',
+        ),
+      ),
       body: ListView(
         padding:
             const EdgeInsets.all(16),
@@ -2234,9 +2365,9 @@ class _RoomPKScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar:
-          AppBar(title: const Text(
-        'Room PK',
-      )),
+          AppBar(
+        title: const Text('Room PK'),
+      ),
       body: ListView(
         padding:
             const EdgeInsets.all(16),
@@ -2274,6 +2405,7 @@ class _RoomPKScreenState
                   ? 'PK LIVE'
                   : 'PK READY',
               style: const TextStyle(
+                color: PremiumTheme.gold,
                 fontSize: 25,
                 fontWeight:
                     FontWeight.bold,
@@ -2344,9 +2476,11 @@ class VipScreen
 
     return Scaffold(
       appBar:
-          AppBar(title: const Text(
-        'VIP Center',
-      )),
+          AppBar(
+        title: const Text(
+          'VIP Center',
+        ),
+      ),
       body: ListView(
         padding:
             const EdgeInsets.all(16),
@@ -2367,8 +2501,18 @@ class VipScreen
               child: ListTile(
                 leading:
                     CircleAvatar(
+                  backgroundColor:
+                      PremiumTheme.purple,
                   child:
-                      Text('${i + 1}'),
+                      Text(
+                    '${i + 1}',
+                    style: const TextStyle(
+                      color:
+                          PremiumTheme.gold,
+                      fontWeight:
+                          FontWeight.bold,
+                    ),
+                  ),
                 ),
                 title:
                     Text('VIP ${i + 1}'),
@@ -2410,9 +2554,11 @@ class CoinsScreen
 
     return Scaffold(
       appBar:
-          AppBar(title: const Text(
-        'Recharge',
-      )),
+          AppBar(
+        title: const Text(
+          'Recharge',
+        ),
+      ),
       body: ListView(
         padding:
             const EdgeInsets.all(16),
@@ -2428,6 +2574,7 @@ class CoinsScreen
           const Text(
             'Select Amount',
             style: TextStyle(
+              color: PremiumTheme.gold,
               fontSize: 21,
               fontWeight:
                   FontWeight.bold,
@@ -2464,6 +2611,7 @@ class CoinsScreen
           const Text(
             'Payment Methods',
             style: TextStyle(
+              color: PremiumTheme.gold,
               fontSize: 21,
               fontWeight:
                   FontWeight.bold,
@@ -2552,9 +2700,11 @@ class GiftsScreen
 
     return Scaffold(
       appBar:
-          AppBar(title: const Text(
-        'Gifts',
-      )),
+          AppBar(
+        title: const Text(
+          'Gifts',
+        ),
+      ),
       body: GridView.builder(
         padding:
             const EdgeInsets.all(16),
@@ -2605,9 +2755,11 @@ class ReferEarnScreen
   Widget build(BuildContext context) {
     return Scaffold(
       appBar:
-          AppBar(title: const Text(
-        'Refer & Earn',
-      )),
+          AppBar(
+        title: const Text(
+          'Refer & Earn',
+        ),
+      ),
       body: ListView(
         padding:
             const EdgeInsets.all(16),
@@ -2675,11 +2827,15 @@ class FeatureScreen
       appBar:
           AppBar(title: Text(title)),
       body: Center(
-        child: FeatureBanner(
-          title: title,
-          subtitle:
-              'Feature ready for connection',
-          icon: icon,
+        child: Padding(
+          padding:
+              const EdgeInsets.all(16),
+          child: FeatureBanner(
+            title: title,
+            subtitle:
+                'Feature ready for connection',
+            icon: icon,
+          ),
         ),
       ),
     );
@@ -2698,9 +2854,11 @@ class SettingsScreen
   Widget build(BuildContext context) {
     return Scaffold(
       appBar:
-          AppBar(title: const Text(
-        'Settings',
-      )),
+          AppBar(
+        title: const Text(
+          'Settings',
+        ),
+      ),
       body: ListView(
         children: [
           SwitchListTile(
@@ -2775,6 +2933,7 @@ class ProfileScreen
             child: Text(
               'Profile',
               style: TextStyle(
+                color: PremiumTheme.gold,
                 fontSize: 32,
                 fontWeight:
                     FontWeight.w800,
@@ -2792,22 +2951,17 @@ class ProfileScreen
                   const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient:
-                    LinearGradient(
-                  colors: [
-                    Color(0xFF6A1B9A),
-                    Color(0xFFE52D8A),
-                  ],
-                ),
+                    PremiumTheme.goldGradient,
               ),
               child:
                   const CircleAvatar(
                 backgroundColor:
-                    Color(0xFFD9CCEF),
+                    PremiumTheme.darkPurple,
                 child: Icon(
                   Icons.person,
                   size: 75,
                   color:
-                      Color(0xFF673AB7),
+                      PremiumTheme.gold,
                 ),
               ),
             ),
@@ -2817,6 +2971,7 @@ class ProfileScreen
             child: Text(
               name,
               style: const TextStyle(
+                color: Colors.white,
                 fontSize: 30,
                 fontWeight:
                     FontWeight.w800,
@@ -2828,7 +2983,7 @@ class ProfileScreen
             child: Text(
               email,
               style: const TextStyle(
-                color: Colors.grey,
+                color: Colors.white60,
                 fontSize: 16,
               ),
             ),
@@ -2838,14 +2993,15 @@ class ProfileScreen
             padding:
                 const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color:
-                  const Color(0xFFF0E9FA),
+              gradient:
+                  PremiumTheme.purpleGradient,
               borderRadius:
                   BorderRadius.circular(24),
               border: Border.all(
                 color:
-                    const Color(0xFFD4C2EC),
-                width: 2,
+                    PremiumTheme.gold.withValues(
+                  alpha: 0.45,
+                ),
               ),
             ),
             child: const Row(
@@ -2853,7 +3009,7 @@ class ProfileScreen
                 Icon(
                   Icons.badge,
                   color:
-                      Color(0xFF7137B5),
+                      PremiumTheme.gold,
                   size: 38,
                 ),
                 SizedBox(width: 15),
@@ -2866,14 +3022,14 @@ class ProfileScreen
                         'Mchat ID',
                         style: TextStyle(
                           color:
-                              Colors.grey,
+                              Colors.white70,
                         ),
                       ),
                       Text(
                         '11111111',
                         style: TextStyle(
                           color:
-                              Color(0xFF6E35B4),
+                              PremiumTheme.gold,
                           fontSize: 30,
                           fontWeight:
                               FontWeight.bold,
@@ -2886,50 +3042,54 @@ class ProfileScreen
                 Icon(
                   Icons.copy,
                   color:
-                      Color(0xFF7137B5),
+                      PremiumTheme.gold,
                 ),
               ],
             ),
           ),
           const SizedBox(height: 20),
           Row(
-  children: [
-    Expanded(
-      child: StreamBuilder<int>(
-        stream: WalletService.instance.coinBalanceStream(),
-        initialData: 0,
-        builder: (context, snapshot) {
-          final coins = snapshot.data ?? 0;
+            children: [
+              Expanded(
+                child: StreamBuilder<int>(
+                  stream: WalletService.instance
+                      .coinBalanceStream(),
+                  initialData: 0,
+                  builder:
+                      (context, snapshot) {
+                    final coins =
+                        snapshot.data ?? 0;
 
-          return _PStat(
-            'Coins',
-            coins.toString(),
-            Icons.monetization_on,
-          );
-        },
-      ),
-    ),
-    const SizedBox(width: 14),
-    const Expanded(
-      child: _PStat(
-        'VIP Level',
-        'VIP 1',
-        Icons.star,
-      ),
-    ),
-  ],
-),
+                    return _PStat(
+                      'Coins',
+                      coins.toString(),
+                      Icons.monetization_on,
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: _PStat(
+                  'VIP Level',
+                  'VIP 1',
+                  Icons.star,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 22),
           Container(
             decoration: BoxDecoration(
               borderRadius:
                   BorderRadius.circular(25),
               gradient:
-                  const LinearGradient(
-                colors: [
-                  Color(0xFF673AB7),
-                  Color(0xFF9652E8),
-                ],
+                  PremiumTheme.purpleGradient,
+              border: Border.all(
+                color:
+                    PremiumTheme.gold.withValues(
+                  alpha: 0.45,
+                ),
               ),
             ),
             child: ListTile(
@@ -2938,11 +3098,11 @@ class ProfileScreen
               leading:
                   const CircleAvatar(
                 backgroundColor:
-                    Colors.white,
+                    PremiumTheme.gold,
                 child: Icon(
                   Icons.admin_panel_settings,
                   color:
-                      Color(0xFF673AB7),
+                      Colors.black,
                 ),
               ),
               title:
@@ -2965,7 +3125,7 @@ class ProfileScreen
               trailing:
                   const Icon(
                 Icons.chevron_right,
-                color: Colors.white,
+                color: PremiumTheme.gold,
               ),
               onTap: () {
                 Navigator.push(
@@ -3034,9 +3194,16 @@ class _PStat
     return Container(
       height: 145,
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient:
+            PremiumTheme.purpleGradient,
         borderRadius:
             BorderRadius.circular(24),
+        border: Border.all(
+          color:
+              PremiumTheme.gold.withValues(
+            alpha: 0.35,
+          ),
+        ),
       ),
       child: Column(
         mainAxisAlignment:
@@ -3046,11 +3213,12 @@ class _PStat
             icon,
             size: 42,
             color:
-                const Color(0xFF7137B5),
+                PremiumTheme.gold,
           ),
           Text(
             value,
             style: const TextStyle(
+              color: Colors.white,
               fontSize: 25,
               fontWeight:
                   FontWeight.w800,
@@ -3059,7 +3227,7 @@ class _PStat
           Text(
             title,
             style: const TextStyle(
-              color: Colors.grey,
+              color: Colors.white70,
             ),
           ),
         ],
@@ -3086,13 +3254,13 @@ class _PM
   Widget build(BuildContext context) {
     final c =
         color ??
-        const Color(0xFF7137B5);
+        PremiumTheme.gold;
 
     return Card(
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor:
-              c.withOpacity(.1),
+              c.withValues(alpha: 0.12),
           child: Icon(
             icon,
             color: c,
@@ -3198,8 +3366,6 @@ class _OwnerSecurityScreenState
                         InputDecoration(
                       labelText:
                           'Enter Owner PIN',
-                      border:
-                          const OutlineInputBorder(),
                       suffixIcon:
                           IconButton(
                         onPressed: () {
@@ -3250,9 +3416,9 @@ class _OwnerSecurityScreenState
               children: [
                 SwitchListTile(
                   value: biometric,
-                  onChanged: (v) {
+                  onChanged: (value) {
                     setState(() {
-                      biometric = v;
+                      biometric = value;
                     });
                   },
                   secondary:
@@ -3265,9 +3431,9 @@ class _OwnerSecurityScreenState
                 ),
                 SwitchListTile(
                   value: autoLock,
-                  onChanged: (v) {
+                  onChanged: (value) {
                     setState(() {
-                      autoLock = v;
+                      autoLock = value;
                     });
                   },
                   secondary:
@@ -3404,6 +3570,7 @@ class OwnerDashboardScreen
           const Text(
             'Management',
             style: TextStyle(
+              color: PremiumTheme.gold,
               fontSize: 22,
               fontWeight:
                   FontWeight.bold,
@@ -3411,16 +3578,20 @@ class OwnerDashboardScreen
           ),
           const SizedBox(height: 10),
           ...items.map(
-            (x) => Card(
+            (item) => Card(
               child: ListTile(
                 leading:
                     CircleAvatar(
+                  backgroundColor:
+                      PremiumTheme.purple,
                   child: Icon(
-                    x[1] as IconData,
+                    item[1] as IconData,
+                    color:
+                        PremiumTheme.gold,
                   ),
                 ),
                 title:
-                    Text(x[0] as String),
+                    Text(item[0] as String),
                 trailing:
                     const Icon(
                   Icons.chevron_right,
@@ -3432,9 +3603,9 @@ class OwnerDashboardScreen
                       builder: (_) =>
                           OwnerFeatureScreen(
                         title:
-                            x[0] as String,
+                            item[0] as String,
                         icon:
-                            x[1] as IconData,
+                            item[1] as IconData,
                       ),
                     ),
                   );
