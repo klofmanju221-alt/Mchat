@@ -3,6 +3,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ============================================================
+    // COMMON FUNCTIONS
+    // ============================================================
+
     function signedIn() {
       return request.auth != null;
     }
@@ -17,25 +21,49 @@ service cloud.firestore {
     // ============================================================
 
     match /users/{uid} {
+
       allow read: if signedIn()
         && (
           request.auth.uid == uid
           || isOwner()
         );
 
+      // User may create only their own account document.
+      // Referral information can be supplied during registration.
       allow create: if signedIn()
         && request.auth.uid == uid;
 
+      // Normal users can update their own normal profile fields,
+      // but referral/reward/security fields are backend-controlled.
       allow update: if signedIn()
         && (
           isOwner()
           ||
           (
             request.auth.uid == uid
+
+            // Owner/role cannot be changed by normal users.
             && request.resource.data.isOwner
                 == resource.data.isOwner
+
             && request.resource.data.role
                 == resource.data.role
+
+            // Referral and reward fields are protected.
+            && !request.resource.data.diff(resource.data)
+                .affectedKeys()
+                .hasAny([
+                  'referralCode',
+                  'referredByUid',
+                  'referredByCode',
+                  'referralStatus',
+                  'referralCoins',
+                  'successfulReferrals',
+                  'referralRewardCoins',
+                  'referralRejectedReason',
+                  'referredAt',
+                  'referralUpdatedAt'
+                ])
           )
         );
 
@@ -47,6 +75,7 @@ service cloud.firestore {
     // ============================================================
 
     match /mchatIds/{mchatId} {
+
       allow read: if signedIn();
 
       allow create: if signedIn()
@@ -68,6 +97,7 @@ service cloud.firestore {
           )
         );
 
+      // Mchat ID is immutable.
       allow update: if signedIn()
         && request.auth.uid
           == resource.data.uid
@@ -86,12 +116,16 @@ service cloud.firestore {
     // ============================================================
 
     match /wallets/{uid} {
+
       allow read: if signedIn()
         && (
           request.auth.uid == uid
           || isOwner()
         );
 
+      // IMPORTANT:
+      // No client can create/update/delete wallet balances.
+      // Firebase Admin/backend only.
       allow write: if false;
     }
 
@@ -100,7 +134,10 @@ service cloud.firestore {
     // ============================================================
 
     match /ledger/{entryId} {
+
       allow read: if signedIn() && isOwner();
+
+      // Backend only.
       allow write: if false;
     }
 
@@ -109,7 +146,10 @@ service cloud.firestore {
     // ============================================================
 
     match /recharges/{id} {
+
       allow read: if signedIn() && isOwner();
+
+      // Backend/payment verification only.
       allow write: if false;
     }
 
@@ -118,7 +158,10 @@ service cloud.firestore {
     // ============================================================
 
     match /withdrawals/{id} {
+
       allow read: if signedIn() && isOwner();
+
+      // Backend only.
       allow write: if false;
     }
 
@@ -127,7 +170,10 @@ service cloud.firestore {
     // ============================================================
 
     match /owner_commissions/{id} {
+
       allow read: if signedIn() && isOwner();
+
+      // Backend only.
       allow write: if false;
     }
 
@@ -136,7 +182,10 @@ service cloud.firestore {
     // ============================================================
 
     match /audit_logs/{id} {
+
       allow read: if signedIn() && isOwner();
+
+      // Backend only.
       allow write: if false;
     }
 
@@ -232,6 +281,7 @@ service cloud.firestore {
       // ----------------------------------------------------------
 
       match /messages/{messageId} {
+
         allow read: if signedIn();
 
         allow create: if signedIn()
@@ -249,7 +299,10 @@ service cloud.firestore {
       // ----------------------------------------------------------
 
       match /gifts/{giftId} {
+
         allow read: if signedIn();
+
+        // Gift transactions must be backend controlled.
         allow create, update, delete: if false;
       }
 
@@ -258,6 +311,7 @@ service cloud.firestore {
       // ----------------------------------------------------------
 
       match /members/{memberId} {
+
         allow read: if signedIn();
 
         allow create: if signedIn()
