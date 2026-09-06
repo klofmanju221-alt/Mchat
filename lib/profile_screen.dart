@@ -1,25 +1,28 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
+import 'mchat_id_service.dart';
 import 'payment_screen.dart';
+import 'premium_theme.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
-
-  static const Color primaryColor = Color(0xFF673AB7);
-  static const Color backgroundColor = Color(0xFFFFF9FF);
 
   @override
   Widget build(BuildContext context) {
     final User? firebaseUser = FirebaseAuth.instance.currentUser;
 
     if (firebaseUser == null) {
-      return const Scaffold(
-        backgroundColor: backgroundColor,
-        body: Center(
+      return Scaffold(
+        backgroundColor: PremiumTheme.background,
+        appBar: AppBar(
+          title: const Text('Profile'),
+        ),
+        body: const Center(
           child: Text(
             'Please login again',
-            style: TextStyle(fontSize: 18),
+            style: PremiumTheme.bodyText,
           ),
         ),
       );
@@ -28,19 +31,9 @@ class ProfileScreen extends StatelessWidget {
     final String uid = firebaseUser.uid;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: PremiumTheme.background,
       appBar: AppBar(
-        backgroundColor: backgroundColor,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          'Profile',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text('Profile'),
       ),
       body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
@@ -51,7 +44,7 @@ class ProfileScreen extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(
-                color: primaryColor,
+                color: PremiumTheme.gold,
               ),
             );
           }
@@ -63,6 +56,7 @@ class ProfileScreen extends StatelessWidget {
                 child: Text(
                   'Unable to load profile.\n\n${snapshot.error}',
                   textAlign: TextAlign.center,
+                  style: PremiumTheme.bodyText,
                 ),
               ),
             );
@@ -72,10 +66,7 @@ class ProfileScreen extends StatelessWidget {
               snapshot.data?.data() ?? <String, dynamic>{};
 
           final String email =
-              (data['email'] ??
-                      firebaseUser.email ??
-                      'No email')
-                  .toString();
+              (data['email'] ?? firebaseUser.email ?? 'No email').toString();
 
           final String name =
               (data['name'] ??
@@ -87,7 +78,6 @@ class ProfileScreen extends StatelessWidget {
               (data['mchatId'] ?? 'Creating...').toString();
 
           final int coins = _toInt(data['coins']);
-
           final int vipLevel = _toInt(data['vipLevel']);
 
           final bool isOwner =
@@ -97,128 +87,118 @@ class ProfileScreen extends StatelessWidget {
           final String? photoUrl = firebaseUser.photoURL;
 
           return ListView(
-            padding: const EdgeInsets.fromLTRB(
-              20,
-              10,
-              20,
-              30,
-            ),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 30),
             children: [
               // =====================================================
-              // PROFILE PHOTO
+              // PREMIUM PROFILE HEADER
               // =====================================================
 
-              Center(
-                child: CircleAvatar(
-                  radius: 60,
-                  backgroundColor: Colors.deepPurple.shade100,
-                  backgroundImage:
-                      photoUrl != null && photoUrl.isNotEmpty
-                          ? NetworkImage(photoUrl)
-                          : null,
-                  child:
-                      photoUrl == null || photoUrl.isEmpty
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: PremiumTheme.purpleGradient,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: PremiumTheme.gold.withValues(alpha: 0.55),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: PremiumTheme.purple.withValues(alpha: 0.25),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 52,
+                      backgroundColor:
+                          PremiumTheme.gold.withValues(alpha: 0.18),
+                      backgroundImage:
+                          photoUrl != null && photoUrl.isNotEmpty
+                              ? NetworkImage(photoUrl)
+                              : null,
+                      child: photoUrl == null || photoUrl.isEmpty
                           ? const Icon(
                               Icons.person,
-                              size: 65,
-                              color: primaryColor,
+                              color: PremiumTheme.gold,
+                              size: 58,
                             )
                           : null,
-                ),
-              ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      name,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 25,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      email,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 15),
 
-              const SizedBox(height: 16),
-
-              // =====================================================
-              // NAME
-              // =====================================================
-
-              Center(
-                child: Text(
-                  name,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 6),
-
-              // =====================================================
-              // EMAIL
-              // =====================================================
-
-              Center(
-                child: Text(
-                  email,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade600,
-                  ),
+                    // MCHAT ID
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: PremiumTheme.gold.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.badge_rounded,
+                            color: PremiumTheme.gold,
+                            size: 25,
+                          ),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Mchat ID',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Text(
+                                mchatId,
+                                style: const TextStyle(
+                                  color: PremiumTheme.gold,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
               const SizedBox(height: 18),
-
-              // =====================================================
-              // MCHAT ID
-              // =====================================================
-
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 13,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.deepPurple.shade50,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: Colors.deepPurple.shade100,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.badge_rounded,
-                        color: primaryColor,
-                        size: 28,
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Mchat ID',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            mchatId,
-                            style: const TextStyle(
-                              fontSize: 23,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 2,
-                              color: primaryColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 25),
 
               // =====================================================
               // COINS + VIP
@@ -228,7 +208,7 @@ class ProfileScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _infoCard(
-                      icon: Icons.monetization_on,
+                      icon: Icons.monetization_on_rounded,
                       title: 'Coins',
                       value: _formatNumber(coins),
                     ),
@@ -236,7 +216,7 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _infoCard(
-                      icon: Icons.star,
+                      icon: Icons.workspace_premium_rounded,
                       title: 'VIP Level',
                       value: 'VIP $vipLevel',
                     ),
@@ -244,73 +224,32 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 18),
+
+              // =====================================================
+              // SEARCH MCHAT ID
+              // =====================================================
+
+              _menuItem(
+                context,
+                Icons.search_rounded,
+                'Search Mchat ID',
+                'Find another Mchat user',
+                () {
+                  _showMchatSearch(context);
+                },
+              ),
 
               // =====================================================
               // OWNER DASHBOARD
               // =====================================================
 
-              if (isOwner)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFF673AB7),
-                        Color(0xFF8E5DE7),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: const [
-                      BoxShadow(
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
-                        color: Colors.black26,
-                      ),
-                    ],
-                  ),
-                  child: ListTile(
-                    contentPadding:
-                        const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 8,
-                    ),
-                    leading: const CircleAvatar(
-                      backgroundColor: Colors.white,
-                      child: Icon(
-                        Icons.admin_panel_settings,
-                        color: primaryColor,
-                      ),
-                    ),
-                    title: const Text(
-                      'Owner Dashboard',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: const Text(
-                      'Manage Mchat application',
-                      style: TextStyle(
-                        color: Colors.white70,
-                      ),
-                    ),
-                    trailing: const Icon(
-                      Icons.chevron_right,
-                      color: Colors.white,
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              const OwnerDashboard(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+              if (isOwner) ...[
+                const SizedBox(height: 2),
+                _ownerDashboardButton(context),
+              ],
+
+              const SizedBox(height: 2),
 
               // =====================================================
               // EDIT PROFILE
@@ -318,7 +257,7 @@ class ProfileScreen extends StatelessWidget {
 
               _menuItem(
                 context,
-                Icons.edit,
+                Icons.edit_rounded,
                 'Edit Profile',
                 'Update your profile',
                 () {
@@ -335,15 +274,14 @@ class ProfileScreen extends StatelessWidget {
 
               _menuItem(
                 context,
-                Icons.account_balance_wallet,
+                Icons.account_balance_wallet_rounded,
                 'Recharge Coins',
                 'Buy coins',
                 () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          const CoinPackagesScreen(),
+                      builder: (_) => const CoinPackagesScreen(),
                     ),
                   );
                 },
@@ -355,7 +293,7 @@ class ProfileScreen extends StatelessWidget {
 
               _menuItem(
                 context,
-                Icons.card_giftcard,
+                Icons.card_giftcard_rounded,
                 'Refer & Earn',
                 'Invite friends and earn',
                 () {
@@ -372,7 +310,7 @@ class ProfileScreen extends StatelessWidget {
 
               _menuItem(
                 context,
-                Icons.settings,
+                Icons.settings_rounded,
                 'Settings',
                 'Application settings',
                 () {
@@ -383,36 +321,28 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 14),
 
               // =====================================================
               // LOGOUT
               // =====================================================
 
               SizedBox(
-                height: 58,
+                height: 56,
                 child: OutlinedButton.icon(
                   icon: const Icon(
-                    Icons.logout,
-                    color: primaryColor,
+                    Icons.logout_rounded,
+                    color: PremiumTheme.gold,
                   ),
                   label: const Text(
                     'LOGOUT',
                     style: TextStyle(
-                      color: primaryColor,
-                      fontSize: 17,
+                      color: PremiumTheme.gold,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(
-                      color: Colors.grey,
-                      width: 1.5,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
+                  style: PremiumTheme.outlinedButton(),
                   onPressed: () async {
                     await FirebaseAuth.instance.signOut();
 
@@ -425,7 +355,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 20),
 
               // =====================================================
               // OWNER STATUS
@@ -433,40 +363,113 @@ class ProfileScreen extends StatelessWidget {
 
               if (isOwner)
                 Container(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(14),
+                    gradient: PremiumTheme.purpleGradient,
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Colors.green.shade200,
+                      color: PremiumTheme.gold.withValues(alpha: 0.5),
                     ),
                   ),
                   child: Column(
                     children: [
                       const Icon(
-                        Icons.verified,
-                        color: Colors.green,
-                        size: 30,
+                        Icons.verified_rounded,
+                        color: PremiumTheme.gold,
+                        size: 35,
                       ),
-                      const SizedBox(height: 5),
+                      const SizedBox(height: 8),
                       const Text(
                         'OWNER ACCOUNT',
                         style: TextStyle(
-                          color: Colors.green,
+                          color: PremiumTheme.gold,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
                       Text(
                         'Mchat ID: $mchatId\n'
                         'VIP Level: $vipLevel\n'
                         'Coins: ${_formatNumber(coins)}',
                         textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          height: 1.6,
+                        ),
                       ),
                     ],
                   ),
                 ),
             ],
+          );
+        },
+      ),
+    );
+  }
+
+  // ===============================================================
+  // OWNER DASHBOARD BUTTON
+  // ===============================================================
+
+  static Widget _ownerDashboardButton(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        gradient: PremiumTheme.goldGradient,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: PremiumTheme.gold.withValues(alpha: 0.22),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 8,
+        ),
+        leading: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.14),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.admin_panel_settings_rounded,
+            color: Colors.black,
+            size: 28,
+          ),
+        ),
+        title: const Text(
+          'Owner Dashboard',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: const Text(
+          'Manage Mchat application',
+          style: TextStyle(
+            color: Colors.black54,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          color: Colors.black,
+          size: 30,
+        ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const OwnerDashboard(),
+            ),
           );
         },
       ),
@@ -482,42 +485,39 @@ class ProfileScreen extends StatelessWidget {
     required String title,
     required String value,
   }) {
-    return Card(
-      elevation: 3,
-      color: const Color(0xFFFFF8FF),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        vertical: 18,
+        horizontal: 8,
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          vertical: 20,
-          horizontal: 10,
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 34,
-              color: primaryColor,
+      decoration: PremiumTheme.premiumCard(
+        radius: 18,
+      ),
+      child: Column(
+        children: [
+          PremiumTheme.iconBox(
+            icon,
+            size: 48,
+          ),
+          const SizedBox(height: 9),
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: PremiumTheme.gold,
+              fontSize: 21,
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
             ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 15,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -533,45 +533,347 @@ class ProfileScreen extends StatelessWidget {
     String subtitle,
     VoidCallback onTap,
   ) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      color: const Color(0xFFFFF8FF),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+      decoration: PremiumTheme.premiumCard(
+        radius: 18,
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 7,
+          horizontal: 15,
+          vertical: 6,
         ),
-        leading: CircleAvatar(
-          radius: 25,
-          backgroundColor: Colors.deepPurple.shade50,
-          child: Icon(
-            icon,
-            color: primaryColor,
-          ),
+        leading: PremiumTheme.iconBox(
+          icon,
+          size: 50,
         ),
         title: Text(
           title,
           style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+            color: Colors.white,
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: TextStyle(
-            fontSize: 15,
-            color: Colors.grey.shade600,
+          style: const TextStyle(
+            color: Colors.white60,
+            fontSize: 13,
           ),
         ),
         trailing: const Icon(
-          Icons.chevron_right,
-          size: 30,
+          Icons.chevron_right_rounded,
+          color: PremiumTheme.gold,
+          size: 29,
         ),
         onTap: onTap,
+      ),
+    );
+  }
+
+  // ===============================================================
+  // MCHAT ID SEARCH
+  // ===============================================================
+
+  static void _showMchatSearch(BuildContext context) {
+    final TextEditingController controller =
+        TextEditingController();
+
+    bool loading = false;
+    Map<String, dynamic>? result;
+    String? error;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: PremiumTheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(26),
+        ),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            Future<void> search() async {
+              final String id = controller.text.trim();
+
+              if (!RegExp(r'^[0-9]{8}$').hasMatch(id)) {
+                setState(() {
+                  result = null;
+                  error = 'Enter a valid 8-digit Mchat ID.';
+                });
+                return;
+              }
+
+              setState(() {
+                loading = true;
+                result = null;
+                error = null;
+              });
+
+              try {
+                final found =
+                    await MchatIdService.findByMchatId(id);
+
+                if (!context.mounted) return;
+
+                setState(() {
+                  loading = false;
+                  result = found;
+
+                  if (found == null) {
+                    error = 'Mchat ID not found.';
+                  }
+                });
+              } catch (e) {
+                if (!context.mounted) return;
+
+                setState(() {
+                  loading = false;
+                  error = 'Search failed. Please try again.';
+                });
+              }
+            }
+
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  18,
+                  18,
+                  18,
+                  18 + MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 45,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+
+                      Row(
+                        children: [
+                          PremiumTheme.iconBox(
+                            Icons.search_rounded,
+                            size: 50,
+                          ),
+                          const SizedBox(width: 13),
+                          const Expanded(
+                            child: Text(
+                              'Search Mchat ID',
+                              style: TextStyle(
+                                color: PremiumTheme.gold,
+                                fontSize: 21,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      TextField(
+                        controller: controller,
+                        keyboardType: TextInputType.number,
+                        maxLength: 8,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          letterSpacing: 2,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'Mchat ID',
+                          hintText: 'Enter 8-digit Mchat ID',
+                          prefixIcon: Icon(
+                            Icons.badge_rounded,
+                          ),
+                          counterText: '',
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton.icon(
+                          style: PremiumTheme.premiumButton(),
+                          icon: const Icon(
+                            Icons.search_rounded,
+                          ),
+                          label: Text(
+                            loading ? 'Searching...' : 'Search User',
+                          ),
+                          onPressed: loading ? null : search,
+                        ),
+                      ),
+
+                      if (loading) ...[
+                        const SizedBox(height: 18),
+                        const CircularProgressIndicator(
+                          color: PremiumTheme.gold,
+                        ),
+                      ],
+
+                      if (error != null) ...[
+                        const SizedBox(height: 18),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(15),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Colors.red.withValues(alpha: 0.4),
+                            ),
+                          ),
+                          child: Text(
+                            error!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+
+                      if (result != null) ...[
+                        const SizedBox(height: 18),
+                        _searchResultCard(result!),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ===============================================================
+  // SEARCH RESULT
+  // ===============================================================
+
+  static Widget _searchResultCard(
+    Map<String, dynamic> data,
+  ) {
+    final String name =
+        (data['name'] ?? 'Mchat User').toString();
+
+    final String email =
+        (data['email'] ?? 'No email').toString();
+
+    final String mchatId =
+        (data['mchatId'] ?? '').toString();
+
+    final String? photoUrl =
+        data['photoUrl']?.toString().isNotEmpty == true
+            ? data['photoUrl'].toString()
+            : data['photoURL']?.toString();
+
+    final bool isOwner =
+        data['isOwner'] == true ||
+        data['role']?.toString().toLowerCase() == 'owner';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: PremiumTheme.premiumCard(
+        radius: 20,
+      ),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 38,
+            backgroundColor:
+                PremiumTheme.gold.withValues(alpha: 0.16),
+            backgroundImage:
+                photoUrl != null && photoUrl.isNotEmpty
+                    ? NetworkImage(photoUrl)
+                    : null,
+            child: photoUrl == null || photoUrl.isEmpty
+                ? const Icon(
+                    Icons.person,
+                    color: PremiumTheme.gold,
+                    size: 40,
+                  )
+                : null,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            name,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            email,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white60,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 9,
+            ),
+            decoration: BoxDecoration(
+              gradient: PremiumTheme.purpleGradient,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: PremiumTheme.gold.withValues(alpha: 0.4),
+              ),
+            ),
+            child: Text(
+              'Mchat ID: $mchatId',
+              style: const TextStyle(
+                color: PremiumTheme.gold,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.5,
+              ),
+            ),
+          ),
+          if (isOwner) ...[
+            const SizedBox(height: 10),
+            const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.verified_rounded,
+                  color: PremiumTheme.gold,
+                  size: 20,
+                ),
+                SizedBox(width: 5),
+                Text(
+                  'OWNER',
+                  style: TextStyle(
+                    color: PremiumTheme.gold,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -637,23 +939,12 @@ class ProfileScreen extends StatelessWidget {
 class OwnerDashboard extends StatelessWidget {
   const OwnerDashboard({super.key});
 
-  static const Color primaryColor = Color(0xFF673AB7);
-  static const Color backgroundColor = Color(0xFFFFF9FF);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: PremiumTheme.background,
       appBar: AppBar(
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Owner Dashboard',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text('Owner Dashboard'),
       ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
@@ -664,7 +955,7 @@ class OwnerDashboard extends StatelessWidget {
               ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(
-                color: primaryColor,
+                color: PremiumTheme.gold,
               ),
             );
           }
@@ -677,6 +968,7 @@ class OwnerDashboard extends StatelessWidget {
                   'Unable to load dashboard.\n\n'
                   '${snapshot.error}',
                   textAlign: TextAlign.center,
+                  style: PremiumTheme.bodyText,
                 ),
               ),
             );
@@ -696,8 +988,7 @@ class OwnerDashboard extends StatelessWidget {
             final String role =
                 data['role']?.toString().toLowerCase() ?? '';
 
-            if (data['isOwner'] == true ||
-                role == 'owner') {
+            if (data['isOwner'] == true || role == 'owner') {
               ownerCount++;
             }
 
@@ -708,30 +999,24 @@ class OwnerDashboard extends StatelessWidget {
           }
 
           return ListView(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(16),
             children: [
-              // =====================================================
               // HEADER
-              // =====================================================
-
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFF673AB7),
-                      Color(0xFF9575CD),
-                    ],
+                  gradient: PremiumTheme.purpleGradient,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: PremiumTheme.gold.withValues(alpha: 0.55),
                   ),
-                  borderRadius: BorderRadius.circular(22),
                 ),
                 child: const Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
-                      Icons.admin_panel_settings,
-                      color: Colors.white,
+                      Icons.admin_panel_settings_rounded,
+                      color: PremiumTheme.gold,
                       size: 45,
                     ),
                     SizedBox(height: 12),
@@ -748,24 +1033,21 @@ class OwnerDashboard extends StatelessWidget {
                       'Application Management',
                       style: TextStyle(
                         color: Colors.white70,
-                        fontSize: 16,
+                        fontSize: 15,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              // =====================================================
-              // USERS + COINS
-              // =====================================================
-
+              // STATISTICS
               Row(
                 children: [
                   Expanded(
                     child: _dashboardCard(
-                      Icons.people,
+                      Icons.people_alt_rounded,
                       'Users',
                       users.length.toString(),
                     ),
@@ -773,7 +1055,7 @@ class OwnerDashboard extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _dashboardCard(
-                      Icons.monetization_on,
+                      Icons.monetization_on_rounded,
                       'Coins',
                       _formatNumber(totalCoins),
                     ),
@@ -783,15 +1065,11 @@ class OwnerDashboard extends StatelessWidget {
 
               const SizedBox(height: 10),
 
-              // =====================================================
-              // OWNERS + VOLUNTEERS
-              // =====================================================
-
               Row(
                 children: [
                   Expanded(
                     child: _dashboardCard(
-                      Icons.verified_user,
+                      Icons.verified_user_rounded,
                       'Owners',
                       ownerCount.toString(),
                     ),
@@ -799,7 +1077,7 @@ class OwnerDashboard extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _dashboardCard(
-                      Icons.support_agent,
+                      Icons.support_agent_rounded,
                       'Volunteers',
                       volunteerCount.toString(),
                     ),
@@ -807,75 +1085,60 @@ class OwnerDashboard extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 22),
 
-              // =====================================================
               // MANAGE USERS
-              // =====================================================
-
               _ownerMenu(
                 context,
-                Icons.people,
+                Icons.people_alt_rounded,
                 'Manage Users',
                 'View registered users',
                 () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          const OwnerUsersScreen(),
+                      builder: (_) => const OwnerUsersScreen(),
                     ),
                   );
                 },
               ),
 
-              // =====================================================
               // COIN PACKAGES
-              // =====================================================
-
               _ownerMenu(
                 context,
-                Icons.monetization_on,
+                Icons.monetization_on_rounded,
                 'Coin Packages',
                 'Manage recharge packages',
                 () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          const CoinPackagesScreen(),
+                      builder: (_) => const CoinPackagesScreen(),
                     ),
                   );
                 },
               ),
 
-              // =====================================================
               // VIP LEVELS
-              // =====================================================
-
               _ownerMenu(
                 context,
-                Icons.star,
+                Icons.workspace_premium_rounded,
                 'VIP Levels',
                 'View VIP levels',
                 () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          const VipLevelsScreen(),
+                      builder: (_) => const VipLevelsScreen(),
                     ),
                   );
                 },
               ),
 
-              // =====================================================
               // OWNER SETTINGS
-              // =====================================================
-
               _ownerMenu(
                 context,
-                Icons.settings,
+                Icons.settings_rounded,
                 'Owner Settings',
                 'Application management settings',
                 () {
@@ -897,34 +1160,38 @@ class OwnerDashboard extends StatelessWidget {
     String title,
     String value,
   ) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        vertical: 17,
+        horizontal: 8,
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          vertical: 18,
-          horizontal: 8,
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: primaryColor,
-              size: 30,
+      decoration: PremiumTheme.premiumCard(
+        radius: 18,
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: PremiumTheme.gold,
+            size: 30,
+          ),
+          const SizedBox(height: 7),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(height: 7),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+          ),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
             ),
-            Text(title),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -936,27 +1203,34 @@ class OwnerDashboard extends StatelessWidget {
     String subtitle,
     VoidCallback onTap,
   ) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
+      decoration: PremiumTheme.premiumCard(
+        radius: 18,
+      ),
       child: ListTile(
         contentPadding: const EdgeInsets.all(12),
-        leading: CircleAvatar(
-          backgroundColor: Colors.deepPurple.shade50,
-          child: Icon(
-            icon,
-            color: primaryColor,
-          ),
+        leading: PremiumTheme.iconBox(
+          icon,
+          size: 50,
         ),
         title: Text(
           title,
           style: const TextStyle(
+            color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 17,
           ),
         ),
-        subtitle: Text(subtitle),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(
+            color: Colors.white60,
+          ),
+        ),
         trailing: const Icon(
-          Icons.chevron_right,
+          Icons.chevron_right_rounded,
+          color: PremiumTheme.gold,
         ),
         onTap: onTap,
       ),
@@ -1012,22 +1286,12 @@ class OwnerDashboard extends StatelessWidget {
 class OwnerUsersScreen extends StatelessWidget {
   const OwnerUsersScreen({super.key});
 
-  static const Color primaryColor = Color(0xFF673AB7);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF9FF),
+      backgroundColor: PremiumTheme.background,
       appBar: AppBar(
-        title: const Text(
-          'Manage Users',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: const Color(0xFFFFF9FF),
-        foregroundColor: Colors.black,
-        elevation: 0,
+        title: const Text('Manage Users'),
       ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
@@ -1038,7 +1302,7 @@ class OwnerUsersScreen extends StatelessWidget {
               ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(
-                color: primaryColor,
+                color: PremiumTheme.gold,
               ),
             );
           }
@@ -1049,6 +1313,7 @@ class OwnerUsersScreen extends StatelessWidget {
                 'Unable to load users.\n\n'
                 '${snapshot.error}',
                 textAlign: TextAlign.center,
+                style: PremiumTheme.bodyText,
               ),
             );
           }
@@ -1059,17 +1324,13 @@ class OwnerUsersScreen extends StatelessWidget {
             return const Center(
               child: Text(
                 'No users found',
-                style: TextStyle(
-                  fontSize: 18,
-                ),
+                style: PremiumTheme.bodyText,
               ),
             );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.symmetric(
-              vertical: 8,
-            ),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: users.length,
             itemBuilder: (context, index) {
               final data = users[index].data();
@@ -1083,59 +1344,54 @@ class OwnerUsersScreen extends StatelessWidget {
               final String mchatId =
                   (data['mchatId'] ?? 'Not assigned').toString();
 
-              final int coins =
-                  _toInt(data['coins']);
-
-              final int vip =
-                  _toInt(data['vipLevel']);
+              final int coins = _toInt(data['coins']);
+              final int vip = _toInt(data['vipLevel']);
 
               final String? photoUrl =
-                  (data['photoUrl'] ?? data['photoURL'])
-                      ?.toString();
+                  (data['photoUrl'] ?? data['photoURL'])?.toString();
 
-              return Card(
+              return Container(
                 margin: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 6,
                 ),
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                decoration: PremiumTheme.premiumCard(
+                  radius: 18,
                 ),
                 child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 14,
                     vertical: 8,
                   ),
                   leading: CircleAvatar(
                     backgroundColor:
-                        Colors.deepPurple.shade50,
+                        PremiumTheme.purple.withValues(alpha: 0.35),
                     backgroundImage:
-                        photoUrl != null &&
-                                photoUrl.isNotEmpty
+                        photoUrl != null && photoUrl.isNotEmpty
                             ? NetworkImage(photoUrl)
                             : null,
-                    child:
-                        photoUrl == null ||
-                                photoUrl.isEmpty
-                            ? const Icon(
-                                Icons.person,
-                                color: primaryColor,
-                              )
-                            : null,
+                    child: photoUrl == null || photoUrl.isEmpty
+                        ? const Icon(
+                            Icons.person,
+                            color: PremiumTheme.gold,
+                          )
+                        : null,
                   ),
                   title: Text(
                     name,
                     style: const TextStyle(
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   subtitle: Text(
                     'Mchat ID: $mchatId\n'
                     '$email\n'
-                    'Coins: ${_formatNumber(coins)}'
-                    ' • VIP: $vip',
+                    'Coins: ${_formatNumber(coins)} • VIP: $vip',
+                    style: const TextStyle(
+                      color: Colors.white60,
+                      height: 1.45,
+                    ),
                   ),
                   isThreeLine: true,
                 ),
@@ -1179,7 +1435,7 @@ class OwnerUsersScreen extends StatelessWidget {
 
 
 // ==================================================================
-// COIN PACKAGES
+// COIN PACKAGE MODEL
 // ==================================================================
 
 class CoinPackage {
@@ -1194,6 +1450,11 @@ class CoinPackage {
   });
 }
 
+
+// ==================================================================
+// COIN PACKAGES
+// ==================================================================
+
 class CoinPackagesScreen extends StatefulWidget {
   const CoinPackagesScreen({super.key});
 
@@ -1204,9 +1465,6 @@ class CoinPackagesScreen extends StatefulWidget {
 
 class _CoinPackagesScreenState
     extends State<CoinPackagesScreen> {
-  static const Color primaryColor = Color(0xFF673AB7);
-  static const Color backgroundColor = Color(0xFFFFF9FF);
-
   static const List<CoinPackage> packages = [
     CoinPackage(
       name: 'Starter Coins',
@@ -1295,9 +1553,7 @@ class _CoinPackagesScreenState
     final StringBuffer result = StringBuffer();
     int count = 0;
 
-    for (int i = number.length - 1;
-        i >= 0;
-        i--) {
+    for (int i = number.length - 1; i >= 0; i--) {
       result.write(number[i]);
       count++;
 
@@ -1307,11 +1563,7 @@ class _CoinPackagesScreenState
       }
     }
 
-    return result
-        .toString()
-        .split('')
-        .reversed
-        .join();
+    return result.toString().split('').reversed.join();
   }
 
   @override
@@ -1320,33 +1572,21 @@ class _CoinPackagesScreenState
         packages[selectedIndex];
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: PremiumTheme.background,
       appBar: AppBar(
-        backgroundColor: backgroundColor,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        title: const Text(
-          'Coin Packages',
-          style: TextStyle(
-            fontSize: 27,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text('Coin Packages'),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.fromLTRB(
-          18,
+          16,
           10,
-          18,
-          120,
+          16,
+          110,
         ),
         itemCount: packages.length,
         itemBuilder: (context, index) {
-          final CoinPackage package =
-              packages[index];
-
-          final bool selected =
-              selectedIndex == index;
+          final CoinPackage package = packages[index];
+          final bool selected = selectedIndex == index;
 
           return GestureDetector(
             onTap: () {
@@ -1355,29 +1595,22 @@ class _CoinPackagesScreenState
               });
             },
             child: Container(
-              margin: const EdgeInsets.only(
-                bottom: 14,
-              ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 18,
-              ),
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                gradient: selected
+                    ? PremiumTheme.purpleGradient
+                    : null,
+                color: selected
+                    ? null
+                    : PremiumTheme.surface,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: selected
-                      ? primaryColor
-                      : Colors.transparent,
-                  width: selected ? 2 : 0,
-                ),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 7,
-                    offset: Offset(0, 3),
+                  color: PremiumTheme.gold.withValues(
+                    alpha: selected ? 0.85 : 0.35,
                   ),
-                ],
+                  width: selected ? 1.5 : 1,
+                ),
               ),
               child: Row(
                 children: [
@@ -1385,19 +1618,16 @@ class _CoinPackagesScreenState
                     width: 58,
                     height: 58,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF0E7FF),
-                      borderRadius:
-                          BorderRadius.circular(18),
+                      gradient: PremiumTheme.goldGradient,
+                      borderRadius: BorderRadius.circular(18),
                     ),
                     child: const Icon(
-                      Icons.monetization_on,
-                      color: primaryColor,
-                      size: 35,
+                      Icons.monetization_on_rounded,
+                      color: Colors.black,
+                      size: 34,
                     ),
                   ),
-
-                  const SizedBox(width: 15),
-
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment:
@@ -1406,40 +1636,39 @@ class _CoinPackagesScreenState
                         Text(
                           package.name,
                           style: const TextStyle(
-                            fontSize: 19,
+                            color: Colors.white,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 5),
                         Text(
                           '${formatCoins(package.coins)} Coins',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey.shade700,
-                            fontWeight: FontWeight.w500,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 15,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           '₹${formatPrice(package.price)}',
                           style: const TextStyle(
-                            fontSize: 18,
-                            color: primaryColor,
+                            color: PremiumTheme.gold,
+                            fontSize: 17,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
                   ),
-
                   Icon(
                     selected
-                        ? Icons.check_circle
-                        : Icons.radio_button_unchecked,
+                        ? Icons.check_circle_rounded
+                        : Icons.radio_button_unchecked_rounded,
                     color: selected
-                        ? Colors.green
-                        : Colors.grey,
-                    size: 30,
+                        ? PremiumTheme.gold
+                        : Colors.white38,
+                    size: 29,
                   ),
                 ],
               ),
@@ -1449,34 +1678,27 @@ class _CoinPackagesScreenState
       ),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(
-          18,
+          16,
           8,
-          18,
+          16,
           14,
         ),
         child: SizedBox(
           height: 56,
           child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 3,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-            ),
+            style: PremiumTheme.premiumButton(),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                builder: (context) => const PaymentScreen(),
+                  builder: (context) => const PaymentScreen(),
                 ),
               );
             },
             child: Text(
               'Continue • ₹${formatPrice(selectedPackage.price)}',
               style: const TextStyle(
-                fontSize: 17,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -1495,8 +1717,6 @@ class _CoinPackagesScreenState
 class VipLevelsScreen extends StatelessWidget {
   const VipLevelsScreen({super.key});
 
-  static const Color primaryColor = Color(0xFF673AB7);
-
   static const Map<int, int> correctVipLevels = {
     1: 1000,
     2: 5000,
@@ -1510,33 +1730,12 @@ class VipLevelsScreen extends StatelessWidget {
     10: 2000000,
   };
 
-  static int _toInt(dynamic value) {
-    if (value is int) return value;
-
-    if (value is num) {
-      return value.toInt();
-    }
-
-    return int.tryParse(
-          value?.toString() ?? '',
-        ) ??
-        0;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF9FF),
+      backgroundColor: PremiumTheme.background,
       appBar: AppBar(
-        title: const Text(
-          'VIP Levels',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: const Color(0xFFFFF9FF),
-        foregroundColor: Colors.black,
-        elevation: 0,
+        title: const Text('VIP Levels'),
       ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
@@ -1547,7 +1746,7 @@ class VipLevelsScreen extends StatelessWidget {
               ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(
-                color: primaryColor,
+                color: PremiumTheme.gold,
               ),
             );
           }
@@ -1560,6 +1759,7 @@ class VipLevelsScreen extends StatelessWidget {
                   'Unable to load VIP levels.\n\n'
                   '${snapshot.error}',
                   textAlign: TextAlign.center,
+                  style: PremiumTheme.bodyText,
                 ),
               ),
             );
@@ -1601,51 +1801,62 @@ class VipLevelsScreen extends StatelessWidget {
           final sortedLevels =
               finalLevels.entries.toList()
                 ..sort(
-                  (a, b) =>
-                      a.key.compareTo(b.key),
+                  (a, b) => a.key.compareTo(b.key),
                 );
 
           return ListView.builder(
-            padding: const EdgeInsets.symmetric(
-              vertical: 10,
+            padding: const EdgeInsets.fromLTRB(
+              12,
+              10,
+              12,
+              25,
             ),
             itemCount: sortedLevels.length,
             itemBuilder: (context, index) {
-              final entry =
-                  sortedLevels[index];
+              final entry = sortedLevels[index];
 
               final int level = entry.key;
-              final int requiredCoins =
-                  entry.value;
+              final int requiredCoins = entry.value;
 
-              return Card(
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 6,
-                ),
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(18),
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: PremiumTheme.premiumCard(
+                  radius: 18,
                 ),
                 child: ListTile(
                   contentPadding:
                       const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 8,
+                    horizontal: 16,
+                    vertical: 7,
                   ),
-                  leading: CircleAvatar(
-                    backgroundColor:
-                        const Color(0xFFF0E7FF),
-                    child: const Icon(
-                      Icons.star,
-                      color: primaryColor,
+                  leading: Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      gradient: PremiumTheme.purpleGradient,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: PremiumTheme.gold.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$level',
+                        style: const TextStyle(
+                          color: PremiumTheme.gold,
+                          fontSize: 19,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                   title: Text(
                     'VIP $level',
                     style: const TextStyle(
-                      fontSize: 20,
+                      color: Colors.white,
+                      fontSize: 19,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -1653,16 +1864,21 @@ class VipLevelsScreen extends StatelessWidget {
                     'Required Coins: '
                     '${_formatNumber(requiredCoins)}',
                     style: const TextStyle(
-                      fontSize: 16,
+                      color: Colors.white70,
+                      fontSize: 14,
                     ),
                   ),
                   trailing: level == 10
                       ? const Icon(
-                          Icons.workspace_premium,
-                          color: Colors.amber,
-                          size: 30,
+                          Icons.workspace_premium_rounded,
+                          color: PremiumTheme.gold,
+                          size: 31,
                         )
-                      : null,
+                      : const Icon(
+                          Icons.chevron_right_rounded,
+                          color: PremiumTheme.gold,
+                          size: 28,
+                        ),
                 ),
               );
             },
@@ -1670,6 +1886,19 @@ class VipLevelsScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+
+    if (value is num) {
+      return value.toInt();
+    }
+
+    return int.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        0;
   }
 
   static String _formatNumber(int value) {
