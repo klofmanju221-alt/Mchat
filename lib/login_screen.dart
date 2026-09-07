@@ -1,3 +1,4 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -27,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ===============================================================
-  // LOGIN
+  // SECURE LOGIN
   // ===============================================================
 
   Future<void> login() async {
@@ -60,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
         password: password,
       );
 
-      final User? user = credential.user;
+      User? user = credential.user;
 
       if (user == null) {
         throw Exception(
@@ -69,17 +70,51 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       // -----------------------------------------------------------
+      // REFRESH USER DATA
+      // -----------------------------------------------------------
+
+      await user.reload();
+
+      user = FirebaseAuth.instance.currentUser;
+
+      if (user == null) {
+        throw Exception(
+          'Unable to load user account',
+        );
+      }
+
+      // -----------------------------------------------------------
+      // EMAIL VERIFICATION CHECK
+      // -----------------------------------------------------------
+
+      if (!user.emailVerified) {
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+          });
+        }
+
+        await _showEmailVerificationDialog(user);
+
+        if (FirebaseAuth.instance.currentUser != null) {
+          await FirebaseAuth.instance.signOut();
+        }
+
+        return;
+      }
+
+      // -----------------------------------------------------------
       // GET DISPLAY NAME
       // -----------------------------------------------------------
 
       String name = user.displayName ?? '';
 
-      if (name.isEmpty) {
+      if (name.trim().isEmpty) {
         name = 'Mchat User';
       }
 
       // -----------------------------------------------------------
-      // AUTOMATIC MCHAT ID
+      // ENSURE MCHAT ID
       // -----------------------------------------------------------
 
       await MchatIdService.ensureMchatId(
@@ -87,6 +122,121 @@ class _LoginScreenState extends State<LoginScreen> {
         name: name,
         email: user.email ?? email,
       );
+
+      // -----------------------------------------------------------
+      // SECURE REFERRAL REWARD
+      // -----------------------------------------------------------
+      //
+      // IMPORTANT:
+      // Flutter DOES NOT add coins.
+      //
+      // Firebase Cloud Function verifies the referral and,
+      // if valid, adds exactly 1000 Coins.
+      //
+      // Duplicate rewards are prevented by backend.
+      //
+
+      try {
+        final HttpsCallable callable =
+            FirebaseFunctions.instanceFor(
+          region: 'asia-south1',
+        ).httpsCallable(
+          'claimReferralReward',
+        );
+
+        final HttpsCallableResult result =
+            await callable.call();
+
+        if (result.data is Map) {
+          final Map<String, dynamic> data =
+              Map<String, dynamic>.from(
+            result.data as Map,
+          );
+
+          final String status =
+              data['status']?.toString() ?? '';
+
+          // -------------------------------------------------------
+          // REFERRAL COMPLETED
+          // -------------------------------------------------------
+
+          if (status == 'completed') {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Referral verified successfully. 1000 Coins added.',
+                  ),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
+          }
+
+          // -------------------------------------------------------
+          // ALREADY COMPLETED
+          // -------------------------------------------------------
+
+          else if (status == 'already_completed') {
+            // Nothing to do.
+          }
+
+          // -------------------------------------------------------
+          // NO REFERRAL
+          // -------------------------------------------------------
+
+          else if (status == 'no_referral') {
+            // Normal login.
+          }
+
+          // -------------------------------------------------------
+          // PENDING
+          // -------------------------------------------------------
+
+          else if (status == 'pending') {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Referral verification is still pending.',
+                  ),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
+          }
+
+          // -------------------------------------------------------
+          // REJECTED
+          // -------------------------------------------------------
+
+          else if (status == 'rejected') {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Referral could not be verified.',
+                  ),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
+          }
+        }
+      } on FirebaseFunctionsException {
+        // ---------------------------------------------------------
+        // IMPORTANT
+        // Referral backend failure must NOT prevent normal login.
+        //
+        // The reward can be checked again on the next login.
+        // ---------------------------------------------------------
+      } catch (_) {
+        // Referral backend temporarily unavailable.
+      }
+
+      // -----------------------------------------------------------
+      // CHECK SCREEN
+      // -----------------------------------------------------------
 
       if (!mounted) {
         return;
@@ -130,6 +280,9 @@ class _LoginScreenState extends State<LoginScreen> {
       } else if (e.code == 'too-many-requests') {
         message =
             'Too many attempts. Please try again later';
+      } else if (e.code == 'network-request-failed') {
+        message =
+            'Network error. Please check your internet connection';
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -154,6 +307,129 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     }
+  }
+
+  // ===============================================================
+  // EMAIL VERIFICATION DIALOG
+  // ===============================================================
+
+  Future<void> _showEmailVerificationDialog(
+    User user,
+  ) async {
+    if (!mounted) {
+      return;
+    }
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        bool sending = false;
+
+        return StatefulBuilder(
+          builder: (
+            context,
+            setDialogState,
+          ) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(22),
+              ),
+              title: const Row(
+                children: [
+                  Icon(
+                    Icons.mark_email_unread_rounded,
+                    color: Color(0xFF8E24AA),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Verify Your Email',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              content: const Text(
+                'Please verify your email address before logging in to Mchat.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: sending
+                      ? null
+                      : () async {
+                          setDialogState(() {
+                            sending = true;
+                          });
+
+                          try {
+                            await user.sendEmailVerification();
+
+                            if (dialogContext.mounted) {
+                              ScaffoldMessenger.of(
+                                dialogContext,
+                              ).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Verification email sent successfully.',
+                                  ),
+                                ),
+                              );
+                            }
+                          } catch (_) {
+                            if (dialogContext.mounted) {
+                              ScaffoldMessenger.of(
+                                dialogContext,
+                              ).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Unable to send verification email. Please try again later.',
+                                  ),
+                                ),
+                              );
+                            }
+                          } finally {
+                            if (dialogContext.mounted) {
+                              setDialogState(() {
+                                sending = false;
+                              });
+                            }
+                          }
+                        },
+                  child: sending
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'RESEND EMAIL',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: const Text(
+                    'LOGIN LATER',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   // ===============================================================
