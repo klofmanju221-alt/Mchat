@@ -22,19 +22,23 @@ service cloud.firestore {
 
     match /users/{uid} {
 
+      // User can read own profile.
+      // Owner can read user profiles.
       allow read: if signedIn()
         && (
           request.auth.uid == uid
           || isOwner()
         );
 
-      // User may create only their own account document.
+      // User can create only their own account document.
+      //
       // Referral information can be supplied during registration.
       allow create: if signedIn()
         && request.auth.uid == uid;
 
-      // Normal users can update their own normal profile fields,
-      // but referral/reward/security fields are backend-controlled.
+      // Normal users can update their own normal profile fields.
+      //
+      // Referral/reward/security fields are backend controlled.
       allow update: if signedIn()
         && (
           isOwner()
@@ -42,10 +46,11 @@ service cloud.firestore {
           (
             request.auth.uid == uid
 
-            // Owner/role cannot be changed by normal users.
+            // Owner status cannot be changed by normal users.
             && request.resource.data.isOwner
                 == resource.data.isOwner
 
+            // Role cannot be changed by normal users.
             && request.resource.data.role
                 == resource.data.role
 
@@ -67,7 +72,33 @@ service cloud.firestore {
           )
         );
 
+      // User accounts cannot be deleted from client.
       allow delete: if false;
+
+      // ==========================================================
+      // REFERRAL HISTORY
+      // ==========================================================
+      //
+      // Path:
+      //
+      // users/{referrerUid}/referrals/{newUserUid}
+      //
+      // Only the referrer or owner can read referral history.
+      //
+      // Client cannot create/update/delete referral history.
+      // Firebase Cloud Functions/Admin SDK handles these writes.
+      //
+
+      match /referrals/{referralId} {
+
+        allow read: if signedIn()
+          && (
+            request.auth.uid == uid
+            || isOwner()
+          );
+
+        allow create, update, delete: if false;
+      }
     }
 
     // ============================================================
@@ -76,8 +107,12 @@ service cloud.firestore {
 
     match /mchatIds/{mchatId} {
 
+      // Signed-in users can search Mchat IDs.
       allow read: if signedIn();
 
+      // Normal users can create their own 8-digit Mchat ID.
+      //
+      // Owner ID 11111111 is reserved.
       allow create: if signedIn()
         && (
           (
@@ -108,6 +143,7 @@ service cloud.firestore {
         && request.resource.data.mchatId
           == mchatId;
 
+      // Mchat IDs cannot be deleted from client.
       allow delete: if false;
     }
 
@@ -117,6 +153,8 @@ service cloud.firestore {
 
     match /wallets/{uid} {
 
+      // User can read own wallet.
+      // Owner can read wallets.
       allow read: if signedIn()
         && (
           request.auth.uid == uid
@@ -124,8 +162,10 @@ service cloud.firestore {
         );
 
       // IMPORTANT:
+      //
       // No client can create/update/delete wallet balances.
-      // Firebase Admin/backend only.
+      //
+      // Firebase Admin SDK / secure backend only.
       allow write: if false;
     }
 
@@ -135,6 +175,7 @@ service cloud.firestore {
 
     match /ledger/{entryId} {
 
+      // Owner can read financial ledger.
       allow read: if signedIn() && isOwner();
 
       // Backend only.
@@ -147,6 +188,7 @@ service cloud.firestore {
 
     match /recharges/{id} {
 
+      // Owner can read recharge records.
       allow read: if signedIn() && isOwner();
 
       // Backend/payment verification only.
@@ -159,6 +201,7 @@ service cloud.firestore {
 
     match /withdrawals/{id} {
 
+      // Owner can read withdrawals.
       allow read: if signedIn() && isOwner();
 
       // Backend only.
@@ -171,6 +214,7 @@ service cloud.firestore {
 
     match /owner_commissions/{id} {
 
+      // Owner can read commission records.
       allow read: if signedIn() && isOwner();
 
       // Backend only.
@@ -183,6 +227,7 @@ service cloud.firestore {
 
     match /audit_logs/{id} {
 
+      // Owner can read security audit logs.
       allow read: if signedIn() && isOwner();
 
       // Backend only.
