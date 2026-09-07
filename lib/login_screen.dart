@@ -70,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       // -----------------------------------------------------------
-      // REFRESH USER DATA
+      // REFRESH FIREBASE USER
       // -----------------------------------------------------------
 
       await user.reload();
@@ -127,13 +127,13 @@ class _LoginScreenState extends State<LoginScreen> {
       // SECURE REFERRAL REWARD
       // -----------------------------------------------------------
       //
-      // IMPORTANT:
-      // Flutter DOES NOT add coins.
+      // Flutter DOES NOT add coins directly.
       //
-      // Firebase Cloud Function verifies the referral and,
-      // if valid, adds exactly 1000 Coins.
+      // Firebase Cloud Function performs all verification.
       //
-      // Duplicate rewards are prevented by backend.
+      // Valid referral = exactly 1000 Coins.
+      //
+      // Duplicate reward is prevented by backend.
       //
 
       try {
@@ -156,6 +156,11 @@ class _LoginScreenState extends State<LoginScreen> {
           final String status =
               data['status']?.toString() ?? '';
 
+          final int rewardCoins =
+              data['rewardCoins'] is num
+                  ? (data['rewardCoins'] as num).toInt()
+                  : 0;
+
           // -------------------------------------------------------
           // REFERRAL COMPLETED
           // -------------------------------------------------------
@@ -163,11 +168,13 @@ class _LoginScreenState extends State<LoginScreen> {
           if (status == 'completed') {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Text(
-                    'Referral verified successfully. 1000 Coins added.',
+                    rewardCoins > 0
+                        ? 'Referral verified successfully. $rewardCoins Coins added.'
+                        : 'Referral verified successfully.',
                   ),
-                  duration: Duration(seconds: 3),
+                  duration: const Duration(seconds: 3),
                 ),
               );
             }
@@ -178,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
           // -------------------------------------------------------
 
           else if (status == 'already_completed') {
-            // Nothing to do.
+            // No additional coins.
           }
 
           // -------------------------------------------------------
@@ -223,15 +230,23 @@ class _LoginScreenState extends State<LoginScreen> {
             }
           }
         }
-      } on FirebaseFunctionsException {
+      } on FirebaseFunctionsException catch (e) {
         // ---------------------------------------------------------
-        // IMPORTANT
-        // Referral backend failure must NOT prevent normal login.
+        // REFERRAL BACKEND FAILURE
+        // ---------------------------------------------------------
         //
-        // The reward can be checked again on the next login.
-        // ---------------------------------------------------------
-      } catch (_) {
-        // Referral backend temporarily unavailable.
+        // Normal login must continue.
+        //
+        // The referral can be checked again during the next login.
+        //
+
+        debugPrint(
+          'Referral function error: ${e.code} - ${e.message}',
+        );
+      } catch (e) {
+        debugPrint(
+          'Referral backend error: $e',
+        );
       }
 
       // -----------------------------------------------------------
@@ -378,6 +393,25 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               );
                             }
+                          } on FirebaseAuthException catch (e) {
+                            if (dialogContext.mounted) {
+                              String message =
+                                  'Unable to send verification email.';
+
+                              if (e.code ==
+                                  'too-many-requests') {
+                                message =
+                                    'Too many requests. Please try again later.';
+                              }
+
+                              ScaffoldMessenger.of(
+                                dialogContext,
+                              ).showSnackBar(
+                                SnackBar(
+                                  content: Text(message),
+                                ),
+                              );
+                            }
                           } catch (_) {
                             if (dialogContext.mounted) {
                               ScaffoldMessenger.of(
@@ -414,9 +448,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                 ),
                 TextButton(
-                  onPressed: () {
-                    Navigator.of(dialogContext).pop();
-                  },
+                  onPressed: sending
+                      ? null
+                      : () {
+                          Navigator.of(dialogContext).pop();
+                        },
                   child: const Text(
                     'LOGIN LATER',
                     style: TextStyle(
