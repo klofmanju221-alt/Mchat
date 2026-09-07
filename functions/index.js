@@ -101,10 +101,10 @@ exports.claimReferralReward = onCall(
             .toUpperCase();
 
     // No referral attached
-    if (
-      referredByUid.isEmpty ||
-      referredByCode.isEmpty
-    ) {
+   if (
+  !referredByUid ||
+  !referredByCode
+) { 
       return {
         success: false,
         status: "no_referral",
