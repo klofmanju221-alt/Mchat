@@ -1,4 +1,3 @@
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const admin = require("firebase-admin");
@@ -13,136 +12,53 @@ setGlobalOptions({
   maxInstances: 10,
 });
 
+// ===============================================================
+// MCHAT REFERRAL SETTINGS
+// ===============================================================
+
 const REFERRAL_REWARD = 1000;
 
 const REFERRAL_PENDING = "pending";
 const REFERRAL_COMPLETED = "completed";
 const REFERRAL_REJECTED = "rejected";
 
-/*
- * STEP 1
- *
- * When a new user document is created, only mark the referral
- * as pending.
- *
- * IMPORTANT:
- * No coins are awarded here.
- */
-exports.processReferralReward = onDocumentCreated(
-  "users/{newUserUid}",
-  async (event) => {
-    const newUserUid = event.params.newUserUid;
-    const newUserSnapshot = event.data;
+// ===============================================================
+// SECURE REFERRAL REWARD
+// ===============================================================
+//
+// IMPORTANT:
+//
+// Flutter NEVER adds referral coins directly.
+//
+// Only this backend function can award the 1000 Coins.
+//
+// Security checks:
+//
+// 1. User must be authenticated
+// 2. Firebase email must be verified
+// 3. Referral must exist
+// 4. Referrer must exist
+// 5. Referral code must match
+// 6. Self referral is blocked
+// 7. Duplicate reward is blocked
+// 8. Wallet update happens inside Firestore transaction
+// 9. Referral history is stored under referrer's account
+// 10. Ledger + audit log are created
+//
+// ===============================================================
 
-    if (!newUserSnapshot) {
-      return;
-    }
-
-    const newUser = newUserSnapshot.data() || {};
-
-    const referredByUid = newUser.referredByUid;
-    const referredByCode = newUser.referredByCode;
-
-    if (!referredByUid || !referredByCode) {
-      return;
-    }
-
-    if (referredByUid === newUserUid) {
-      await newUserSnapshot.ref.set(
-        {
-          referralStatus: REFERRAL_REJECTED,
-          referralRejectedReason: "self_referral",
-          referralUpdatedAt:
-            admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      );
-
-      return;
-    }
-
-    const referrerRef = db
-      .collection("users")
-      .doc(referredByUid);
-
-    const referralRef = newUserSnapshot.ref
-      .collection("referrals")
-      .doc(referredByUid);
-
-    const referrerSnapshot = await referrerRef.get();
-
-    if (!referrerSnapshot.exists) {
-      await newUserSnapshot.ref.set(
-        {
-          referralStatus: REFERRAL_REJECTED,
-          referralRejectedReason: "referrer_not_found",
-          referralUpdatedAt:
-            admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      );
-
-      return;
-    }
-
-    const referrer = referrerSnapshot.data() || {};
-
-    if (referrer.referralCode !== referredByCode) {
-      await newUserSnapshot.ref.set(
-        {
-          referralStatus: REFERRAL_REJECTED,
-          referralRejectedReason: "invalid_referral_code",
-          referralUpdatedAt:
-            admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      );
-
-      return;
-    }
-
-    await newUserSnapshot.ref.set(
-      {
-        referralStatus: REFERRAL_PENDING,
-        referralUpdatedAt:
-          admin.firestore.FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    );
-
-    await referralRef.set(
-      {
-        referredUid: newUserUid,
-        referredByUid: referredByUid,
-        referralCode: referredByCode,
-        rewardCoins: REFERRAL_REWARD,
-        status: REFERRAL_PENDING,
-        createdAt:
-          admin.firestore.FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    );
-  },
-);
-
-
-/*
- * STEP 2
- *
- * Secure backend reward claim.
- *
- * The user must be authenticated.
- * The backend checks Firebase Authentication directly.
- *
- * The client NEVER writes coins directly.
- */
 exports.claimReferralReward = onCall(
   {
     // App Check will be enforced before production launch
-    // after App Check is configured in the Mchat app.
+    // after App Check is configured in the Flutter app.
     enforceAppCheck: false,
   },
+
   async (request) => {
+    // =============================================================
+    // 1. AUTHENTICATION CHECK
+    // =============================================================
+
     if (!request.auth) {
       throw new HttpsError(
         "unauthenticated",
@@ -152,9 +68,13 @@ exports.claimReferralReward = onCall(
 
     const newUserUid = request.auth.uid;
 
+    // =============================================================
+    // 2. GET NEW USER PROFILE
+    // =============================================================
+
     const newUserRef = db
-      .collection("users")
-      .doc(newUserUid);
+        .collection("users")
+        .doc(newUserUid);
 
     const newUserSnapshot = await newUserRef.get();
 
@@ -165,290 +85,553 @@ exports.claimReferralReward = onCall(
       );
     }
 
-    const newUser = newUserSnapshot.data() || {};
+    const newUser =
+        newUserSnapshot.data() || {};
 
-    const referredByUid = newUser.referredByUid;
-    const referredByCode = newUser.referredByCode;
+    // =============================================================
+    // 3. GET REFERRAL INFORMATION
+    // =============================================================
 
-    if (!referredByUid || !referredByCode) {
+    const referredByUid =
+        String(newUser.referredByUid || "").trim();
+
+    const referredByCode =
+        String(newUser.referredByCode || "")
+            .trim()
+            .toUpperCase();
+
+    // No referral attached
+    if (
+      referredByUid.isEmpty ||
+      referredByCode.isEmpty
+    ) {
       return {
         success: false,
         status: "no_referral",
-        message: "No referral is attached to this account.",
+        rewardCoins: 0,
+        message:
+            "No referral is attached to this account.",
       };
     }
+
+    // =============================================================
+    // 4. SELF REFERRAL PROTECTION
+    // =============================================================
 
     if (referredByUid === newUserUid) {
       await newUserRef.set(
         {
-          referralStatus: REFERRAL_REJECTED,
-          referralRejectedReason: "self_referral",
+          referralStatus:
+              REFERRAL_REJECTED,
+
+          referralRejectedReason:
+              "self_referral",
+
           referralUpdatedAt:
-            admin.firestore.FieldValue.serverTimestamp(),
+              admin.firestore.FieldValue
+                  .serverTimestamp(),
         },
         { merge: true },
       );
 
-      throw new HttpsError(
-        "invalid-argument",
-        "Self referral is not allowed.",
-      );
+      return {
+        success: false,
+        status: REFERRAL_REJECTED,
+        rewardCoins: 0,
+        message:
+            "Self referral is not allowed.",
+      };
     }
 
-    /*
-     * IMPORTANT:
-     * Read the real Firebase Authentication user.
-     *
-     * Do not trust an emailVerified field coming from Firestore.
-     */
-    const authUser = await auth.getUser(newUserUid);
+    // =============================================================
+    // 5. FIREBASE AUTH EMAIL VERIFICATION
+    // =============================================================
+
+    // IMPORTANT:
+    // Never trust emailVerified from Firestore.
+    //
+    // Read the real Firebase Authentication account.
+
+    let authUser;
+
+    try {
+      authUser =
+          await auth.getUser(newUserUid);
+    } catch (error) {
+      throw new HttpsError(
+        "not-found",
+        "Firebase user account was not found.",
+      );
+    }
 
     if (!authUser.emailVerified) {
       return {
         success: false,
         status: REFERRAL_PENDING,
+        rewardCoins: 0,
         message:
-          "Email verification is required before the referral reward can be completed.",
+            "Email verification is required before the referral reward can be completed.",
       };
     }
 
+    // =============================================================
+    // 6. REFERRER REFERENCES
+    // =============================================================
+
     const referrerRef = db
-      .collection("users")
-      .doc(referredByUid);
+        .collection("users")
+        .doc(referredByUid);
+
+    // IMPORTANT:
+    // WalletService uses "coinBalance".
+    //
+    // Therefore backend must update "coinBalance",
+    // NOT "coins".
 
     const walletRef = db
-      .collection("wallets")
-      .doc(referredByUid);
+        .collection("wallets")
+        .doc(referredByUid);
 
-    const referralRef = newUserRef
-      .collection("referrals")
-      .doc(referredByUid);
+    // IMPORTANT:
+    // Referral history belongs to the REFERRER.
+    //
+    // users/{referrerUid}/referrals/{newUserUid}
+
+    const referralRef = referrerRef
+        .collection("referrals")
+        .doc(newUserUid);
+
+    // Fixed IDs are created before transaction.
+    // This keeps the transaction idempotent.
 
     const ledgerRef = db
-      .collection("ledger")
-      .doc();
+        .collection("ledger")
+        .doc();
 
     const auditRef = db
-      .collection("audit_logs")
-      .doc();
+        .collection("audit_logs")
+        .doc();
 
-    await db.runTransaction(async (transaction) => {
-      const referrerSnapshot =
-        await transaction.get(referrerRef);
+    // =============================================================
+    // 7. TRANSACTION
+    // =============================================================
 
-      const newUserSnapshotTx =
-        await transaction.get(newUserRef);
+    let resultStatus = REFERRAL_PENDING;
+    let resultMessage =
+        "Referral verification is pending.";
+    let rewardGiven = 0;
 
-      const walletSnapshot =
-        await transaction.get(walletRef);
+    await db.runTransaction(
+      async (transaction) => {
+        // ---------------------------------------------------------
+        // READ ALL REQUIRED DOCUMENTS
+        // ---------------------------------------------------------
 
-      const referralSnapshot =
-        await transaction.get(referralRef);
+        const referrerSnapshot =
+            await transaction.get(referrerRef);
 
-      if (!referrerSnapshot.exists) {
-        transaction.set(
-          newUserRef,
-          {
-            referralStatus: REFERRAL_REJECTED,
-            referralRejectedReason: "referrer_not_found",
-            referralUpdatedAt:
-              admin.firestore.FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        );
+        const currentUserSnapshot =
+            await transaction.get(newUserRef);
 
-        return;
-      }
+        const walletSnapshot =
+            await transaction.get(walletRef);
 
-      const referrer =
-        referrerSnapshot.data() || {};
+        const referralSnapshot =
+            await transaction.get(referralRef);
 
-      const newUserData =
-        newUserSnapshotTx.data() || {};
+        // ---------------------------------------------------------
+        // REFERRER NOT FOUND
+        // ---------------------------------------------------------
 
-      /*
-       * Verify that the referral code still belongs
-       * to the claimed referrer.
-       */
-      if (referrer.referralCode !== referredByCode) {
-        transaction.set(
-          newUserRef,
-          {
-            referralStatus: REFERRAL_REJECTED,
-            referralRejectedReason:
-              "invalid_referral_code",
-            referralUpdatedAt:
-              admin.firestore.FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        );
+        if (!referrerSnapshot.exists) {
+          transaction.set(
+            newUserRef,
+            {
+              referralStatus:
+                  REFERRAL_REJECTED,
 
-        return;
-      }
+              referralRejectedReason:
+                  "referrer_not_found",
 
-      /*
-       * Idempotency protection.
-       *
-       * If the referral is already completed,
-       * never give another 1000 coins.
-       */
-      if (
-        newUserData.referralStatus ===
-        REFERRAL_COMPLETED
-      ) {
-        return;
-      }
+              referralUpdatedAt:
+                  admin.firestore.FieldValue
+                      .serverTimestamp(),
+            },
+            { merge: true },
+          );
 
-      if (
-        referralSnapshot.exists &&
-        referralSnapshot.data().status ===
+          resultStatus =
+              REFERRAL_REJECTED;
+
+          resultMessage =
+              "Referrer account was not found.";
+
+          rewardGiven = 0;
+
+          return;
+        }
+
+        // ---------------------------------------------------------
+        // GET REFERRER DATA
+        // ---------------------------------------------------------
+
+        const referrer =
+            referrerSnapshot.data() || {};
+
+        const currentUser =
+            currentUserSnapshot.data() || {};
+
+        // ---------------------------------------------------------
+        // VERIFY REFERRAL CODE
+        // ---------------------------------------------------------
+
+        const realReferralCode =
+            String(
+              referrer.referralCode || "",
+            )
+                .trim()
+                .toUpperCase();
+
+        if (
+          realReferralCode !==
+          referredByCode
+        ) {
+          transaction.set(
+            newUserRef,
+            {
+              referralStatus:
+                  REFERRAL_REJECTED,
+
+              referralRejectedReason:
+                  "invalid_referral_code",
+
+              referralUpdatedAt:
+                  admin.firestore.FieldValue
+                      .serverTimestamp(),
+            },
+            { merge: true },
+          );
+
+          resultStatus =
+              REFERRAL_REJECTED;
+
+          resultMessage =
+              "Invalid referral code.";
+
+          rewardGiven = 0;
+
+          return;
+        }
+
+        // ---------------------------------------------------------
+        // DUPLICATE PROTECTION - USER STATUS
+        // ---------------------------------------------------------
+
+        if (
+          currentUser.referralStatus ===
           REFERRAL_COMPLETED
-      ) {
+        ) {
+          resultStatus =
+              "already_completed";
+
+          resultMessage =
+              "Referral reward has already been completed.";
+
+          rewardGiven = 0;
+
+          return;
+        }
+
+        // ---------------------------------------------------------
+        // DUPLICATE PROTECTION - HISTORY
+        // ---------------------------------------------------------
+
+        if (referralSnapshot.exists) {
+          const referralData =
+              referralSnapshot.data() || {};
+
+          if (
+            referralData.status ===
+            REFERRAL_COMPLETED
+          ) {
+            transaction.set(
+              newUserRef,
+              {
+                referralStatus:
+                    REFERRAL_COMPLETED,
+
+                referralRewardCoins:
+                    REFERRAL_REWARD,
+
+                referralUpdatedAt:
+                    admin.firestore.FieldValue
+                        .serverTimestamp(),
+              },
+              { merge: true },
+            );
+
+            resultStatus =
+                "already_completed";
+
+            resultMessage =
+                "Referral reward has already been completed.";
+
+            rewardGiven = 0;
+
+            return;
+          }
+        }
+
+        // ---------------------------------------------------------
+        // CURRENT WALLET BALANCE
+        // ---------------------------------------------------------
+
+        let currentCoinBalance = 0;
+
+        if (walletSnapshot.exists) {
+          const wallet =
+              walletSnapshot.data() || {};
+
+          const balance =
+              wallet.coinBalance;
+
+          if (typeof balance === "number" &&
+              Number.isFinite(balance)) {
+            currentCoinBalance =
+                Math.max(
+                  0,
+                  Math.floor(balance),
+                );
+          }
+        }
+
+        const newCoinBalance =
+            currentCoinBalance +
+            REFERRAL_REWARD;
+
+        // ---------------------------------------------------------
+        // REFERRAL COUNTS
+        // ---------------------------------------------------------
+
+        let currentReferralCount = 0;
+
+        const referralCount =
+            referrer.successfulReferrals;
+
+        if (
+          typeof referralCount === "number" &&
+          Number.isFinite(referralCount)
+        ) {
+          currentReferralCount =
+              Math.max(
+                0,
+                Math.floor(referralCount),
+              );
+        }
+
+        let currentReferralCoins = 0;
+
+        const referralCoins =
+            referrer.referralCoins;
+
+        if (
+          typeof referralCoins === "number" &&
+          Number.isFinite(referralCoins)
+        ) {
+          currentReferralCoins =
+              Math.max(
+                0,
+                Math.floor(referralCoins),
+              );
+        }
+
+        // ---------------------------------------------------------
+        // UPDATE REFERRER WALLET
+        // ---------------------------------------------------------
+
         transaction.set(
-          newUserRef,
+          walletRef,
           {
-            referralStatus: REFERRAL_COMPLETED,
-            referralRewardCoins: REFERRAL_REWARD,
-            referralUpdatedAt:
-              admin.firestore.FieldValue.serverTimestamp(),
+            coinBalance:
+                newCoinBalance,
+
+            updatedAt:
+                admin.firestore.FieldValue
+                    .serverTimestamp(),
           },
           { merge: true },
         );
 
-        return;
-      }
+        // ---------------------------------------------------------
+        // UPDATE REFERRER PROFILE
+        // ---------------------------------------------------------
 
-      let currentCoins = 0;
+        transaction.set(
+          referrerRef,
+          {
+            successfulReferrals:
+                currentReferralCount + 1,
 
-      if (walletSnapshot.exists) {
-        const wallet =
-          walletSnapshot.data() || {};
+            referralCoins:
+                currentReferralCoins +
+                REFERRAL_REWARD,
 
-        currentCoins =
-          Number.isInteger(wallet.coins)
-            ? wallet.coins
-            : 0;
-      }
+            referralUpdatedAt:
+                admin.firestore.FieldValue
+                    .serverTimestamp(),
+          },
+          { merge: true },
+        );
 
-      const newBalance =
-        currentCoins + REFERRAL_REWARD;
+        // ---------------------------------------------------------
+        // CREATE REFERRAL HISTORY
+        // ---------------------------------------------------------
 
-      /*
-       * SECURE WALLET UPDATE
-       *
-       * Firestore client rules must keep wallet writes disabled.
-       */
-      transaction.set(
-        walletRef,
-        {
-          coins: newBalance,
-          updatedAt:
-            admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      );
+        transaction.set(
+          referralRef,
+          {
+            referredUid:
+                newUserUid,
 
-      const currentReferralCount =
-        Number.isInteger(
-          referrer.successfulReferrals,
-        )
-          ? referrer.successfulReferrals
-          : 0;
+            referredByUid:
+                referredByUid,
 
-      const currentReferralCoins =
-        Number.isInteger(
-          referrer.referralCoins,
-        )
-          ? referrer.referralCoins
-          : 0;
+            referralCode:
+                referredByCode,
 
-      transaction.set(
-        referrerRef,
-        {
-          successfulReferrals:
-            currentReferralCount + 1,
-          referralCoins:
-            currentReferralCoins +
-            REFERRAL_REWARD,
-          referralUpdatedAt:
-            admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      );
+            rewardCoins:
+                REFERRAL_REWARD,
 
-      /*
-       * Referral history
-       */
-      transaction.set(
-        referralRef,
-        {
-          referredUid: newUserUid,
-          referredByUid: referredByUid,
-          referralCode: referredByCode,
-          rewardCoins: REFERRAL_REWARD,
-          status: REFERRAL_COMPLETED,
-          createdAt:
-            referralSnapshot.exists
-              ? (
-                  referralSnapshot.data().createdAt ||
-                  admin.firestore.FieldValue.serverTimestamp()
-                )
-              : admin.firestore.FieldValue.serverTimestamp(),
-          completedAt:
-            admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      );
+            status:
+                REFERRAL_COMPLETED,
 
-      /*
-       * Mark referral completed.
-       */
-      transaction.set(
-        newUserRef,
-        {
-          referralStatus: REFERRAL_COMPLETED,
-          referralRewardCoins: REFERRAL_REWARD,
-          referralUpdatedAt:
-            admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      );
+            createdAt:
+                referralSnapshot.exists
+                    ? (
+                        referralSnapshot
+                                .data()
+                                ?.createdAt ??
+                        admin.firestore.FieldValue
+                            .serverTimestamp()
+                      )
+                    : admin.firestore.FieldValue
+                        .serverTimestamp(),
 
-      /*
-       * Immutable financial ledger.
-       */
-      transaction.set(ledgerRef, {
-        type: "referral_reward",
-        uid: referredByUid,
-        sourceUid: newUserUid,
-        amount: REFERRAL_REWARD,
-        currency: "coins",
-        description:
-          "Successful referral reward",
-        createdAt:
-          admin.firestore.FieldValue.serverTimestamp(),
-      });
+            completedAt:
+                admin.firestore.FieldValue
+                    .serverTimestamp(),
+          },
+          { merge: true },
+        );
 
-      /*
-       * Security audit log.
-       */
-      transaction.set(auditRef, {
-        action:
-          "referral_reward_completed",
-        referrerUid: referredByUid,
-        referredUid: newUserUid,
-        rewardCoins: REFERRAL_REWARD,
-        createdAt:
-          admin.firestore.FieldValue.serverTimestamp(),
-      });
-    });
+        // ---------------------------------------------------------
+        // MARK NEW USER REFERRAL COMPLETED
+        // ---------------------------------------------------------
+
+        transaction.set(
+          newUserRef,
+          {
+            referralStatus:
+                REFERRAL_COMPLETED,
+
+            referralRewardCoins:
+                REFERRAL_REWARD,
+
+            referralUpdatedAt:
+                admin.firestore.FieldValue
+                    .serverTimestamp(),
+          },
+          { merge: true },
+        );
+
+        // ---------------------------------------------------------
+        // FINANCIAL LEDGER
+        // ---------------------------------------------------------
+
+        transaction.set(
+          ledgerRef,
+          {
+            type:
+                "referral_reward",
+
+            uid:
+                referredByUid,
+
+            sourceUid:
+                newUserUid,
+
+            amount:
+                REFERRAL_REWARD,
+
+            currency:
+                "coins",
+
+            description:
+                "Successful referral reward",
+
+            createdAt:
+                admin.firestore.FieldValue
+                    .serverTimestamp(),
+          },
+        );
+
+        // ---------------------------------------------------------
+        // SECURITY AUDIT LOG
+        // ---------------------------------------------------------
+
+        transaction.set(
+          auditRef,
+          {
+            action:
+                "referral_reward_completed",
+
+            referrerUid:
+                referredByUid,
+
+            referredUid:
+                newUserUid,
+
+            rewardCoins:
+                REFERRAL_REWARD,
+
+            createdAt:
+                admin.firestore.FieldValue
+                    .serverTimestamp(),
+          },
+        );
+
+        // ---------------------------------------------------------
+        // SUCCESS
+        // ---------------------------------------------------------
+
+        resultStatus =
+            REFERRAL_COMPLETED;
+
+        resultMessage =
+            "Referral reward completed successfully.";
+
+        rewardGiven =
+            REFERRAL_REWARD;
+      },
+    );
+
+    // =============================================================
+    // RETURN RESULT
+    // =============================================================
 
     return {
-      success: true,
-      status: REFERRAL_COMPLETED,
-      rewardCoins: REFERRAL_REWARD,
+      success:
+          resultStatus ===
+          REFERRAL_COMPLETED,
+
+      status:
+          resultStatus,
+
+      rewardCoins:
+          rewardGiven,
+
       message:
-        "Referral reward completed successfully.",
+          resultMessage,
     };
   },
 );
