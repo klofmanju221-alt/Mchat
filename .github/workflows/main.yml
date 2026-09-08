@@ -44,6 +44,7 @@ jobs:
               )
 
               p.write_text(s)
+
               print("OK: app compileSdk = 37")
           else:
               raise SystemExit(
@@ -85,7 +86,9 @@ jobs:
 
               p.write_text(s)
 
-              print(f"OK: Agora compileSdk fixed: {p}")
+              print(
+                  f"OK: Agora compileSdk fixed: {p}"
+              )
           PY
 
       - name: Fix iris_method_channel compileSdk
@@ -153,6 +156,52 @@ jobs:
             -print \
             -exec grep -n "compileSdk" {} \;
 
+      # ==========================================
+      # MCHAT ANDROID SHA-256
+      # ==========================================
+      - name: Get Android SHA-256
+        shell: bash
+        run: |
+          echo "======================================"
+          echo "MCHAT ANDROID SHA-256"
+          echo "======================================"
+
+          KEYSTORE="$HOME/.android/debug.keystore"
+
+          if [ ! -f "$KEYSTORE" ]; then
+            echo "Debug keystore not found. Creating it..."
+
+            mkdir -p "$HOME/.android"
+
+            keytool -genkeypair \
+              -v \
+              -keystore "$KEYSTORE" \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+          echo ""
+          echo "SHA-256 CERTIFICATE:"
+          echo "--------------------------------------"
+
+          keytool \
+            -list \
+            -v \
+            -keystore "$KEYSTORE" \
+            -alias androiddebugkey \
+            -storepass android \
+            -keypass android \
+            | grep -E "SHA-256|SHA256"
+
+          echo "--------------------------------------"
+          echo "MCHAT ANDROID SHA-256 END"
+          echo "======================================"
+
       - name: Flutter Clean
         run: |
           flutter clean
@@ -172,7 +221,9 @@ jobs:
             echo "======================================"
             echo "APK BUILD SUCCESS"
             echo "======================================"
+
             ls -lh "$APK"
+
           else
             echo "ERROR: APK not found"
             exit 1
