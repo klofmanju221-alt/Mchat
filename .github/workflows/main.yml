@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -157,8 +158,9 @@ jobs:
             -exec grep -n "compileSdk" {} \;
 
       # ==========================================
-      # MCHAT ANDROID SHA-256
+      # GET ANDROID SHA-256
       # ==========================================
+
       - name: Get Android SHA-256
         shell: bash
         run: |
@@ -223,7 +225,6 @@ jobs:
             echo "======================================"
 
             ls -lh "$APK"
-
           else
             echo "ERROR: APK not found"
             exit 1
