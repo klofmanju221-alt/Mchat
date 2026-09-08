@@ -22,39 +22,93 @@ service cloud.firestore {
 
     match /users/{uid} {
 
+      // ----------------------------------------------------------
+      // READ
+      // ----------------------------------------------------------
+      //
       // User can read own profile.
       // Owner can read user profiles.
+      //
+
       allow read: if signedIn()
         && (
           request.auth.uid == uid
           || isOwner()
         );
 
-      // User can create only their own account document.
+      // ----------------------------------------------------------
+      // CREATE
+      // ----------------------------------------------------------
       //
-      // Referral information can be supplied during registration.
-      allow create: if signedIn()
-        && request.auth.uid == uid;
+      // Normal user:
+      // - Can create only own profile.
+      // - Cannot create themselves as owner.
+      //
+      // Owner:
+      // - Can create/update owner profile.
+      //
 
-      // Normal users can update their own normal profile fields.
-      //
-      // Referral/reward/security fields are backend controlled.
-      allow update: if signedIn()
+      allow create: if signedIn()
         && (
           isOwner()
           ||
           (
             request.auth.uid == uid
+            && request.resource.data.uid == request.auth.uid
+            && request.resource.data.isOwner == false
+          )
+        );
 
-            // Owner status cannot be changed by normal users.
+      // ----------------------------------------------------------
+      // UPDATE
+      // ----------------------------------------------------------
+      //
+      // Three secure paths:
+      //
+      // 1. Owner can update.
+      //
+      // 2. Normal user can update normal profile fields only.
+      //
+      // 3. Existing users can perform a safe one-time
+      //    referral profile initialization.
+      //
+
+      allow update: if signedIn()
+        && (
+
+          // ======================================================
+          // 1. OWNER
+          // ======================================================
+
+          isOwner()
+
+          ||
+
+          // ======================================================
+          // 2. NORMAL USER PROFILE UPDATE
+          // ======================================================
+
+          (
+            request.auth.uid == uid
+
+            // UID cannot be changed.
+            && request.resource.data.uid
+                == resource.data.uid
+
+            // Owner status cannot be changed.
             && request.resource.data.isOwner
                 == resource.data.isOwner
 
-            // Role cannot be changed by normal users.
+            // Role cannot be changed.
             && request.resource.data.role
                 == resource.data.role
 
-            // Referral and reward fields are protected.
+            // Mchat ID cannot be changed.
+            && request.resource.data.mchatId
+                == resource.data.mchatId
+
+            // Referral/security/financial fields are
+            // backend controlled.
             && !request.resource.data.diff(resource.data)
                 .affectedKeys()
                 .hasAny([
@@ -70,7 +124,81 @@ service cloud.firestore {
                   'referralUpdatedAt'
                 ])
           )
+
+          ||
+
+          // ======================================================
+          // 3. SAFE ONE-TIME REFERRAL PROFILE INITIALIZATION
+          // ======================================================
+          //
+          // This allows an existing user whose referral fields
+          // are missing to initialize:
+          //
+          // referralCode
+          // successfulReferrals = 0
+          // referralCoins = 0
+          //
+          // The referral code MUST match the user's own Mchat ID.
+          //
+
+          (
+            request.auth.uid == uid
+
+            // UID cannot change.
+            && request.resource.data.uid
+                == resource.data.uid
+
+            // Owner status cannot change.
+            && request.resource.data.isOwner
+                == resource.data.isOwner
+
+            // Role cannot change.
+            && request.resource.data.role
+                == resource.data.role
+
+            // Mchat ID cannot change.
+            && request.resource.data.mchatId
+                == resource.data.mchatId
+
+            // Valid normal-user Mchat ID.
+            && request.resource.data.mchatId is string
+            && request.resource.data.mchatId.matches(
+              '^[0-9]{8}$'
+            )
+            && request.resource.data.mchatId
+                != '11111111'
+
+            // Referral code MUST be derived from
+            // the same user's Mchat ID.
+            && request.resource.data.referralCode
+                == 'MCHAT-' + request.resource.data.mchatId
+
+            // Initial counters must be zero.
+            && request.resource.data.successfulReferrals == 0
+            && request.resource.data.referralCoins == 0
+
+            // Only these fields may change.
+            && request.resource.data.diff(resource.data)
+                .affectedKeys()
+                .hasOnly([
+                  'referralCode',
+                  'successfulReferrals',
+                  'referralCoins',
+                  'referralUpdatedAt'
+                ])
+
+            // This must be a one-time initialization.
+            && !resource.data.keys().hasAll([
+              'referralCode',
+              'successfulReferrals',
+              'referralCoins'
+            ])
+          )
         );
+
+      // ----------------------------------------------------------
+      // DELETE
+      // ----------------------------------------------------------
 
       // User accounts cannot be deleted from client.
       allow delete: if false;
@@ -83,10 +211,11 @@ service cloud.firestore {
       //
       // users/{referrerUid}/referrals/{newUserUid}
       //
-      // Only the referrer or owner can read referral history.
+      // Referrer can read own referral history.
+      // Owner can read referral history.
       //
-      // Client cannot create/update/delete referral history.
-      // Firebase Cloud Functions/Admin SDK handles these writes.
+      // Client cannot create/update/delete history.
+      // Backend/Admin SDK only.
       //
 
       match /referrals/{referralId} {
@@ -107,32 +236,54 @@ service cloud.firestore {
 
     match /mchatIds/{mchatId} {
 
+      // ----------------------------------------------------------
+      // READ
+      // ----------------------------------------------------------
+      //
       // Signed-in users can search Mchat IDs.
+      //
+
       allow read: if signedIn();
 
-      // Normal users can create their own 8-digit Mchat ID.
+      // ----------------------------------------------------------
+      // CREATE
+      // ----------------------------------------------------------
+      //
+      // Normal users can create their own 8-digit ID.
       //
       // Owner ID 11111111 is reserved.
+      //
+
       allow create: if signedIn()
         && (
           (
             request.auth.uid
               == request.resource.data.uid
+            && request.resource.data.mchatId
+              == mchatId
             && mchatId.matches('^[0-9]{8}$')
             && mchatId != '11111111'
+            && request.resource.data.isOwner == false
           )
           ||
           (
-            mchatId == '11111111'
+            isOwner()
+            && mchatId == '11111111'
             && request.resource.data.uid
               == request.auth.uid
-            && get(
-              /databases/$(database)/documents/users/$(request.auth.uid)
-            ).data.isOwner == true
+            && request.resource.data.mchatId
+              == '11111111'
+            && request.resource.data.isOwner == true
           )
         );
 
-      // Mchat ID is immutable.
+      // ----------------------------------------------------------
+      // UPDATE
+      // ----------------------------------------------------------
+      //
+      // Mchat ID and owner status are immutable.
+      //
+
       allow update: if signedIn()
         && request.auth.uid
           == resource.data.uid
@@ -141,9 +292,14 @@ service cloud.firestore {
         && request.resource.data.mchatId
           == resource.data.mchatId
         && request.resource.data.mchatId
-          == mchatId;
+          == mchatId
+        && request.resource.data.isOwner
+          == resource.data.isOwner;
 
-      // Mchat IDs cannot be deleted from client.
+      // ----------------------------------------------------------
+      // DELETE
+      // ----------------------------------------------------------
+
       allow delete: if false;
     }
 
@@ -163,9 +319,11 @@ service cloud.firestore {
 
       // IMPORTANT:
       //
-      // No client can create/update/delete wallet balances.
+      // Client cannot create/update/delete wallet balances.
       //
       // Firebase Admin SDK / secure backend only.
+      //
+
       allow write: if false;
     }
 
@@ -201,7 +359,7 @@ service cloud.firestore {
 
     match /withdrawals/{id} {
 
-      // Owner can read withdrawals.
+      // Owner can read withdrawal records.
       allow read: if signedIn() && isOwner();
 
       // Backend only.
@@ -295,6 +453,10 @@ service cloud.firestore {
 
     match /rooms/{roomId} {
 
+      // ----------------------------------------------------------
+      // ROOM
+      // ----------------------------------------------------------
+
       allow read: if signedIn();
 
       allow create: if signedIn()
@@ -347,7 +509,7 @@ service cloud.firestore {
 
         allow read: if signedIn();
 
-        // Gift transactions must be backend controlled.
+        // Gift transactions are backend controlled.
         allow create, update, delete: if false;
       }
 
